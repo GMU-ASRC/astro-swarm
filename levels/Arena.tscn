@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://d3v3xxxxxxxxx"]
+
+[ext_resource type="Script" uid="uid://dl76p3fecws2g" path="res://levels/Arena.gd" id="1_arena"]
+[ext_resource type="PackedScene" uid="uid://b1v1xxxxxxxxx" path="res://entities/robot/Robot.tscn" id="2_robot"]
+[ext_resource type="PackedScene" uid="uid://c2v2xxxxxxxxx" path="res://levels/DragIndicator.tscn" id="3_drag"]
+[ext_resource type="PackedScene" uid="uid://sidebar00001" path="res://ui/hud/Sidebar.tscn" id="4_sidebar"]
+[ext_resource type="PackedScene" uid="uid://topbar000001" path="res://ui/hud/TopBar.tscn" id="5_topbar"]
+[ext_resource type="PackedScene" uid="uid://radialmenu01" path="res://ui/hud/RadialMenu.tscn" id="6_radial"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
+size = Vector2(1920, 50)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bottom"]
+size = Vector2(1920, 50)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_left"]
+size = Vector2(50, 1080)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_right"]
+size = Vector2(50, 1080)
+
+[node name="Arena" type="Node2D" unique_id=2128879106]
+script = ExtResource("1_arena")
+robot_scene = ExtResource("2_robot")
+
+[node name="Walls" type="StaticBody2D" parent="." unique_id=2135044340]
+
+[node name="TopWall" type="CollisionShape2D" parent="Walls" unique_id=331953190]
+position = Vector2(960, -25)
+shape = SubResource("RectangleShape2D_top")
+
+[node name="BottomWall" type="CollisionShape2D" parent="Walls" unique_id=1359361312]
+position = Vector2(960, 1105)
+shape = SubResource("RectangleShape2D_bottom")
+
+[node name="LeftWall" type="CollisionShape2D" parent="Walls" unique_id=1254614376]
+position = Vector2(-25, 540)
+shape = SubResource("RectangleShape2D_left")
+
+[node name="RightWall" type="CollisionShape2D" parent="Walls" unique_id=574570258]
+position = Vector2(1945, 540)
+shape = SubResource("RectangleShape2D_right")
+
+[node name="DragIndicator" parent="." unique_id=1222571311 instance=ExtResource("3_drag")]
+
+[node name="Sidebar" parent="." unique_id=815294680 instance=ExtResource("4_sidebar")]
+
+[node name="TopBar" parent="." unique_id=118469989 instance=ExtResource("5_topbar")]
+
+[node name="RadialMenu" parent="." unique_id=844492565 instance=ExtResource("6_radial")]

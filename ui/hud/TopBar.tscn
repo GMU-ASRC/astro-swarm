@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://topbar000001"]
+
+[ext_resource type="Script" path="res://ui/hud/TopBar.gd" id="1_tb"]
+[ext_resource type="Theme" path="res://ui/MainTheme.tres" id="2_theme"]
+
+[node name="TopBar" type="CanvasLayer"]
+layer = 5
+process_mode = 3
+script = ExtResource("1_tb")
+
+[node name="Panel" type="PanelContainer" parent="."]
+theme = ExtResource("2_theme")
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -600.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 56.0
+grow_horizontal = 0
+
+[node name="HBox" type="HBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TimeLabel" type="Label" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.118, 0.118, 0.180, 1.0)
+text = "00:00"
+
+[node name="ReplaySlider" type="HSlider" parent="Panel/HBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.01
+
+[node name="VSep1" type="VSeparator" parent="Panel/HBox"]
+layout_mode = 2
+
+[node name="CountLabel" type="Label" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 13
+text = "0 placed"
+
+[node name="Speed1x" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = "×1"
+
+[node name="Speed2x" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = "×2"
+
+[node name="Speed3x" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = "×3"
+
+[node name="VSep2" type="VSeparator" parent="Panel/HBox"]
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = " ▶ Start "
+
+[node name="StopButton" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = " ⏹ Stop "

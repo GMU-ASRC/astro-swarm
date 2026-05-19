@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://bftuny86k0duc"]
+
+[ext_resource type="Theme" uid="uid://cx62j8fxxxxx" path="res://ui/MainTheme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://levels/GameModeScene.gd" id="2_script"]
+
+[node name="GameModeScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.835, 0.835, 0.859, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 40
+
+[node name="TitleLabel" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Select Mode"
+horizontal_alignment = 1
+
+[node name="ButtonBox" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="SpaceMinnowsButton" type="Button" parent="VBox/ButtonBox"]
+layout_mode = 2
+text = "Space Minnows"
+
+[node name="ChallengesButton" type="Button" parent="VBox/ButtonBox"]
+layout_mode = 2
+text = "Challenges"
+
+[node name="BackButton" type="Button" parent="VBox/ButtonBox"]
+layout_mode = 2
+text = "Back"

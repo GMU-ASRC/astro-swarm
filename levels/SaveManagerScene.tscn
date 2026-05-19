@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://c3as5rvcmt80s"]
+
+[ext_resource type="Script" path="res://levels/SaveManagerScene.gd" id="1_script"]
+[ext_resource type="Theme" path="res://ui/MainTheme.tres" id="2_theme"]
+
+[node name="SaveManagerScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.835294, 0.835294, 0.858824, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = 40.0
+offset_right = -60.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="VBox/Header"]
+layout_mode = 2
+focus_mode = 0
+text = "◀ Back to Simulator"
+
+[node name="Title" type="Label" parent="VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Manage Data & Saves"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="VBox/Header"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="Content" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 40
+
+[node name="VBox" type="VBoxContainer" parent="VBox/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="VBox/Content/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "💾 Saved Setups"
+horizontal_alignment = 1
+
+[node name="SaveList" type="ItemList" parent="VBox/Content/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Content/VBox"]
+layout_mode = 2
+
+[node name="SaveNameEdit" type="LineEdit" parent="VBox/Content/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_placeholder_color = Color(0.4, 0.4, 0.4, 1)
+placeholder_text = "setup_name.save"
+
+[node name="SaveCurrentBtn" type="Button" parent="VBox/Content/VBox/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = "Save Current"
+
+[node name="HBox2" type="HBoxContainer" parent="VBox/Content/VBox"]
+layout_mode = 2
+
+[node name="LoadSaveBtn" type="Button" parent="VBox/Content/VBox/HBox2"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Load Selected Setup"
+
+[node name="DeleteSaveBtn" type="Button" parent="VBox/Content/VBox/HBox2"]
+layout_mode = 2
+focus_mode = 0
+text = "Delete"
+
+[node name="VSeparator" type="VSeparator" parent="VBox/Content"]
+layout_mode = 2
+
+[node name="VBox2" type="VBoxContainer" parent="VBox/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="VBox/Content/VBox2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "🎞 Recorded Runs"
+horizontal_alignment = 1
+
+[node name="RunList" type="ItemList" parent="VBox/Content/VBox2"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBox" type="HBoxContainer" parent="VBox/Content/VBox2"]
+layout_mode = 2
+
+[node name="LoadRunBtn" type="Button" parent="VBox/Content/VBox2/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Load Selected Run"
+
+[node name="ExportVideoBtn" type="Button" parent="VBox/Content/VBox2/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = "Export to Video"
+
+[node name="DeleteRunBtn" type="Button" parent="VBox/Content/VBox2/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = "Delete"

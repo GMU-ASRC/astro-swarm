@@ -1,0 +1,9 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+.claude/
+
+bin/linux/ffmpeg
+bin/windows/ffmpeg.exe
+bin/macos/ffmpeg

@@ -1,0 +1,220 @@
+[gd_scene load_steps=3 format=3 uid="uid://cx62j8fxxxxx_set"]
+
+[ext_resource type="Theme" uid="uid://cx62j8fxxxxx" path="res://ui/MainTheme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://levels/SettingsScene.gd" id="2_script"]
+
+[node name="SettingsScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.835, 0.835, 0.859, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = 40.0
+offset_right = -60.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBar" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="VBox/TopBar"]
+layout_mode = 2
+text = "◀ Back"
+
+[node name="Title" type="Label" parent="VBox/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Player Settings"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="VBox/TopBar"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/side_margin = 0
+
+[node name="Display" type="PanelContainer" parent="VBox/TabContainer"]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Display"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Display/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="VBox/TabContainer/Display/Margin/VBox"]
+layout_mode = 2
+text = "Window Mode"
+
+[node name="WindowModeOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/VBox"]
+layout_mode = 2
+item_count = 2
+selected = 0
+popup/item_0/text = "Windowed"
+popup/item_0/id = 0
+popup/item_1/text = "Fullscreen"
+popup/item_1/id = 1
+
+[node name="Graphics" type="PanelContainer" parent="VBox/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Graphics"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Graphics/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="VSyncCheck" type="CheckBox" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+layout_mode = 2
+text = "Enable V-Sync"
+
+[node name="FpsLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+layout_mode = 2
+text = "Max FPS"
+
+[node name="FpsOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+layout_mode = 2
+item_count = 4
+selected = 0
+popup/item_0/text = "Uncapped"
+popup/item_0/id = 0
+popup/item_1/text = "60 FPS"
+popup/item_1/id = 1
+popup/item_2/text = "120 FPS"
+popup/item_2/id = 2
+popup/item_3/text = "144 FPS"
+popup/item_3/id = 3
+
+[node name="MsaaLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+layout_mode = 2
+text = "Anti-Aliasing (MSAA 2D)"
+
+[node name="MsaaOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+layout_mode = 2
+item_count = 4
+selected = 0
+popup/item_0/text = "Disabled"
+popup/item_0/id = 0
+popup/item_1/text = "2x"
+popup/item_1/id = 1
+popup/item_2/text = "4x"
+popup/item_2/id = 2
+popup/item_3/text = "8x"
+popup/item_3/id = 3
+
+[node name="Sound" type="PanelContainer" parent="VBox/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Sound"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Sound/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DeviceLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+text = "Audio Output Device"
+
+[node name="DeviceOption" type="OptionButton" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+text = "Master Volume"
+
+[node name="MasterVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 100.0
+value = 100.0
+
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(40, 0)
+text = "100%"
+
+[node name="MusicLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+text = "Music Volume"
+
+[node name="MusicVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 100.0
+value = 100.0
+
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(40, 0)
+text = "100%"
+
+[node name="SfxLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+text = "SFX Volume"
+
+[node name="SfxVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 100.0
+value = 100.0
+
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(40, 0)
+text = "100%"

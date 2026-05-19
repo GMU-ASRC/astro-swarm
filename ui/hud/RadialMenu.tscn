@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://radialmenu01"]
+
+[ext_resource type="Script" path="res://ui/hud/RadialMenu.gd" id="1_rm"]
+[ext_resource type="Theme" path="res://ui/MainTheme.tres" id="2_theme"]
+
+[node name="RadialMenu" type="CanvasLayer"]
+layer = 20
+visible = false
+process_mode = 3
+script = ExtResource("1_rm")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.3)
+
+[node name="Center" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+theme = ExtResource("2_theme")
+
+[node name="Container" type="Control" parent="Center"]
+anchors_preset = 0

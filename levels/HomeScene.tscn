@@ -1,0 +1,92 @@
+[gd_scene format=3 uid="uid://dnsw3eipkvwly"]
+
+[ext_resource type="Theme" uid="uid://cx62j8fxxxxx" path="res://ui/MainTheme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://cxyt0xou1000m" path="res://levels/HomeScene.gd" id="2_script"]
+
+[node name="HomeScene" type="Control" unique_id=263769714]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=357923104]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.835, 0.835, 0.859, 1)
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1115986008]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 40
+
+[node name="TitleLabel" type="Label" parent="VBox" unique_id=401448044]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "AstroSwarm"
+horizontal_alignment = 1
+
+[node name="ButtonBox" type="VBoxContainer" parent="VBox" unique_id=2120090048]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="PlayButton" type="Button" parent="VBox/ButtonBox" unique_id=1421293837]
+layout_mode = 2
+text = "Play"
+
+[node name="SimulatorButton" type="Button" parent="VBox/ButtonBox" unique_id=690703670]
+layout_mode = 2
+text = "Simulator"
+
+[node name="SettingsButton" type="Button" parent="VBox/ButtonBox" unique_id=1715249168]
+layout_mode = 2
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="VBox/ButtonBox" unique_id=362085094]
+layout_mode = 2
+text = "Quit"
+
+[node name="VersionLabel" type="Label" parent="." unique_id=1794545902]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -36.0
+offset_right = 116.0
+offset_bottom = -16.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.4, 0.4, 0.45, 1)
+text = "v0.0.1-alpha"
+
+[node name="Author" type="Label" parent="." unique_id=1646247741]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.91800004
+anchor_top = 1.0
+anchor_right = 0.91800004
+anchor_bottom = 1.0
+offset_left = 0.95996094
+offset_top = -36.0
+offset_right = 100.95996
+offset_bottom = -16.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.4, 0.4, 0.45, 1)
+text = "Sir Blob"
