@@ -225,14 +225,30 @@ func _spawn_robot(start_pos: Vector2, end_pos: Vector2):
 func _on_robot_clicked(robot: Node2D):
 	_selected_robot = robot
 	var playing := SimulationManager.has_started and not get_tree().paused
+	var replaying := SimulationManager.is_replaying
 	var actions: Array = []
-	if _controlled_robot == robot:
-		actions.append({"id": "release", "label": "Release", "color": Color(0.85, 0.5, 0.2)})
-	else:
-		actions.append({"id": "take_over", "label": "Take Over", "color": Color(0.176, 0.341, 0.714)})
-	if not playing:
-		actions.append({"id": "remove", "label": "Remove", "color": Color(0.8, 0.25, 0.25)})
-	$RadialMenu.open(get_global_mouse_position(), actions, robot.robot_name)
+	if not replaying:
+		if _controlled_robot == robot:
+			actions.append({"id": "release", "label": "Release", "color": Color(0.85, 0.5, 0.2, 1.0)})
+		else:
+			actions.append({"id": "take_over", "label": "Take Over", "color": Color(0.176, 0.341, 0.714, 1.0)})
+	actions.append({
+		"id": "toggle_trail",
+		"label": "Trail Off" if robot.trail_enabled else "Trail On",
+		"color": Color(0.482, 0.302, 0.686, 1.0)
+	})
+	actions.append({
+		"id": "toggle_coords",
+		"label": "Unpin XY" if robot.pin_coords else "Pin XY",
+		"color": Color(0.255, 0.463, 0.843, 1.0)
+	})
+	if not playing and not replaying:
+		actions.append({"id": "remove", "label": "Remove", "color": Color(0.8, 0.25, 0.25, 1.0)})
+	$RadialMenu.open(get_global_mouse_position(), actions, _robot_title(robot))
+
+func _robot_title(robot: Node2D) -> String:
+	var meters: Vector2 = robot.global_position / SimulationManager.PX_PER_METER
+	return "%s\n(%.1fm, %.1fm)" % [robot.robot_name, meters.x, meters.y]
 
 func _on_radial_action(action_id: String):
 	if _selected_robot == null:
@@ -252,6 +268,10 @@ func _on_radial_action(action_id: String):
 			_take_over(_selected_robot)
 		"release":
 			_release_control()
+		"toggle_trail":
+			_selected_robot.toggle_trail()
+		"toggle_coords":
+			_selected_robot.toggle_pin_coords()
 	_selected_robot = null
 
 func _take_over(robot: Node2D):

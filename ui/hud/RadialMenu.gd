@@ -91,6 +91,12 @@ func _on_center_draw():
 		center.draw_string(font, text_pos, label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color.WHITE)
 
 	if _title != "":
-		var string_size = font.get_string_size(_title, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
-		var title_pos = Vector2(-string_size.x / 2.0, string_size.y * 0.35)
-		center.draw_string(font, title_pos, _title, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(0.9, 0.9, 0.9, 1.0))
+		var lines: PackedStringArray = _title.split("\n")
+		var line_h: float = font.get_height(font_size)
+		var total_h: float = line_h * lines.size()
+		var y_start: float = -total_h * 0.5 + line_h * 0.75
+		for i in lines.size():
+			var line: String = lines[i]
+			var line_size = font.get_string_size(line, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
+			var line_pos = Vector2(-line_size.x / 2.0, y_start + i * line_h)
+			center.draw_string(font, line_pos, line, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(0.9, 0.9, 0.9, 1.0))
