@@ -326,6 +326,16 @@ func start_recording():
 	recorded_frames.clear()
 	record_timer = 0.0
 
+func _make_run_filename() -> String:
+	var dt: Dictionary = Time.get_datetime_dict_from_system()
+	var base: String = "Run_%04d-%02d-%02d_%02dh%02d" % [dt.year, dt.month, dt.day, dt.hour, dt.minute]
+	var candidate: String = base + ".run"
+	var n: int = 2
+	while FileAccess.file_exists("user://runs/" + candidate):
+		candidate = "%s_(%d).run" % [base, n]
+		n += 1
+	return candidate
+
 func stop_recording_and_save():
 	if not is_recording: return
 	is_recording = false
@@ -333,9 +343,8 @@ func stop_recording_and_save():
 	if recorded_frames.is_empty(): return
 
 	DirAccess.make_dir_absolute("user://runs")
-	var dt = Time.get_datetime_dict_from_system()
-	var filename = "run_%04d%02d%02d_%02d%02d%02d.run" % [dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second]
-	var path = "user://runs/" + filename
+	var filename: String = _make_run_filename()
+	var path: String = "user://runs/" + filename
 
 	var f = FileAccess.open(path, FileAccess.WRITE)
 	if f:
