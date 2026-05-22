@@ -5,6 +5,8 @@ signal selected_type_changed(type_id: String)
 signal behavior_changed(type_id: String)
 signal type_config_changed(type_id: String)
 signal species_list_changed
+signal tool_changed(tool_id: String)
+signal obstacles_changed
 
 var simulation_time: float = 0.0
 var has_started: bool = false
@@ -52,6 +54,14 @@ var type_configs: Dictionary = {}
 var compiled_rules: Dictionary = {}
 
 var placements: Array = []
+var obstacles: Array = []
+
+const TOOL_PLACE := "place_robot"
+const TOOL_MEASURE := "measure"
+const TOOL_WALL := "wall"
+const TOOL_OBSTACLE := "obstacle"
+
+var active_tool: String = TOOL_PLACE
 
 var settings: Dictionary = {
 	"speed":          3.75,
@@ -199,6 +209,20 @@ func set_selected_type(type_id: String):
 	selected_type_id = type_id
 	selected_type_changed.emit(type_id)
 
+func set_active_tool(tool_id: String):
+	if active_tool == tool_id:
+		return
+	active_tool = tool_id
+	tool_changed.emit(tool_id)
+
+func add_obstacle(data: Dictionary):
+	obstacles.append(data)
+	obstacles_changed.emit()
+
+func clear_obstacles():
+	obstacles.clear()
+	obstacles_changed.emit()
+
 func update_setting(key: String, value):
 	settings[key] = value
 	for t in robot_types:
@@ -214,6 +238,12 @@ func add_placement(type_id: String, pos: Vector2, rot: float):
 
 func clear_placements():
 	placements.clear()
+	reset_time()
+
+func clear_all_arena():
+	placements.clear()
+	obstacles.clear()
+	obstacles_changed.emit()
 	reset_time()
 
 
@@ -266,6 +296,7 @@ func get_setup_data() -> Dictionary:
 		"type_configs": type_configs,
 		"compiled_rules": compiled_rules,
 		"placements": placements,
+		"obstacles": obstacles,
 		"settings": settings,
 	}
 
@@ -284,10 +315,12 @@ func load_setup(path: String) -> bool:
 		type_configs = data.get("type_configs", type_configs)
 		compiled_rules = data.get("compiled_rules", compiled_rules)
 		placements = data.get("placements", placements)
+		obstacles = data.get("obstacles", [])
 		settings = data.get("settings", settings)
 
 		species_list_changed.emit()
 		settings_changed.emit()
+		obstacles_changed.emit()
 		return true
 	return false
 
@@ -302,10 +335,12 @@ func load_run(path: String) -> bool:
 		type_configs = setup.get("type_configs", type_configs)
 		compiled_rules = setup.get("compiled_rules", compiled_rules)
 		placements = setup.get("placements", placements)
+		obstacles = setup.get("obstacles", [])
 		settings = setup.get("settings", settings)
 
 		species_list_changed.emit()
 		settings_changed.emit()
+		obstacles_changed.emit()
 
 		current_replay = data["frames"]
 		is_replaying = true

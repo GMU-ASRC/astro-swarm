@@ -142,5 +142,6 @@ func _on_type_config_changed(changed_type: String):
 		_apply_type_config()
 
 func _on_click_area_input_event(viewport: Node, event: InputEvent, shape_idx: int):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		clicked.emit(self)
+		viewport.set_input_as_handled()

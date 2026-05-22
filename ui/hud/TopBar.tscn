@@ -4,9 +4,9 @@
 [ext_resource type="Theme" path="res://ui/MainTheme.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel_compact"]
-content_margin_left = 10.0
+content_margin_left = 8.0
 content_margin_top = 6.0
-content_margin_right = 10.0
+content_margin_right = 8.0
 content_margin_bottom = 6.0
 bg_color = Color(0.91, 0.91, 0.925, 1)
 border_width_left = 1
@@ -20,9 +20,9 @@ corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_btn"]
-content_margin_left = 8.0
+content_margin_left = 7.0
 content_margin_top = 4.0
-content_margin_right = 8.0
+content_margin_right = 7.0
 content_margin_bottom = 4.0
 bg_color = Color(0.945, 0.945, 0.957, 1)
 border_width_left = 1
@@ -36,9 +36,9 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_btn_hover"]
-content_margin_left = 8.0
+content_margin_left = 7.0
 content_margin_top = 4.0
-content_margin_right = 8.0
+content_margin_right = 7.0
 content_margin_bottom = 4.0
 bg_color = Color(0.918, 0.937, 0.969, 1)
 border_width_left = 1
@@ -111,44 +111,123 @@ script = ExtResource("1_tb")
 [node name="Panel" type="PanelContainer" parent="."]
 theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel_compact")
-anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -470.0
+offset_left = 12.0
 offset_top = 12.0
 offset_right = -12.0
 offset_bottom = 50.0
-grow_horizontal = 0
+grow_horizontal = 2
 
 [node name="HBox" type="HBoxContainer" parent="Panel"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="TimeLabel" type="Label" parent="Panel/HBox"]
+[node name="BackBtn" type="Button" parent="Panel/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
+focus_mode = 0
 theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(0.118, 0.118, 0.180, 1.0)
-text = "00:00"
+theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
+text = "◀"
+tooltip_text = "Home"
+
+[node name="VSepA" type="VSeparator" parent="Panel/HBox"]
+layout_mode = 2
+
+[node name="SetupBtn" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
+text = "💾"
+tooltip_text = "Manage Setups"
+
+[node name="WorkspaceBtn" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
+text = "▦"
+tooltip_text = "Workspace"
+
+[node name="ClearBtn" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
+text = "↺"
+tooltip_text = "Clear Arena"
+
+[node name="SettingsBtn" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
+text = "⚙"
+tooltip_text = "Arena Settings"
+
+[node name="VSepB" type="VSeparator" parent="Panel/HBox"]
+layout_mode = 2
+
+[node name="ToolBox" type="HBoxContainer" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 3
+
+[node name="VSepC" type="VSeparator" parent="Panel/HBox"]
+layout_mode = 2
+
+[node name="SpeciesBox" type="HBoxContainer" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 3
+
+[node name="AddSpeciesBtn" type="Button" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
+text = "+"
+tooltip_text = "New Species"
+
+[node name="Spacer" type="Control" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="ReplaySlider" type="HSlider" parent="Panel/HBox"]
 visible = false
 layout_mode = 2
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(220, 0)
 size_flags_vertical = 4
 max_value = 1.0
 step = 0.01
 
-[node name="VSep1" type="VSeparator" parent="Panel/HBox"]
-layout_mode = 2
-
 [node name="CountLabel" type="Label" parent="Panel/HBox"]
 layout_mode = 2
-size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_font_sizes/font_size = 12
 theme_override_colors/font_color = Color(0.32, 0.32, 0.4, 1.0)
 text = "0"
-horizontal_alignment = 2
+
+[node name="VSepD" type="VSeparator" parent="Panel/HBox"]
+layout_mode = 2
 
 [node name="SpeedBox" type="HBoxContainer" parent="Panel/HBox"]
 layout_mode = 2
@@ -188,8 +267,15 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_seg_right")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_seg_active")
 text = "3×"
 
-[node name="VSep2" type="VSeparator" parent="Panel/HBox"]
+[node name="VSepE" type="VSeparator" parent="Panel/HBox"]
 layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.118, 0.118, 0.180, 1.0)
+text = "00:00"
 
 [node name="PlayButton" type="Button" parent="Panel/HBox"]
 layout_mode = 2

@@ -2,6 +2,8 @@ extends Node2D
 
 @export var robot_scene: PackedScene
 @onready var drag_indicator: Node2D = $DragIndicator
+@onready var obstacles_root: Node2D = $Obstacles
+@onready var top_bar: CanvasLayer = $TopBar
 
 var is_dragging: bool = false
 var is_panning: bool = false
@@ -15,12 +17,20 @@ const RULER_COLOR := Color(0.420, 0.420, 0.475, 1.0)
 const RULER_TEXT  := Color(0.320, 0.320, 0.400, 1.0)
 const PX_PER_M   := 40.0
 
-const SIDEBAR_RIGHT_X := 140.0
-const TOPBAR_BOTTOM_Y := 68.0
+const WALL_FILL := Color(0.45, 0.45, 0.52, 1.0)
+const WALL_BORDER := Color(0.22, 0.22, 0.28, 1.0)
+const OBSTACLE_FILL := Color(0.55, 0.40, 0.30, 1.0)
+const OBSTACLE_BORDER := Color(0.30, 0.20, 0.15, 1.0)
+const MEASURE_COLOR := Color(0.176, 0.341, 0.714, 1.0)
+const TOOL_PREVIEW_COLOR := Color(0.176, 0.341, 0.714, 1.0)
 
 const SETTINGS_MODAL_SCENE = preload("res://ui/modal/SettingsModal.tscn")
 const EXPORT_MODAL_SCRIPT = preload("res://ui/modal/ExportProgressModal.gd")
 var settings_modal: CanvasLayer
+
+var _measure_anchor: Vector2 = Vector2.ZERO
+var _has_measure_anchor: bool = false
+var _measure_committed: Array = []
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -31,27 +41,43 @@ func _ready():
 	drag_indicator.update_drag(false)
 
 	settings_modal = SETTINGS_MODAL_SCENE.instantiate()
+	settings_modal.name = "ArenaSettingsModal"
 	add_child(settings_modal)
 
 	_fit_to_viewport()
 	_restore_placements()
+	_restore_obstacles()
 
-	$Sidebar.settings_btn.pressed.connect(func(): settings_modal.open())
-	$Sidebar.open_workspace.connect(_goto_workspace)
-	$Sidebar.request_clear.connect(_clear_arena)
-	$TopBar.request_stop.connect(_stop_arena)
+	top_bar.open_workspace.connect(_goto_workspace)
+	top_bar.request_clear.connect(_clear_arena)
+	top_bar.request_stop.connect(_stop_arena)
 	$RadialMenu.action_selected.connect(_on_radial_action)
 	$RadialMenu.menu_closed.connect(func(): _selected_robot = null)
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	SimulationManager.settings_changed.connect(_on_settings_changed)
+	SimulationManager.obstacles_changed.connect(_on_obstacles_changed)
+	SimulationManager.tool_changed.connect(_on_tool_changed)
 	get_tree().paused = true
 	queue_redraw()
 
 	if SimulationManager.is_exporting:
 		_run_video_export.call_deferred()
 
+func open_settings_modal():
+	if settings_modal:
+		settings_modal.open()
+
 func _on_settings_changed():
 	_fit_to_viewport()
+	queue_redraw()
+
+func _on_obstacles_changed():
+	_restore_obstacles()
+
+func _on_tool_changed(_tool_id: String):
+	is_dragging = false
+	drag_indicator.update_drag(false)
+	_has_measure_anchor = false
 	queue_redraw()
 
 func _on_viewport_resized():
@@ -59,26 +85,59 @@ func _on_viewport_resized():
 	queue_redraw()
 
 func _draw():
-	var s = Vector2(SimulationManager.settings.arena_width, SimulationManager.settings.arena_height)
+	var s: Vector2 = Vector2(SimulationManager.settings.arena_width, SimulationManager.settings.arena_height)
 	draw_rect(Rect2(Vector2.ZERO, s), BG_COLOR)
 
-	var line_width := 1.0
+	var line_width: float = 1.0
 	if arena_camera and arena_camera.zoom.x > 0.0:
 		line_width = max(1.0, 1.0 / arena_camera.zoom.x)
 
-	var x := 0.0
+	var x: float = 0.0
 	while x <= s.x:
 		draw_line(Vector2(x, 0.0), Vector2(x, s.y), GRID_COLOR, line_width)
 		x += GRID_STEP
-	var y := 0.0
+	var y: float = 0.0
 	while y <= s.y:
 		draw_line(Vector2(0.0, y), Vector2(s.x, y), GRID_COLOR, line_width)
 		y += GRID_STEP
 
-	var border_width := 4.0 * line_width
+	for ob in SimulationManager.obstacles:
+		_draw_obstacle(ob)
+
+	for m in _measure_committed:
+		_draw_measure_marks(m.start, m.end, line_width)
+
+	var border_width: float = 4.0 * line_width
 	draw_rect(Rect2(Vector2.ZERO, s), Color(0.9, 0.2, 0.2, 1.0), false, border_width)
 	_draw_ruler_h(s)
 	_draw_ruler_v(s)
+
+func _draw_obstacle(ob: Dictionary):
+	if ob.get("type", "") == "wall":
+		var pos: Vector2 = ob.get("position", Vector2.ZERO)
+		var size: Vector2 = ob.get("size", Vector2.ZERO)
+		var rect: Rect2 = Rect2(pos - size * 0.5, size)
+		draw_rect(rect, WALL_FILL, true)
+		draw_rect(rect, WALL_BORDER, false, 2.0)
+	elif ob.get("type", "") == "circle":
+		var pos: Vector2 = ob.get("position", Vector2.ZERO)
+		var r: float = ob.get("radius", 0.0)
+		draw_circle(pos, r, OBSTACLE_FILL)
+		draw_arc(pos, r, 0.0, TAU, 64, OBSTACLE_BORDER, 2.0, true)
+
+func _draw_measure_marks(p1: Vector2, p2: Vector2, line_width: float):
+	draw_line(p1, p2, MEASURE_COLOR, max(2.0, line_width * 2.0), true)
+	var meters: float = p1.distance_to(p2) / PX_PER_M
+	var txt: String = "%.2f m" % meters
+	var font: Font = ThemeDB.fallback_font
+	var font_size: int = 12
+	var size: Vector2 = font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
+	var mid: Vector2 = (p1 + p2) * 0.5
+	var pad: float = 4.0
+	var bg_rect: Rect2 = Rect2(mid - Vector2(size.x * 0.5 + pad, size.y * 0.5 + pad), size + Vector2(pad * 2.0, pad * 2.0))
+	draw_rect(bg_rect, Color(0.965, 0.965, 0.973, 1.0), true)
+	draw_rect(bg_rect, MEASURE_COLOR, false, 1.0)
+	draw_string(font, mid + Vector2(-size.x * 0.5, size.y * 0.3), txt, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(0.137, 0.137, 0.196, 1.0))
 
 func _draw_ruler_h(s: Vector2):
 	var ruler_y: float = s.y - 18.0
@@ -101,17 +160,17 @@ func _draw_ruler_v(s: Vector2):
 			draw_string(ThemeDB.fallback_font, Vector2(ruler_x + tick_w + 2, py + 4), "%dm" % m, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, RULER_TEXT)
 
 func _fit_to_viewport():
-	var w = SimulationManager.settings.arena_width
-	var h = SimulationManager.settings.arena_height
-	var s = Vector2(w, h)
-	var t := 50.0
+	var w: float = SimulationManager.settings.arena_width
+	var h: float = SimulationManager.settings.arena_height
+	var s: Vector2 = Vector2(w, h)
+	var t: float = 50.0
 
 	if arena_camera:
 		arena_camera.position = s / 2.0
-		var vp = get_viewport_rect().size
-		var zoom_x = vp.x / w
-		var zoom_y = vp.y / h
-		var zoom_min = min(zoom_x, zoom_y)
+		var vp: Vector2 = get_viewport_rect().size
+		var zoom_x: float = vp.x / w
+		var zoom_y: float = vp.y / h
+		var zoom_min: float = min(zoom_x, zoom_y)
 		arena_camera.zoom = Vector2(zoom_min, zoom_min)
 
 	$Walls.collision_layer = 1
@@ -154,52 +213,144 @@ func _restore_placements():
 		robot.clicked.connect(_on_robot_clicked)
 		add_child(robot)
 
-func _is_in_ui_zone(pos: Vector2) -> bool:
-	var s := get_viewport_rect().size
-	if pos.x < SIDEBAR_RIGHT_X + 12.0:
-		return true
-	if pos.y < TOPBAR_BOTTOM_Y and pos.x > s.x - 360.0:
-		return true
-	return false
+func _restore_obstacles():
+	for child in obstacles_root.get_children():
+		child.queue_free()
+	for ob in SimulationManager.obstacles:
+		_spawn_obstacle_body(ob)
+	queue_redraw()
+
+func _spawn_obstacle_body(ob: Dictionary):
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask = 1
+	body.add_to_group("obstacles")
+	var shape_node := CollisionShape2D.new()
+	if ob.get("type", "") == "wall":
+		var sh := RectangleShape2D.new()
+		sh.size = ob.get("size", Vector2.ZERO)
+		shape_node.shape = sh
+	elif ob.get("type", "") == "circle":
+		var sh := CircleShape2D.new()
+		sh.radius = ob.get("radius", 0.0)
+		shape_node.shape = sh
+	body.add_child(shape_node)
+	body.position = ob.get("position", Vector2.ZERO)
+	obstacles_root.add_child(body)
 
 func _unhandled_input(event):
-	if event is InputEventKey and event.pressed and Input.is_action_just_pressed("release_control") and _controlled_robot != null:
+	if event.is_action_pressed("release_control") and _controlled_robot != null:
 		_release_control()
 		get_viewport().set_input_as_handled()
 		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		if _has_measure_anchor or not _measure_committed.is_empty():
+			_has_measure_anchor = false
+			_measure_committed.clear()
+			drag_indicator.update_drag(false)
+			queue_redraw()
+			get_viewport().set_input_as_handled()
+			return
+
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			if arena_camera:
 				arena_camera.zoom *= 1.1
 				queue_redraw()
+			return
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			if arena_camera:
 				arena_camera.zoom *= 0.9
 				queue_redraw()
+			return
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
 			is_panning = event.pressed
+			return
 	elif event is InputEventMouseMotion and is_panning:
 		if arena_camera:
 			arena_camera.position -= event.relative / arena_camera.zoom.x
 			queue_redraw()
+		return
 
 	if SimulationManager.has_started and not get_tree().paused:
 		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
+
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			if _is_in_ui_zone(event.position):
 				return
+			_on_left_press(get_global_mouse_position())
+		elif is_dragging:
+			_on_left_release(get_global_mouse_position())
+	elif event is InputEventMouseMotion:
+		if is_dragging:
+			_on_drag_update(get_global_mouse_position())
+		elif _has_measure_anchor and SimulationManager.active_tool == "measure":
+			drag_indicator.update_drag(true, "measure", _measure_anchor, get_global_mouse_position(), MEASURE_COLOR)
+
+func _on_left_press(pos: Vector2):
+	match SimulationManager.active_tool:
+		"measure":
+			if not _has_measure_anchor:
+				_measure_anchor = pos
+				_has_measure_anchor = true
+				drag_indicator.update_drag(true, "measure", _measure_anchor, pos, MEASURE_COLOR)
+			else:
+				_measure_committed = [{"start": _measure_anchor, "end": pos}]
+				_has_measure_anchor = false
+				drag_indicator.update_drag(false)
+				queue_redraw()
+		"wall":
 			is_dragging = true
-			drag_start_pos = get_global_mouse_position()
+			drag_start_pos = pos
+			drag_indicator.update_drag(true, "rect", pos, pos, TOOL_PREVIEW_COLOR)
+		"obstacle":
+			is_dragging = true
+			drag_start_pos = pos
+			drag_indicator.update_drag(true, "circle", pos, pos, TOOL_PREVIEW_COLOR)
+		_:
+			is_dragging = true
+			drag_start_pos = pos
 			var type_color: Color = SimulationManager.get_type(SimulationManager.selected_type_id).color
-			drag_indicator.update_drag(true, drag_start_pos, drag_start_pos, type_color)
-		elif not event.pressed and is_dragging:
-			is_dragging = false
-			drag_indicator.update_drag(false)
-			_spawn_robot(drag_start_pos, get_global_mouse_position())
-	elif event is InputEventMouseMotion and is_dragging:
-		var type_color: Color = SimulationManager.get_type(SimulationManager.selected_type_id).color
-		drag_indicator.update_drag(true, drag_start_pos, get_global_mouse_position(), type_color)
+			drag_indicator.update_drag(true, "arrow", pos, pos, type_color)
+
+func _on_drag_update(pos: Vector2):
+	match SimulationManager.active_tool:
+		"wall":
+			drag_indicator.update_drag(true, "rect", drag_start_pos, pos, TOOL_PREVIEW_COLOR)
+		"obstacle":
+			drag_indicator.update_drag(true, "circle", drag_start_pos, pos, TOOL_PREVIEW_COLOR)
+		_:
+			var type_color: Color = SimulationManager.get_type(SimulationManager.selected_type_id).color
+			drag_indicator.update_drag(true, "arrow", drag_start_pos, pos, type_color)
+
+func _on_left_release(pos: Vector2):
+	is_dragging = false
+	drag_indicator.update_drag(false)
+	match SimulationManager.active_tool:
+		"wall":
+			var rect: Rect2 = Rect2(drag_start_pos, pos - drag_start_pos).abs()
+			if rect.size.x >= 6.0 and rect.size.y >= 6.0:
+				SimulationManager.add_obstacle({
+					"type": "wall",
+					"position": rect.position + rect.size * 0.5,
+					"size": rect.size,
+				})
+		"obstacle":
+			var radius: float = drag_start_pos.distance_to(pos)
+			if radius >= 6.0:
+				SimulationManager.add_obstacle({
+					"type": "circle",
+					"position": drag_start_pos,
+					"radius": radius,
+				})
+		"place_robot":
+			_spawn_robot(drag_start_pos, pos)
+
+func _is_in_ui_zone(pos: Vector2) -> bool:
+	if pos.y < 56.0:
+		return true
+	return false
 
 func _spawn_robot(start_pos: Vector2, end_pos: Vector2):
 	if robot_scene == null:
@@ -293,8 +444,12 @@ func _clear_arena():
 	SimulationManager.simulation_time = 0.0
 	for r in get_tree().get_nodes_in_group("robots"):
 		r.queue_free()
-	SimulationManager.clear_placements()
+	SimulationManager.clear_all_arena()
+	_measure_committed.clear()
+	_has_measure_anchor = false
+	drag_indicator.update_drag(false)
 	get_tree().paused = true
+	queue_redraw()
 
 func _stop_arena():
 	_controlled_robot = null
@@ -319,10 +474,9 @@ const _EXPORT_FRAMES_DIR := "user://export_frames"
 const _EXPORT_OUTPUT_DIR := "user://exports"
 
 func _run_video_export() -> void:
-	$Sidebar.visible = false
+	top_bar.set_minimal_for_export(true)
 	$DragIndicator.visible = false
 	$RadialMenu.visible = false
-	$TopBar.set_minimal_for_export(true)
 
 	var overlay = EXPORT_MODAL_SCRIPT.new()
 	add_child(overlay)

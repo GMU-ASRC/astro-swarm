@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://dl76p3fecws2g" path="res://levels/Arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" uid="uid://b1v1xxxxxxxxx" path="res://entities/robot/Robot.tscn" id="2_robot"]
 [ext_resource type="PackedScene" uid="uid://c2v2xxxxxxxxx" path="res://levels/DragIndicator.tscn" id="3_drag"]
-[ext_resource type="PackedScene" uid="uid://sidebar00001" path="res://ui/hud/Sidebar.tscn" id="4_sidebar"]
 [ext_resource type="PackedScene" uid="uid://topbar000001" path="res://ui/hud/TopBar.tscn" id="5_topbar"]
 [ext_resource type="PackedScene" uid="uid://radialmenu01" path="res://ui/hud/RadialMenu.tscn" id="6_radial"]
 
@@ -43,7 +42,7 @@ shape = SubResource("RectangleShape2D_right")
 
 [node name="DragIndicator" parent="." unique_id=1222571311 instance=ExtResource("3_drag")]
 
-[node name="Sidebar" parent="." unique_id=815294680 instance=ExtResource("4_sidebar")]
+[node name="Obstacles" type="Node2D" parent="."]
 
 [node name="TopBar" parent="." unique_id=118469989 instance=ExtResource("5_topbar")]
 
