@@ -12,8 +12,11 @@ var _color: Color
 var trail_enabled: bool = false
 var pin_coords: bool = false
 var _trail_points: PackedVector2Array = PackedVector2Array()
+var _trail_color: Color = Color(1, 1, 1, 0.6)
 const TRAIL_MIN_DIST := 4.0
 const TRAIL_MAX_POINTS := 4096
+
+static var _trail_counter: int = 0
 
 signal clicked(robot)
 
@@ -38,8 +41,7 @@ func _draw():
 		local_points.resize(_trail_points.size())
 		for i in _trail_points.size():
 			local_points[i] = to_local(_trail_points[i])
-		var trail_color := Color(_color.r, _color.g, _color.b, 0.55)
-		draw_polyline(local_points, trail_color, 1.6, true)
+		draw_polyline(local_points, _trail_color, 1.6, true)
 	if is_controlled:
 		draw_arc(Vector2.ZERO, dot_radius + 4.0, 0.0, TAU, 32, Color(1.0, 0.82, 0.18, 1.0), 2.0, true)
 	draw_circle(Vector2.ZERO, dot_radius, _color)
@@ -114,8 +116,14 @@ func toggle_trail():
 	if not trail_enabled:
 		_trail_points.clear()
 	else:
+		_trail_color = _allocate_trail_color()
 		_trail_points.append(global_position)
 	queue_redraw()
+
+static func _allocate_trail_color() -> Color:
+	var hue: float = fmod(_trail_counter * 0.618033988, 1.0)
+	_trail_counter += 1
+	return Color.from_hsv(hue, 0.78, 0.85, 0.85)
 
 func toggle_pin_coords():
 	pin_coords = not pin_coords
