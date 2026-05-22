@@ -75,51 +75,51 @@ func _on_center_draw():
 	_draw_ring_shadow()
 
 	for i in range(_actions.size()):
-		var start_angle = -PI / 2.0 + i * step
-		var end_angle = start_angle + step
-		var action = _actions[i]
+		var start_angle: float = -PI / 2.0 + float(i) * step
+		var end_angle: float = start_angle + step
+		var action: Dictionary = _actions[i]
 		var accent: Color = action.get("color", Color(0.5, 0.5, 0.5, 1.0))
-		var is_hover := i == hover_index
+		var is_hover: bool = i == hover_index
 
-		var poly = PackedVector2Array()
+		var poly: PackedVector2Array = PackedVector2Array()
 		for j in range(segment_points + 1):
-			var t = start_angle + (end_angle - start_angle) * (j / float(segment_points))
+			var t: float = start_angle + (end_angle - start_angle) * (float(j) / float(segment_points))
 			poly.append(Vector2(cos(t), sin(t)) * outer_radius)
 		for j in range(segment_points + 1):
-			var t = end_angle - (end_angle - start_angle) * (j / float(segment_points))
+			var t: float = end_angle - (end_angle - start_angle) * (float(j) / float(segment_points))
 			poly.append(Vector2(cos(t), sin(t)) * inner_radius)
 
 		var fill: Color = accent if is_hover else SLICE_BG
 		center.draw_colored_polygon(poly, fill)
 
 	for i in range(_actions.size()):
-		var sep_angle = -PI / 2.0 + i * step
-		var p1 = Vector2(cos(sep_angle), sin(sep_angle)) * (inner_radius + 1.0)
-		var p2 = Vector2(cos(sep_angle), sin(sep_angle)) * (outer_radius - 1.0)
+		var sep_angle: float = -PI / 2.0 + float(i) * step
+		var p1: Vector2 = Vector2(cos(sep_angle), sin(sep_angle)) * (inner_radius + 1.0)
+		var p2: Vector2 = Vector2(cos(sep_angle), sin(sep_angle)) * (outer_radius - 1.0)
 		center.draw_line(p1, p2, SEP_COLOR, 1.0, true)
 
 	_draw_circle_outline(outer_radius, PANEL_BORDER, 1.5, segment_points * _actions.size())
 	_draw_circle_outline(inner_radius, PANEL_BORDER, 1.5, segment_points * _actions.size())
 
 	for i in range(_actions.size()):
-		var start_angle = -PI / 2.0 + i * step
-		var end_angle = start_angle + step
-		var action = _actions[i]
+		var start_angle: float = -PI / 2.0 + float(i) * step
+		var end_angle: float = start_angle + step
+		var action: Dictionary = _actions[i]
 		var accent: Color = action.get("color", Color(0.5, 0.5, 0.5, 1.0))
-		var is_hover := i == hover_index
-		var mid_angle = start_angle + step / 2.0
-		var mid_radius = (inner_radius + outer_radius) / 2.0
-		var center_pos = Vector2(cos(mid_angle), sin(mid_angle)) * mid_radius
+		var is_hover: bool = i == hover_index
+		var mid_angle: float = start_angle + step / 2.0
+		var mid_radius: float = (inner_radius + outer_radius) / 2.0
+		var center_pos: Vector2 = Vector2(cos(mid_angle), sin(mid_angle)) * mid_radius
 
 		var label: String = action.get("label", "")
 		var text_color: Color = TEXT_LIGHT if is_hover else TEXT_DARK
-		var text_size = font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
+		var text_size: Vector2 = font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
 
-		var dot_radius := 3.0
-		var dot_pos := center_pos + Vector2(0, -text_size.y * 0.5 - 6.0)
+		var dot_radius: float = 3.0
+		var dot_pos: Vector2 = center_pos + Vector2(0, -text_size.y * 0.5 - 6.0)
 		center.draw_circle(dot_pos, dot_radius, TEXT_LIGHT if is_hover else accent)
 
-		var text_pos = center_pos + Vector2(-text_size.x * 0.5, text_size.y * 0.35)
+		var text_pos: Vector2 = center_pos + Vector2(-text_size.x * 0.5, text_size.y * 0.35)
 		center.draw_string(font, text_pos, label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, text_color)
 
 	_draw_hub()
@@ -150,20 +150,20 @@ func _draw_hub():
 		y += (name_h if i == 0 else sub_h)
 
 func _draw_ring_shadow():
-	var pts := 96
-	var ring := PackedVector2Array()
-	var offset := Vector2(2, 4)
+	var pts: int = 96
+	var ring: PackedVector2Array = PackedVector2Array()
+	var offset: Vector2 = Vector2(2, 4)
 	for j in range(pts + 1):
-		var t = j / float(pts) * TAU
+		var t: float = float(j) / float(pts) * TAU
 		ring.append(Vector2(cos(t), sin(t)) * (outer_radius + 2.0) + offset)
 	for j in range(pts + 1):
-		var t = (1.0 - j / float(pts)) * TAU
+		var t: float = (1.0 - float(j) / float(pts)) * TAU
 		ring.append(Vector2(cos(t), sin(t)) * inner_radius + offset)
 	center.draw_colored_polygon(ring, SHADOW)
 
 func _draw_circle_outline(r: float, color: Color, width: float, segments: int):
-	var pts := PackedVector2Array()
+	var pts: PackedVector2Array = PackedVector2Array()
 	for j in range(segments + 1):
-		var t = j / float(segments) * TAU
+		var t: float = float(j) / float(segments) * TAU
 		pts.append(Vector2(cos(t), sin(t)) * r)
 	center.draw_polyline(pts, color, width, true)

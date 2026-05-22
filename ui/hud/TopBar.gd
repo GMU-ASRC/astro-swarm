@@ -7,9 +7,9 @@ signal request_stop
 @onready var count_label: Label = $Panel/HBox/CountLabel
 @onready var play_btn:    Button = $Panel/HBox/PlayButton
 @onready var stop_btn:    Button = $Panel/HBox/StopButton
-@onready var speed_1x:    Button = $Panel/HBox/Speed1x
-@onready var speed_2x:    Button = $Panel/HBox/Speed2x
-@onready var speed_3x:    Button = $Panel/HBox/Speed3x
+@onready var speed_1x:    Button = $Panel/HBox/SpeedBox/Speed1x
+@onready var speed_2x:    Button = $Panel/HBox/SpeedBox/Speed2x
+@onready var speed_3x:    Button = $Panel/HBox/SpeedBox/Speed3x
 
 var _last_paused: bool = true
 var _last_started: bool = false
