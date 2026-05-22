@@ -244,7 +244,7 @@ func _on_robot_clicked(robot: Node2D):
 	})
 	if not playing and not replaying:
 		actions.append({"id": "remove", "label": "Remove", "color": Color(0.8, 0.25, 0.25, 1.0)})
-	$RadialMenu.open(get_global_mouse_position(), actions, _robot_title(robot))
+	$RadialMenu.open(robot.get_global_transform_with_canvas().origin, actions, _robot_title(robot))
 
 func _robot_title(robot: Node2D) -> String:
 	var meters: Vector2 = robot.global_position / SimulationManager.PX_PER_METER
