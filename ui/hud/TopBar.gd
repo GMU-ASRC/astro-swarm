@@ -48,7 +48,7 @@ func _process(_delta):
 	if _export_mode:
 		return
 
-	count_label.text = "%d placed" % get_tree().get_nodes_in_group("robots").size()
+	count_label.text = "%d" % get_tree().get_nodes_in_group("robots").size()
 	if get_tree().paused != _last_paused or SimulationManager.has_started != _last_started:
 		_last_paused  = get_tree().paused
 		_last_started = SimulationManager.has_started
@@ -77,12 +77,12 @@ func _refresh_speed_buttons():
 
 func _refresh_play_text():
 	stop_btn.visible = SimulationManager.has_started and not get_tree().paused
-	if not SimulationManager.has_started:
-		play_btn.text = " ▶ Start "
-	elif get_tree().paused:
-		play_btn.text = " ▶ Resume "
+	if not SimulationManager.has_started or get_tree().paused:
+		play_btn.text = "▶"
+		play_btn.tooltip_text = "Start" if not SimulationManager.has_started else "Resume"
 	else:
-		play_btn.text = " ⏸ Pause "
+		play_btn.text = "⏸"
+		play_btn.tooltip_text = "Pause"
 
 func _fmt(t: float) -> String:
 	var m := int(t) / 60
