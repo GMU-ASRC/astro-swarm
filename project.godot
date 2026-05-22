@@ -13,13 +13,15 @@ config_version=5
 config/name="AstroSwarm"
 run/main_scene="res://levels/HomeScene.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
-boot_splash/bg_color=Color(0, 0, 0, 1)
+boot_splash/bg_color=Color(0.21471307, 0.12729925, 0.2998675, 1)
+boot_splash/stretch_mode=4
 boot_splash/image="uid://dp7a4ykc8rh7q"
 config/icon="res://icon.svg"
-boot_splash/minimum_display_time=120
+boot_splash/minimum_display_time=2000
 
 [autoload]
 
+PlayerSettings="*res://autoloads/PlayerSettings.gd"
 SimulationManager="*res://autoloads/SimulationManager.gd"
 GameManager="*res://autoloads/GameManager.gd"
 

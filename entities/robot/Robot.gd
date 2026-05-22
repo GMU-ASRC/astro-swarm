@@ -53,14 +53,14 @@ func _physics_process(delta: float):
 
 func _poll_control_input():
 	var fwd := 0.0
-	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP):
+	if Input.is_action_pressed("robot_forward"):
 		fwd += 1.0
-	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN):
+	if Input.is_action_pressed("robot_backward"):
 		fwd -= 1.0
 	var turn := 0.0
-	if Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT):
+	if Input.is_action_pressed("robot_turn_left"):
 		turn -= 1.0
-	if Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT):
+	if Input.is_action_pressed("robot_turn_right"):
 		turn += 1.0
 	forward_input = fwd
 	turn_input = turn

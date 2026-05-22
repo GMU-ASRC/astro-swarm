@@ -11,111 +11,103 @@ extends Control
 @onready var music_vol_label = $VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox/ValueLabel
 @onready var sfx_vol_slider = $VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox/Slider
 @onready var sfx_vol_label = $VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox/ValueLabel
+@onready var bind_list: VBoxContainer = $VBox/TabContainer/Keybinds/Margin/VBox/Scroll/BindList
+@onready var reset_binds_btn: Button = $VBox/TabContainer/Keybinds/Margin/VBox/ResetButton
 @onready var back_btn = $VBox/TopBar/BackButton
+
+var _capturing_action: String = ""
+var _capturing_btn: Button = null
 
 func _ready():
 	back_btn.pressed.connect(_on_back)
 
-	var is_fullscreen = get_window().mode == Window.MODE_FULLSCREEN or get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN
-	window_mode_option.select(1 if is_fullscreen else 0)
-	window_mode_option.item_selected.connect(_on_window_mode)
+	window_mode_option.select(PlayerSettings.get_window_mode_idx())
+	window_mode_option.item_selected.connect(PlayerSettings.set_window_mode)
 
-	var vsync = DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_ENABLED
-	vsync_check.button_pressed = vsync
-	vsync_check.toggled.connect(_on_vsync_toggled)
+	vsync_check.button_pressed = PlayerSettings.get_vsync()
+	vsync_check.toggled.connect(PlayerSettings.set_vsync)
 
-	var max_fps = Engine.max_fps
-	if max_fps == 0:
-		fps_option.select(0)
-	elif max_fps == 60:
-		fps_option.select(1)
-	elif max_fps == 120:
-		fps_option.select(2)
-	elif max_fps == 144:
-		fps_option.select(3)
-	fps_option.item_selected.connect(_on_fps_mode)
+	fps_option.select(PlayerSettings.get_fps_idx())
+	fps_option.item_selected.connect(PlayerSettings.set_fps)
 
-	var msaa = get_viewport().msaa_2d
-	if msaa == Viewport.MSAA_DISABLED:
-		msaa_option.select(0)
-	elif msaa == Viewport.MSAA_2X:
-		msaa_option.select(1)
-	elif msaa == Viewport.MSAA_4X:
-		msaa_option.select(2)
-	elif msaa == Viewport.MSAA_8X:
-		msaa_option.select(3)
-	msaa_option.item_selected.connect(_on_msaa_mode)
+	msaa_option.select(PlayerSettings.get_msaa_idx())
+	msaa_option.item_selected.connect(PlayerSettings.set_msaa)
 
-	var devices = AudioServer.get_output_device_list()
-	var current_device = AudioServer.output_device
+	var devices := AudioServer.get_output_device_list()
+	var saved_device := PlayerSettings.get_device()
 	for i in devices.size():
 		device_option.add_item(devices[i])
-		if devices[i] == current_device:
+		if devices[i] == saved_device:
 			device_option.select(i)
-	device_option.item_selected.connect(_on_device_mode)
+	device_option.item_selected.connect(func(idx): PlayerSettings.set_device(device_option.get_item_text(idx)))
 
 	_init_bus_slider("Master", master_vol_slider, master_vol_label)
 	_init_bus_slider("Music", music_vol_slider, music_vol_label)
 	_init_bus_slider("SFX", sfx_vol_slider, sfx_vol_label)
 
-	master_vol_slider.value_changed.connect(_on_master_vol)
-	music_vol_slider.value_changed.connect(_on_music_vol)
-	sfx_vol_slider.value_changed.connect(_on_sfx_vol)
+	master_vol_slider.value_changed.connect(func(v): _on_bus_changed("Master", v, master_vol_label))
+	music_vol_slider.value_changed.connect(func(v): _on_bus_changed("Music", v, music_vol_label))
+	sfx_vol_slider.value_changed.connect(func(v): _on_bus_changed("SFX", v, sfx_vol_label))
+
+	reset_binds_btn.pressed.connect(_on_reset_binds)
+	_build_keybind_rows()
 
 func _init_bus_slider(bus_name: String, slider: HSlider, label: Label):
-	var bus_idx = AudioServer.get_bus_index(bus_name)
-	if bus_idx != -1:
-		var current_db = AudioServer.get_bus_volume_db(bus_idx)
-		var current_linear = db_to_linear(current_db) * 100.0
-		slider.value = current_linear
-		label.text = "%d%%" % int(current_linear)
-
-func _on_window_mode(idx: int):
-	if idx == 0:
-		get_window().mode = Window.MODE_WINDOWED
-	else:
-		get_window().mode = Window.MODE_FULLSCREEN
-
-func _on_vsync_toggled(toggled_on: bool):
-	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if toggled_on else DisplayServer.VSYNC_DISABLED)
-
-func _on_fps_mode(idx: int):
-	if idx == 0:
-		Engine.max_fps = 0
-	elif idx == 1:
-		Engine.max_fps = 60
-	elif idx == 2:
-		Engine.max_fps = 120
-	elif idx == 3:
-		Engine.max_fps = 144
-
-func _on_msaa_mode(idx: int):
-	if idx == 0:
-		get_viewport().msaa_2d = Viewport.MSAA_DISABLED
-	elif idx == 1:
-		get_viewport().msaa_2d = Viewport.MSAA_2X
-	elif idx == 2:
-		get_viewport().msaa_2d = Viewport.MSAA_4X
-	elif idx == 3:
-		get_viewport().msaa_2d = Viewport.MSAA_8X
-
-func _on_device_mode(idx: int):
-	AudioServer.output_device = device_option.get_item_text(idx)
-
-func _on_master_vol(val: float):
-	_set_bus_volume("Master", val, master_vol_label)
-
-func _on_music_vol(val: float):
-	_set_bus_volume("Music", val, music_vol_label)
-
-func _on_sfx_vol(val: float):
-	_set_bus_volume("SFX", val, sfx_vol_label)
-
-func _set_bus_volume(bus_name: String, val: float, label: Label):
+	var val: float = PlayerSettings.get_bus_volume(bus_name)
+	slider.value = val
 	label.text = "%d%%" % int(val)
-	var bus_idx = AudioServer.get_bus_index(bus_name)
-	if bus_idx != -1:
-		AudioServer.set_bus_volume_db(bus_idx, linear_to_db(val / 100.0))
+
+func _on_bus_changed(bus_name: String, val: float, label: Label):
+	label.text = "%d%%" % int(val)
+	PlayerSettings.set_bus_volume(bus_name, val)
+
+func _build_keybind_rows():
+	for child in bind_list.get_children():
+		child.queue_free()
+	for action in PlayerSettings.DEFAULT_KEYBINDS.keys():
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var name_label := Label.new()
+		name_label.text = PlayerSettings.KEYBIND_LABELS.get(action, action)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(name_label)
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(180, 0)
+		btn.text = _keycode_label(PlayerSettings.get_keybind(action))
+		var act: String = action
+		btn.pressed.connect(func(): _start_capture(act, btn))
+		row.add_child(btn)
+		bind_list.add_child(row)
+
+func _keycode_label(keycode: int) -> String:
+	if keycode == 0:
+		return "Unbound"
+	return OS.get_keycode_string(keycode)
+
+func _start_capture(action: String, btn: Button):
+	if _capturing_btn != null:
+		_capturing_btn.text = _keycode_label(PlayerSettings.get_keybind(_capturing_action))
+	_capturing_action = action
+	_capturing_btn = btn
+	btn.text = "Press a key…"
+
+func _input(event: InputEvent):
+	if _capturing_action == "" or _capturing_btn == null:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		var kc: int = event.physical_keycode
+		accept_event()
+		if kc == KEY_ESCAPE:
+			_capturing_btn.text = _keycode_label(PlayerSettings.get_keybind(_capturing_action))
+		else:
+			PlayerSettings.set_keybind(_capturing_action, kc)
+			_capturing_btn.text = _keycode_label(kc)
+		_capturing_action = ""
+		_capturing_btn = null
+
+func _on_reset_binds():
+	PlayerSettings.reset_keybinds()
+	_build_keybind_rows()
 
 func _on_back():
 	get_tree().change_scene_to_file("res://levels/HomeScene.tscn")

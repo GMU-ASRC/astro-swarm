@@ -163,7 +163,7 @@ func _is_in_ui_zone(pos: Vector2) -> bool:
 	return false
 
 func _unhandled_input(event):
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE and _controlled_robot != null:
+	if event is InputEventKey and event.pressed and Input.is_action_just_pressed("release_control") and _controlled_robot != null:
 		_release_control()
 		get_viewport().set_input_as_handled()
 		return
