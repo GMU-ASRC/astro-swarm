@@ -22,7 +22,7 @@ func _ready():
 	color_picker.color_changed.connect(_on_color_changed)
 	delete_species_btn.pressed.connect(_on_delete_species)
 	name_edit.text_submitted.connect(_on_name_submitted)
-	name_edit.focus_exited.connect(func(): _on_name_submitted(name_edit.text))
+	name_edit.focus_exited.connect(_commit_species_name)
 	SimulationManager.species_list_changed.connect(_on_species_list_changed)
 	_style_color_picker()
 	_build_tabs()
@@ -68,6 +68,7 @@ func _build_tabs():
 	tab_box.add_child(add_btn)
 
 func _switch_type(type_id: String):
+	_commit_species_name()
 	_save_blocks()
 	_current_type_id = type_id
 	_refresh()
@@ -119,6 +120,7 @@ func _on_picker_created():
 	picker.presets_visible = false
 
 func _on_add_species():
+	_commit_species_name()
 	_save_blocks()
 	var n: int = SimulationManager.robot_types.size() + 1
 	var hue: float = fmod(n * 0.618033988, 1.0)
@@ -130,16 +132,22 @@ func _on_add_species():
 func _on_delete_species():
 	if SimulationManager.robot_types.size() <= 1:
 		return
+	name_edit.release_focus()
 	_save_blocks()
 	SimulationManager.remove_species(_current_type_id)
 	_current_type_id = SimulationManager.selected_type_id
 
-func _on_name_submitted(new_name: String):
+func _on_name_submitted(_new_name: String):
 	name_edit.release_focus()
-	if new_name.strip_edges() == "":
-		name_edit.text = SimulationManager.get_type(_current_type_id).name
+
+func _commit_species_name():
+	var t: String = name_edit.text.strip_edges()
+	var current_name: String = SimulationManager.get_type(_current_type_id).name
+	if t == "":
+		name_edit.text = current_name
 		return
-	SimulationManager.set_species_name(_current_type_id, new_name)
+	if t != current_name:
+		SimulationManager.set_species_name(_current_type_id, t)
 
 func _on_species_list_changed():
 	var found := false
@@ -270,5 +278,6 @@ func _find_insert_index(mouse_y: float) -> int:
 	return count - 1
 
 func _on_back():
+	_commit_species_name()
 	_save_blocks()
 	get_tree().change_scene_to_file("res://levels/Arena.tscn")
