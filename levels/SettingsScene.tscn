@@ -1,7 +1,8 @@
 [gd_scene load_steps=3 format=3 uid="uid://cx62j8fxxxxx_set"]
 
-[ext_resource type="Theme" uid="uid://cx62j8fxxxxx" path="res://ui/MainTheme.tres" id="1_theme"]
+[ext_resource type="Theme" path="res://ui/GameTheme.tres" id="1_theme"]
 [ext_resource type="Script" path="res://levels/SettingsScene.gd" id="2_script"]
+[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--arrow-left.png" id="3_arrow"]
 
 [node name="SettingsScene" type="Control"]
 layout_mode = 3
@@ -39,7 +40,12 @@ layout_mode = 2
 
 [node name="BackButton" type="Button" parent="VBox/TopBar"]
 layout_mode = 2
-text = "◀ Back"
+theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
+theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
+theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_constants/icon_max_width = 18
+icon = ExtResource("3_arrow")
+text = "Back"
 
 [node name="Title" type="Label" parent="VBox/TopBar"]
 layout_mode = 2

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://levels/SaveManagerScene.gd" id="1_script"]
 [ext_resource type="Theme" path="res://ui/MainTheme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--arrow-left.png" id="3_arrow"]
 
 [node name="SaveManagerScene" type="Control"]
 layout_mode = 3
@@ -41,7 +42,12 @@ layout_mode = 2
 [node name="BackButton" type="Button" parent="VBox/Header"]
 layout_mode = 2
 focus_mode = 0
-text = "◀ Back to Simulator"
+theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
+theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
+theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_constants/icon_max_width = 18
+icon = ExtResource("3_arrow")
+text = "Back to Simulator"
 
 [node name="Title" type="Label" parent="VBox/Header"]
 layout_mode = 2

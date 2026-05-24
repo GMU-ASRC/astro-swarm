@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bftuny86k0duc"]
 
-[ext_resource type="Theme" uid="uid://cx62j8fxxxxx" path="res://ui/MainTheme.tres" id="1_theme"]
+[ext_resource type="Theme" path="res://ui/GameTheme.tres" id="1_theme"]
 [ext_resource type="Script" path="res://levels/GameModeScene.gd" id="2_script"]
 
 [node name="GameModeScene" type="Control"]
