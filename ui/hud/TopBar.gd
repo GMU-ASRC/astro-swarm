@@ -29,8 +29,10 @@ var _export_mode: bool = false
 var _tool_buttons: Dictionary = {}
 var _species_buttons: Dictionary = {}
 
+const ICON_ROBOT := preload("res://assets/icons/pixelarticons--robot.png")
+
 const TOOLS := [
-	{"id": "place_robot", "icon": "☰", "tip": "Place Robots"},
+	{"id": "place_robot", "icon": "", "tex": ICON_ROBOT, "tip": "Place Robots"},
 	{"id": "measure",     "icon": "📏", "tip": "Measure"},
 	{"id": "wall",        "icon": "▢", "tip": "Wall"},
 	{"id": "obstacle",    "icon": "◯", "tip": "Obstacle"},
@@ -100,7 +102,7 @@ func _build_tool_buttons():
 		child.queue_free()
 	_tool_buttons.clear()
 	for t in TOOLS:
-		var btn := _make_toolbar_btn(t.icon, t.tip)
+		var btn := _make_toolbar_btn(t.icon, t.tip, t.get("tex", null))
 		var tool_id: String = t.id
 		btn.toggle_mode = true
 		btn.button_pressed = (tool_id == SimulationManager.active_tool)
@@ -125,7 +127,7 @@ func _build_species_swatches():
 	_species_buttons.clear()
 	for t in SimulationManager.robot_types:
 		var btn := Button.new()
-		btn.custom_minimum_size = Vector2(22, 22)
+		btn.custom_minimum_size = Vector2(28, 28)
 		btn.toggle_mode = true
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.tooltip_text = t.name
@@ -161,21 +163,29 @@ func _style_species_btn(btn: Button, color: Color, pressed: bool):
 	btn.add_theme_stylebox_override("hover_pressed", sb)
 	btn.add_theme_stylebox_override("focus", sb)
 
-func _make_toolbar_btn(icon: String, tip: String) -> Button:
+func _make_toolbar_btn(icon: String, tip: String, tex: Texture2D = null) -> Button:
 	var btn := Button.new()
-	btn.text = icon
+	if tex != null:
+		btn.icon = tex
+		btn.add_theme_constant_override("icon_max_width", 20)
+		btn.add_theme_color_override("icon_normal_color", Color(0.137, 0.137, 0.196, 1.0))
+		btn.add_theme_color_override("icon_hover_color", Color(0.176, 0.341, 0.714, 1.0))
+		btn.add_theme_color_override("icon_pressed_color", Color(1, 1, 1, 1))
+		btn.add_theme_color_override("icon_hover_pressed_color", Color(1, 1, 1, 1))
+	else:
+		btn.text = icon
 	btn.tooltip_text = tip
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_font_size_override("font_size", 16)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.945, 0.945, 0.957, 1.0)
 	sb.set_corner_radius_all(3)
 	sb.set_border_width_all(1)
 	sb.border_color = Color(0.722, 0.722, 0.745, 1.0)
-	sb.content_margin_left = 7
-	sb.content_margin_right = 7
-	sb.content_margin_top = 4
-	sb.content_margin_bottom = 4
+	sb.content_margin_left = 10
+	sb.content_margin_right = 10
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
 	var sb_hov := sb.duplicate() as StyleBoxFlat
 	sb_hov.bg_color = Color(0.918, 0.937, 0.969, 1.0)
 	sb_hov.border_color = Color(0.251, 0.447, 0.835, 1.0)

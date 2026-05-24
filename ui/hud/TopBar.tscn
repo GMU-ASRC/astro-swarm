@@ -2,12 +2,17 @@
 
 [ext_resource type="Script" path="res://ui/hud/TopBar.gd" id="1_tb"]
 [ext_resource type="Theme" path="res://ui/MainTheme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--arrow-left.png" id="3_back"]
+[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--save.png" id="4_save"]
+[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--edit.png" id="5_edit"]
+[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--undo.png" id="6_undo"]
+[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--earth.png" id="7_earth"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel_compact"]
-content_margin_left = 8.0
-content_margin_top = 6.0
-content_margin_right = 8.0
-content_margin_bottom = 6.0
+content_margin_left = 12.0
+content_margin_top = 9.0
+content_margin_right = 12.0
+content_margin_bottom = 9.0
 bg_color = Color(0.91, 0.91, 0.925, 1)
 border_width_left = 1
 border_width_top = 1
@@ -20,10 +25,10 @@ corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_btn"]
-content_margin_left = 7.0
-content_margin_top = 4.0
-content_margin_right = 7.0
-content_margin_bottom = 4.0
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
 bg_color = Color(0.945, 0.945, 0.957, 1)
 border_width_left = 1
 border_width_top = 1
@@ -36,10 +41,10 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_btn_hover"]
-content_margin_left = 7.0
-content_margin_top = 4.0
-content_margin_right = 7.0
-content_margin_bottom = 4.0
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
 bg_color = Color(0.918, 0.937, 0.969, 1)
 border_width_left = 1
 border_width_top = 1
@@ -52,10 +57,10 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_seg_left"]
-content_margin_left = 8.0
-content_margin_top = 3.0
-content_margin_right = 8.0
-content_margin_bottom = 3.0
+content_margin_left = 11.0
+content_margin_top = 5.0
+content_margin_right = 11.0
+content_margin_bottom = 5.0
 bg_color = Color(0.945, 0.945, 0.957, 1)
 border_width_left = 1
 border_width_top = 1
@@ -66,10 +71,10 @@ corner_radius_top_left = 3
 corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_seg_mid"]
-content_margin_left = 8.0
-content_margin_top = 3.0
-content_margin_right = 8.0
-content_margin_bottom = 3.0
+content_margin_left = 11.0
+content_margin_top = 5.0
+content_margin_right = 11.0
+content_margin_bottom = 5.0
 bg_color = Color(0.945, 0.945, 0.957, 1)
 border_width_left = 1
 border_width_top = 1
@@ -78,10 +83,10 @@ border_width_bottom = 1
 border_color = Color(0.722, 0.722, 0.745, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_seg_right"]
-content_margin_left = 8.0
-content_margin_top = 3.0
-content_margin_right = 8.0
-content_margin_bottom = 3.0
+content_margin_left = 11.0
+content_margin_top = 5.0
+content_margin_right = 11.0
+content_margin_bottom = 5.0
 bg_color = Color(0.945, 0.945, 0.957, 1)
 border_width_left = 1
 border_width_top = 1
@@ -92,10 +97,10 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_seg_active"]
-content_margin_left = 8.0
-content_margin_top = 3.0
-content_margin_right = 8.0
-content_margin_bottom = 3.0
+content_margin_left = 11.0
+content_margin_top = 5.0
+content_margin_right = 11.0
+content_margin_bottom = 5.0
 bg_color = Color(0.176, 0.341, 0.714, 1)
 border_width_left = 1
 border_width_top = 1
@@ -115,7 +120,7 @@ anchor_right = 1.0
 offset_left = 12.0
 offset_top = 12.0
 offset_right = -12.0
-offset_bottom = 50.0
+offset_bottom = 64.0
 grow_horizontal = 2
 
 [node name="HBox" type="HBoxContainer" parent="Panel"]
@@ -126,11 +131,15 @@ theme_override_constants/separation = 6
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
-text = "◀"
+theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
+theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
+theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_constants/icon_max_width = 20
+icon = ExtResource("3_back")
 tooltip_text = "Home"
 
 [node name="VSepA" type="VSeparator" parent="Panel/HBox"]
@@ -140,44 +149,60 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
-text = "💾"
+theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
+theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
+theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_constants/icon_max_width = 20
+icon = ExtResource("4_save")
 tooltip_text = "Manage Setups"
 
 [node name="WorkspaceBtn" type="Button" parent="Panel/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
-text = "▦"
+theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
+theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
+theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_constants/icon_max_width = 20
+icon = ExtResource("5_edit")
 tooltip_text = "Workspace"
 
 [node name="ClearBtn" type="Button" parent="Panel/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
-text = "↺"
+theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
+theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
+theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_constants/icon_max_width = 20
+icon = ExtResource("6_undo")
 tooltip_text = "Clear Arena"
 
 [node name="SettingsBtn" type="Button" parent="Panel/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
-text = "⚙"
+theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
+theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
+theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_constants/icon_max_width = 20
+icon = ExtResource("7_earth")
 tooltip_text = "Arena Settings"
 
 [node name="VSepB" type="VSeparator" parent="Panel/HBox"]
@@ -200,7 +225,7 @@ theme_override_constants/separation = 3
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
@@ -222,7 +247,7 @@ step = 0.01
 [node name="CountLabel" type="Label" parent="Panel/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.32, 0.32, 0.4, 1.0)
 text = "0"
 
@@ -237,7 +262,7 @@ theme_override_constants/separation = 0
 [node name="Speed1x" type="Button" parent="Panel/HBox/SpeedBox"]
 layout_mode = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_disabled_color = Color(1, 1, 1, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_seg_left")
 theme_override_styles/hover = SubResource("StyleBoxFlat_seg_left")
@@ -248,7 +273,7 @@ text = "1×"
 [node name="Speed2x" type="Button" parent="Panel/HBox/SpeedBox"]
 layout_mode = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_disabled_color = Color(1, 1, 1, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_seg_mid")
 theme_override_styles/hover = SubResource("StyleBoxFlat_seg_mid")
@@ -259,7 +284,7 @@ text = "2×"
 [node name="Speed3x" type="Button" parent="Panel/HBox/SpeedBox"]
 layout_mode = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_disabled_color = Color(1, 1, 1, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_seg_right")
 theme_override_styles/hover = SubResource("StyleBoxFlat_seg_right")
@@ -273,7 +298,7 @@ layout_mode = 2
 [node name="TimeLabel" type="Label" parent="Panel/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.118, 0.118, 0.180, 1.0)
 text = "00:00"
 
@@ -281,7 +306,7 @@ text = "00:00"
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
@@ -292,7 +317,7 @@ tooltip_text = "Start / Pause"
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_icon_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_icon_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_icon_btn_hover")
