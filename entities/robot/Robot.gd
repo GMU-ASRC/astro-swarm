@@ -7,7 +7,9 @@ var robot_name: String = ""
 var forward_input: float = 1.0
 var turn_input: float = 0.0
 var is_controlled: bool = false
+var controller_index: int = -1
 var _color: Color
+const STICK_DEADZONE := 0.18
 
 var trail_enabled: bool = false
 var pin_coords: bool = false
@@ -19,6 +21,7 @@ const TRAIL_MAX_POINTS := 4096
 static var _trail_counter: int = 0
 
 signal clicked(robot)
+signal release_requested(robot)
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -43,10 +46,29 @@ func _draw():
 			local_points[i] = to_local(_trail_points[i])
 		draw_polyline(local_points, _trail_color, 1.6, true)
 	if is_controlled:
-		draw_arc(Vector2.ZERO, dot_radius + 4.0, 0.0, TAU, 32, Color(1.0, 0.82, 0.18, 1.0), 2.0, true)
+		var ring_color: Color = _player_color()
+		draw_arc(Vector2.ZERO, dot_radius + 4.0, 0.0, TAU, 32, ring_color, 2.0, true)
 	draw_circle(Vector2.ZERO, dot_radius, _color)
+	if is_controlled and controller_index >= 0:
+		_draw_player_badge()
 	if pin_coords:
 		_draw_coord_label()
+
+func _player_color() -> Color:
+	if controller_index == 1:
+		return Color(0.30, 0.78, 0.35, 1.0)
+	return Color(1.0, 0.82, 0.18, 1.0)
+
+func _draw_player_badge():
+	var font: Font = ThemeDB.fallback_font
+	var font_size: int = 10
+	var txt: String = "P%d" % (controller_index + 1)
+	var size: Vector2 = font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
+	var pad: float = 2.0
+	var bg_color: Color = _player_color()
+	var bg_rect: Rect2 = Rect2(Vector2(-size.x * 0.5 - pad, dot_radius + 4.0), Vector2(size.x + pad * 2.0, size.y + pad))
+	draw_rect(bg_rect, bg_color, true)
+	draw_string(font, Vector2(-size.x * 0.5, dot_radius + 4.0 + size.y - 1.0), txt, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(1, 1, 1, 1))
 
 func _draw_coord_label():
 	var font := ThemeDB.fallback_font
@@ -91,25 +113,47 @@ func _physics_process(delta: float):
 		turn_input = randf_range(0.5, 1.5)
 
 func _poll_control_input():
-	var fwd := 0.0
+	if controller_index >= 0:
+		var dev: int = controller_index
+		var fwd: float = -Input.get_joy_axis(dev, JOY_AXIS_LEFT_Y)
+		var turn: float = Input.get_joy_axis(dev, JOY_AXIS_LEFT_X)
+		if absf(fwd) < STICK_DEADZONE: fwd = 0.0
+		if absf(turn) < STICK_DEADZONE: turn = 0.0
+		forward_input = clampf(fwd, -1.0, 1.0)
+		turn_input = clampf(turn, -1.0, 1.0)
+		return
+	var fwd_kb := 0.0
 	if Input.is_action_pressed("robot_forward"):
-		fwd += 1.0
+		fwd_kb += 1.0
 	if Input.is_action_pressed("robot_backward"):
-		fwd -= 1.0
-	var turn := 0.0
+		fwd_kb -= 1.0
+	var turn_kb := 0.0
 	if Input.is_action_pressed("robot_turn_left"):
-		turn -= 1.0
+		turn_kb -= 1.0
 	if Input.is_action_pressed("robot_turn_right"):
-		turn += 1.0
-	forward_input = fwd
-	turn_input = turn
+		turn_kb += 1.0
+	forward_input = fwd_kb
+	turn_input = turn_kb
 
 func set_controlled(value: bool):
 	is_controlled = value
 	if not value:
 		forward_input = 0.0
 		turn_input = 0.0
+		controller_index = -1
+	set_process_input(value and controller_index >= 0)
 	queue_redraw()
+
+func assign_controller(idx: int):
+	controller_index = idx
+	set_process_input(is_controlled and idx >= 0)
+
+func _input(event: InputEvent):
+	if not is_controlled or controller_index < 0:
+		return
+	if event is InputEventJoypadButton and event.device == controller_index and event.pressed:
+		if event.button_index == JOY_BUTTON_B:
+			release_requested.emit(self)
 
 func toggle_trail():
 	trail_enabled = not trail_enabled

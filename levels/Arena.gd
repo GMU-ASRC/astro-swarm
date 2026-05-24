@@ -57,6 +57,7 @@ func _ready():
 	SimulationManager.settings_changed.connect(_on_settings_changed)
 	SimulationManager.obstacles_changed.connect(_on_obstacles_changed)
 	SimulationManager.tool_changed.connect(_on_tool_changed)
+	Input.joy_connection_changed.connect(_on_joy_changed)
 	get_tree().paused = true
 	queue_redraw()
 
@@ -69,7 +70,23 @@ func open_settings_modal():
 
 func _on_settings_changed():
 	_fit_to_viewport()
+	_reconcile_controls()
 	queue_redraw()
+
+func _reconcile_controls():
+	var controller_mode: bool = SimulationManager.settings.get("controller_mode", false)
+	var multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
+	var max_slots: int = (2 if multiplayer else 1) if controller_mode else 1
+	var to_release: Array = []
+	for r in _controlled_robots:
+		if controller_mode and r.controller_index < 0:
+			to_release.append(r)
+		elif controller_mode and r.controller_index >= max_slots:
+			to_release.append(r)
+		elif not controller_mode and r.controller_index >= 0:
+			to_release.append(r)
+	for r in to_release:
+		_release_robot(r)
 
 func _on_obstacles_changed():
 	_restore_obstacles()
@@ -202,6 +219,7 @@ func _fit_to_viewport():
 
 var _selected_robot: Node2D = null
 var _controlled_robot: Node2D = null
+var _controlled_robots: Array = []
 
 func _restore_placements():
 	for p in SimulationManager.placements:
@@ -348,7 +366,7 @@ func _on_left_release(pos: Vector2):
 			_spawn_robot(drag_start_pos, pos)
 
 func _is_in_ui_zone(pos: Vector2) -> bool:
-	if pos.y < 56.0:
+	if pos.y < 76.0:
 		return true
 	return false
 
@@ -379,10 +397,24 @@ func _on_robot_clicked(robot: Node2D):
 	var replaying := SimulationManager.is_replaying
 	var actions: Array = []
 	if not replaying:
-		if _controlled_robot == robot:
-			actions.append({"id": "release", "label": "Release", "color": Color(0.85, 0.5, 0.2, 1.0)})
+		if _controlled_robots.has(robot):
+			var label: String = "Release"
+			if SimulationManager.settings.get("controller_mode", false) and robot.controller_index >= 0:
+				label = "Release P%d" % (robot.controller_index + 1)
+			actions.append({"id": "release", "label": label, "color": Color(0.85, 0.5, 0.2, 1.0)})
 		else:
-			actions.append({"id": "take_over", "label": "Take Over", "color": Color(0.176, 0.341, 0.714, 1.0)})
+			var take_label: String = "Take Over"
+			var controller_mode: bool = SimulationManager.settings.get("controller_mode", false)
+			var multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
+			var max_slots: int = (2 if multiplayer else 1) if controller_mode else 1
+			if controller_mode and _controlled_robots.size() < max_slots:
+				var preview_slot: int = _next_free_controller_slot(max_slots)
+				if preview_slot >= 0:
+					take_label = "Take Over P%d" % (preview_slot + 1)
+			if controller_mode and _controlled_robots.size() >= max_slots:
+				pass
+			else:
+				actions.append({"id": "take_over", "label": take_label, "color": Color(0.176, 0.341, 0.714, 1.0)})
 	actions.append({
 		"id": "toggle_trail",
 		"label": "Trail Off" if robot.trail_enabled else "Trail On",
@@ -412,13 +444,13 @@ func _on_radial_action(action_id: String):
 				if p.type_id == _selected_robot.type_id and p.position.is_equal_approx(_selected_robot.global_position):
 					placements.remove_at(i)
 					break
-			if _controlled_robot == _selected_robot:
-				_controlled_robot = null
+			if _controlled_robots.has(_selected_robot):
+				_release_robot(_selected_robot)
 			_selected_robot.queue_free()
 		"take_over":
 			_take_over(_selected_robot)
 		"release":
-			_release_control()
+			_release_robot(_selected_robot)
 		"toggle_trail":
 			_selected_robot.toggle_trail()
 		"toggle_coords":
@@ -426,18 +458,82 @@ func _on_radial_action(action_id: String):
 	_selected_robot = null
 
 func _take_over(robot: Node2D):
-	if _controlled_robot != null and _controlled_robot != robot:
-		_controlled_robot.set_controlled(false)
-	_controlled_robot = robot
+	if _controlled_robots.has(robot):
+		return
+	var controller_mode: bool = SimulationManager.settings.get("controller_mode", false)
+	var multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
+	var max_slots: int = (2 if multiplayer else 1) if controller_mode else 1
+
+	if not controller_mode:
+		_release_all_controlled()
+		robot.assign_controller(-1)
+		_attach_controlled(robot)
+		_controlled_robot = robot
+		return
+
+	if _controlled_robots.size() >= max_slots:
+		return
+	var slot: int = _next_free_controller_slot(max_slots)
+	if slot < 0:
+		return
+	robot.assign_controller(slot)
+	_attach_controlled(robot)
+	if _controlled_robot == null:
+		_controlled_robot = robot
+
+func _attach_controlled(robot: Node2D):
+	_controlled_robots.append(robot)
 	robot.set_controlled(true)
+	if not robot.release_requested.is_connected(_on_release_requested):
+		robot.release_requested.connect(_on_release_requested)
+
+func _next_free_controller_slot(max_slots: int) -> int:
+	var used: Array = []
+	for r in _controlled_robots:
+		used.append(r.controller_index)
+	for i in range(max_slots):
+		if not used.has(i):
+			return i
+	return -1
+
+func _on_release_requested(robot: Node2D):
+	_release_robot(robot)
+
+func _on_joy_changed(device: int, connected: bool):
+	if connected:
+		return
+	for r in _controlled_robots.duplicate():
+		if r.controller_index == device:
+			_release_robot(r)
+
+func _release_robot(robot: Node2D):
+	if robot == null:
+		return
+	if _controlled_robots.has(robot):
+		_controlled_robots.erase(robot)
+	robot.set_controlled(false)
+	if _controlled_robot == robot:
+		_controlled_robot = _controlled_robots.back() if not _controlled_robots.is_empty() else null
+
+func _release_all_controlled():
+	for r in _controlled_robots.duplicate():
+		r.set_controlled(false)
+	_controlled_robots.clear()
+	_controlled_robot = null
 
 func _release_control():
-	if _controlled_robot != null:
-		_controlled_robot.set_controlled(false)
-		_controlled_robot = null
+	var keyboard_robot: Node2D = null
+	for r in _controlled_robots:
+		if r.controller_index < 0:
+			keyboard_robot = r
+			break
+	if keyboard_robot != null:
+		_release_robot(keyboard_robot)
+	elif _controlled_robot != null:
+		_release_robot(_controlled_robot)
 
 func _clear_arena():
-	_controlled_robot = null
+	_release_all_controlled()
 	SimulationManager.stop_recording_and_save()
 	SimulationManager.has_started = false
 	SimulationManager.is_replaying = false
@@ -452,7 +548,7 @@ func _clear_arena():
 	queue_redraw()
 
 func _stop_arena():
-	_controlled_robot = null
+	_release_all_controlled()
 	SimulationManager.stop_recording_and_save()
 	SimulationManager.has_started = false
 	SimulationManager.is_replaying = false

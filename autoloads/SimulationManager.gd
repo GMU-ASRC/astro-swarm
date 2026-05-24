@@ -71,6 +71,8 @@ var settings: Dictionary = {
 	"time_scale":     1.0,
 	"arena_width":    1280.0,
 	"arena_height":   720.0,
+	"controller_mode": false,
+	"multiplayer":    false,
 }
 
 const BLOCK_DEFS := {
