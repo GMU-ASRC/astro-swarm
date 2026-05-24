@@ -70,7 +70,7 @@ func _on_center_draw():
 	var step = TAU / _actions.size()
 	var font = ThemeDB.fallback_font
 	var font_size = 12
-	var segment_points = max(20, int(96 / _actions.size()))
+	var segment_points = max(20, int(96.0 / float(_actions.size())))
 
 	_draw_ring_shadow()
 
@@ -103,7 +103,7 @@ func _on_center_draw():
 
 	for i in range(_actions.size()):
 		var start_angle: float = -PI / 2.0 + float(i) * step
-		var end_angle: float = start_angle + step
+		var _end_angle: float = start_angle + step
 		var action: Dictionary = _actions[i]
 		var accent: Color = action.get("color", Color(0.5, 0.5, 0.5, 1.0))
 		var is_hover: bool = i == hover_index
@@ -152,13 +152,13 @@ func _draw_hub():
 func _draw_ring_shadow():
 	var pts: int = 96
 	var ring: PackedVector2Array = PackedVector2Array()
-	var offset: Vector2 = Vector2(2, 4)
+	var shadow_offset: Vector2 = Vector2(2, 4)
 	for j in range(pts + 1):
 		var t: float = float(j) / float(pts) * TAU
-		ring.append(Vector2(cos(t), sin(t)) * (outer_radius + 2.0) + offset)
+		ring.append(Vector2(cos(t), sin(t)) * (outer_radius + 2.0) + shadow_offset)
 	for j in range(pts + 1):
 		var t: float = (1.0 - float(j) / float(pts)) * TAU
-		ring.append(Vector2(cos(t), sin(t)) * inner_radius + offset)
+		ring.append(Vector2(cos(t), sin(t)) * inner_radius + shadow_offset)
 	center.draw_colored_polygon(ring, SHADOW)
 
 func _draw_circle_outline(r: float, color: Color, width: float, segments: int):

@@ -1,10 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://cx62j8fxxxxx_set"]
+[gd_scene format=3 uid="uid://blf816fi5qs3j"]
 
 [ext_resource type="Theme" path="res://ui/GameTheme.tres" id="1_theme"]
-[ext_resource type="Script" path="res://levels/SettingsScene.gd" id="2_script"]
-[ext_resource type="Texture2D" path="res://assets/icons/pixelarticons--arrow-left.png" id="3_arrow"]
+[ext_resource type="Script" uid="uid://cpvlhldx6nblg" path="res://levels/SettingsScene.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://ddu0dit8tejvl" path="res://assets/icons/pixelarticons--arrow-left.png" id="3_arrow"]
 
-[node name="SettingsScene" type="Control"]
+[node name="SettingsScene" type="Control" unique_id=2147393334]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -14,16 +14,16 @@ grow_vertical = 2
 theme = ExtResource("1_theme")
 script = ExtResource("2_script")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1822480321]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.835, 0.835, 0.859, 1)
+color = Color(0.09803922, 0.09019608, 0.14117648, 1)
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1149098600]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,56 +35,63 @@ offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TopBar" type="HBoxContainer" parent="VBox"]
+[node name="TopBar" type="HBoxContainer" parent="VBox" unique_id=148967613]
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="VBox/TopBar"]
+[node name="BackButton" type="Button" parent="VBox/TopBar" unique_id=111644591]
 layout_mode = 2
-theme_override_colors/icon_normal_color = Color(0.137, 0.137, 0.196, 1)
-theme_override_colors/icon_hover_color = Color(0.176, 0.341, 0.714, 1)
-theme_override_colors/icon_pressed_color = Color(0.118, 0.247, 0.58, 1)
+theme_override_colors/icon_normal_color = Color(0.85, 0.862, 0.961, 1)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
 theme_override_constants/icon_max_width = 18
-icon = ExtResource("3_arrow")
 text = "Back"
+icon = ExtResource("3_arrow")
 
-[node name="Title" type="Label" parent="VBox/TopBar"]
+[node name="Title" type="Label" parent="VBox/TopBar" unique_id=152975284]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
 theme_override_font_sizes/font_size = 24
 text = "Player Settings"
 horizontal_alignment = 1
 
-[node name="Spacer" type="Control" parent="VBox/TopBar"]
+[node name="Spacer" type="Control" parent="VBox/TopBar" unique_id=1608863252]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 
-[node name="TabContainer" type="TabContainer" parent="VBox"]
+[node name="HeaderGap" type="Control" parent="VBox" unique_id=78882066]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="VBox" unique_id=315094038]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/side_margin = 0
+current_tab = 0
 
-[node name="Display" type="PanelContainer" parent="VBox/TabContainer"]
+[node name="Display" type="PanelContainer" parent="VBox/TabContainer" unique_id=1021259407]
 layout_mode = 2
+metadata/_tab_index = 0
 
-[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Display"]
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Display" unique_id=1168591884]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Display/Margin"]
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Display/Margin" unique_id=1373973208]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Label" type="Label" parent="VBox/TabContainer/Display/Margin/VBox"]
+[node name="Label" type="Label" parent="VBox/TabContainer/Display/Margin/VBox" unique_id=1669727292]
 layout_mode = 2
 text = "Window Mode"
 
-[node name="WindowModeOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/VBox"]
+[node name="WindowModeOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/VBox" unique_id=231448888]
 layout_mode = 2
-item_count = 3
 selected = 0
+item_count = 3
 popup/item_0/text = "Windowed"
 popup/item_0/id = 0
 popup/item_1/text = "Fullscreen"
@@ -92,33 +99,34 @@ popup/item_1/id = 1
 popup/item_2/text = "Borderless"
 popup/item_2/id = 2
 
-[node name="Graphics" type="PanelContainer" parent="VBox/TabContainer"]
+[node name="Graphics" type="PanelContainer" parent="VBox/TabContainer" unique_id=1546908855]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 1
 
-[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Graphics"]
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Graphics" unique_id=14190914]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Graphics/Margin"]
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Graphics/Margin" unique_id=1669016850]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="VSyncCheck" type="CheckBox" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+[node name="VSyncCheck" type="CheckBox" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=348781010]
 layout_mode = 2
 text = "Enable V-Sync"
 
-[node name="FpsLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+[node name="FpsLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=526013318]
 layout_mode = 2
 text = "Max FPS"
 
-[node name="FpsOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+[node name="FpsOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=1092389657]
 layout_mode = 2
-item_count = 4
 selected = 0
+item_count = 4
 popup/item_0/text = "Uncapped"
 popup/item_0/id = 0
 popup/item_1/text = "60 FPS"
@@ -128,14 +136,14 @@ popup/item_2/id = 2
 popup/item_3/text = "144 FPS"
 popup/item_3/id = 3
 
-[node name="MsaaLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+[node name="MsaaLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=1976708527]
 layout_mode = 2
 text = "Anti-Aliasing (MSAA 2D)"
 
-[node name="MsaaOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+[node name="MsaaOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=860231824]
 layout_mode = 2
-item_count = 4
 selected = 0
+item_count = 4
 popup/item_0/text = "Disabled"
 popup/item_0/id = 0
 popup/item_1/text = "2x"
@@ -145,120 +153,119 @@ popup/item_2/id = 2
 popup/item_3/text = "8x"
 popup/item_3/id = 3
 
-[node name="Keybinds" type="PanelContainer" parent="VBox/TabContainer"]
+[node name="Keybinds" type="PanelContainer" parent="VBox/TabContainer" unique_id=439197885]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 2
 
-[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Keybinds"]
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Keybinds" unique_id=1075855058]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Keybinds/Margin"]
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Keybinds/Margin" unique_id=508368330]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Hint" type="Label" parent="VBox/TabContainer/Keybinds/Margin/VBox"]
+[node name="Hint" type="Label" parent="VBox/TabContainer/Keybinds/Margin/VBox" unique_id=411933400]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
 theme_override_colors/font_color = Color(0.45, 0.45, 0.51, 1)
+theme_override_font_sizes/font_size = 11
 text = "Click a binding then press a key. Esc cancels."
 
-[node name="Scroll" type="ScrollContainer" parent="VBox/TabContainer/Keybinds/Margin/VBox"]
+[node name="Scroll" type="ScrollContainer" parent="VBox/TabContainer/Keybinds/Margin/VBox" unique_id=1521395160]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="BindList" type="VBoxContainer" parent="VBox/TabContainer/Keybinds/Margin/VBox/Scroll"]
+[node name="BindList" type="VBoxContainer" parent="VBox/TabContainer/Keybinds/Margin/VBox/Scroll" unique_id=1643672049]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="ResetButton" type="Button" parent="VBox/TabContainer/Keybinds/Margin/VBox"]
+[node name="ResetButton" type="Button" parent="VBox/TabContainer/Keybinds/Margin/VBox" unique_id=1743985545]
 layout_mode = 2
 size_flags_horizontal = 0
 text = " Reset to defaults "
 
-[node name="Sound" type="PanelContainer" parent="VBox/TabContainer"]
+[node name="Sound" type="PanelContainer" parent="VBox/TabContainer" unique_id=253994327]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 3
 
-[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Sound"]
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Sound" unique_id=566560181]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Sound/Margin"]
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Sound/Margin" unique_id=76368297]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="DeviceLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="DeviceLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=142625471]
 layout_mode = 2
 text = "Audio Output Device"
 
-[node name="DeviceOption" type="OptionButton" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="DeviceOption" type="OptionButton" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=732118265]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="Label" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=232516132]
 layout_mode = 2
 text = "Master Volume"
 
-[node name="MasterVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="MasterVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=2144496544]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox"]
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox" unique_id=825012807]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-max_value = 100.0
 value = 100.0
 
-[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox"]
-layout_mode = 2
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox" unique_id=1944576474]
 custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
 text = "100%"
 
-[node name="MusicLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="MusicLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=2128757304]
 layout_mode = 2
 text = "Music Volume"
 
-[node name="MusicVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="MusicVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=1884984502]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox"]
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox" unique_id=1465104433]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-max_value = 100.0
 value = 100.0
 
-[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox"]
-layout_mode = 2
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox" unique_id=1023391285]
 custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
 text = "100%"
 
-[node name="SfxLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="SfxLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=1286990959]
 layout_mode = 2
 text = "SFX Volume"
 
-[node name="SfxVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox"]
+[node name="SfxVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=645508624]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox"]
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox" unique_id=1580814425]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-max_value = 100.0
 value = 100.0
 
-[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox"]
-layout_mode = 2
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox" unique_id=1844135190]
 custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
 text = "100%"

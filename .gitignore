@@ -7,3 +7,5 @@
 bin/linux/ffmpeg
 bin/windows/ffmpeg.exe
 bin/macos/ffmpeg
+
+info.md
