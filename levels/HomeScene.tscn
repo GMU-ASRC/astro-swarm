@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://dnsw3eipkvwly"]
 
-[ext_resource type="Theme" uid="uid://cx62j8fxxxxx" path="res://ui/MainTheme.tres" id="1_theme"]
+[ext_resource type="Theme" path="res://ui/GameTheme.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://cxyt0xou1000m" path="res://levels/HomeScene.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://dk14eq523l2l4" path="res://ui/game/Starfield.gd" id="3_starfield"]
 
 [node name="HomeScene" type="Control" unique_id=263769714]
 layout_mode = 3
@@ -20,7 +21,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.835, 0.835, 0.859, 1)
+color = Color(0.03388787, 0.029845234, 0.058758005, 1)
+
+[node name="Starfield" type="Control" parent="." unique_id=480270360]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_starfield")
 
 [node name="VBox" type="VBoxContainer" parent="." unique_id=1115986008]
 layout_mode = 1
@@ -39,6 +50,7 @@ theme_override_constants/separation = 40
 
 [node name="TitleLabel" type="Label" parent="VBox" unique_id=401448044]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
 theme_override_font_sizes/font_size = 48
 text = "AstroSwarm"
 horizontal_alignment = 1
@@ -73,7 +85,7 @@ offset_top = -36.0
 offset_right = 116.0
 offset_bottom = -16.0
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.4, 0.4, 0.45, 1)
+theme_override_colors/font_color = Color(0.62, 0.64, 0.72, 1)
 text = "v0.0.1-alpha"
 
 [node name="Author" type="Label" parent="." unique_id=1646247741]
@@ -88,5 +100,5 @@ offset_top = -36.0
 offset_right = 100.95996
 offset_bottom = -16.0
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.4, 0.4, 0.45, 1)
+theme_override_colors/font_color = Color(0.62, 0.64, 0.72, 1)
 text = "Sir Blob"
