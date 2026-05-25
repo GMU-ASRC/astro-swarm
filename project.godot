@@ -24,6 +24,7 @@ boot_splash/minimum_display_time=2000
 SimulationManager="*res://autoloads/SimulationManager.gd"
 GameManager="*res://autoloads/GameManager.gd"
 PlayerSettings="*res://autoloads/PlayerSettings.gd"
+PlayerData="*res://autoloads/PlayerData.gd"
 
 [display]
 

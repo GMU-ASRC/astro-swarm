@@ -1,0 +1,265 @@
+[gd_scene format=3 uid="uid://bksp3obk7skiq"]
+
+[ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://2yqvphdguuod" path="res://levels/PlayerBaseScene.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://dk14eq523l2l4" path="res://ui/game/Starfield.gd" id="3_star"]
+[ext_resource type="Script" uid="uid://cn5wk74ifpdyp" path="res://ui/game/CoinIcon.gd" id="4_coin"]
+[ext_resource type="Texture2D" uid="uid://ddu0dit8tejvl" path="res://assets/icons/pixelarticons--arrow-left.png" id="5_arrow"]
+
+[node name="PlayerBase" type="Control" unique_id=179260535]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Bg" type="ColorRect" parent="." unique_id=698710854]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.03529412, 0.03137255, 0.05882353, 1)
+
+[node name="Starfield" type="Control" parent="." unique_id=1987111794]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_star")
+
+[node name="PlanetLayer" type="Control" parent="." unique_id=750340389]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HUD" type="Control" parent="." unique_id=1437430905]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Username" type="Label" parent="HUD" unique_id=839287923]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 460.0
+offset_bottom = 48.0
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Commander"
+
+[node name="Level" type="Label" parent="HUD" unique_id=177501023]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 52.0
+offset_right = 300.0
+offset_bottom = 72.0
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 13
+text = "Level 1"
+
+[node name="XPBar" type="ProgressBar" parent="HUD" unique_id=2118125224]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 82.0
+offset_right = 404.0
+offset_bottom = 104.0
+show_percentage = false
+
+[node name="XPLabel" type="Label" parent="HUD" unique_id=2024566316]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 82.0
+offset_right = 404.0
+offset_bottom = 104.0
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "0 / 100 XP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CoinIcon" type="Control" parent="HUD" unique_id=1798386289]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -160.0
+offset_top = 22.0
+offset_right = -134.0
+offset_bottom = 48.0
+mouse_filter = 2
+script = ExtResource("4_coin")
+
+[node name="CoinLabel" type="Label" parent="HUD" unique_id=794321802]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -126.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 48.0
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "0"
+
+[node name="MoonsTitle" type="Label" parent="HUD" unique_id=1291409623]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -118.0
+offset_right = 300.0
+offset_bottom = -98.0
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 12
+text = "MOONS"
+
+[node name="BackButton" type="Button" parent="." unique_id=75014607]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -62.0
+offset_right = 150.0
+offset_bottom = -22.0
+focus_mode = 0
+theme_override_colors/icon_normal_color = Color(0.85, 0.862, 0.961, 1)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+theme_override_constants/icon_max_width = 16
+text = "Home"
+icon = ExtResource("5_arrow")
+
+[node name="FindMatchButton" type="Button" parent="." unique_id=1282374284]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -66.0
+offset_right = 120.0
+offset_bottom = -22.0
+focus_mode = 0
+text = "FIND MATCH"
+
+[node name="DevPanel" type="VBoxContainer" parent="." unique_id=1895799079]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -188.0
+offset_top = -150.0
+offset_right = -24.0
+offset_bottom = -22.0
+theme_override_constants/separation = 6
+
+[node name="DevLabel" type="Label" parent="DevPanel" unique_id=756554703]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.52, 0.62, 1)
+theme_override_font_sizes/font_size = 10
+text = "DEV TOOLS"
+horizontal_alignment = 2
+
+[node name="AddXP" type="Button" parent="DevPanel" unique_id=188261697]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 12
+text = "+50 XP"
+
+[node name="AddCoins" type="Button" parent="DevPanel" unique_id=1576284183]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 12
+text = "+25 AstroCoin"
+
+[node name="UsernameModal" type="Control" parent="." unique_id=2074317537]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="UsernameModal" unique_id=1818688109]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Panel" type="PanelContainer" parent="UsernameModal" unique_id=789521557]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -120.0
+offset_right = 190.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="UsernameModal/Panel" unique_id=141679071]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="UsernameModal/Panel/Margin" unique_id=1773090316]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="UsernameModal/Panel/Margin/VBox" unique_id=1556151392]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "ENTER CALLSIGN"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="UsernameModal/Panel/Margin/VBox" unique_id=594639062]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 12
+text = "Name your commander to claim your home planet."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="NameEdit" type="LineEdit" parent="UsernameModal/Panel/Margin/VBox" unique_id=1114178171]
+layout_mode = 2
+placeholder_text = "Callsign"
+max_length = 16
+
+[node name="Confirm" type="Button" parent="UsernameModal/Panel/Margin/VBox" unique_id=1346856195]
+layout_mode = 2
+disabled = true
+text = "CONFIRM"

@@ -11,7 +11,7 @@ func _ready():
 	$VersionLabel.text = VERSION
 
 func _on_play():
-	get_tree().change_scene_to_file("res://levels/GameModeScene.tscn")
+	get_tree().change_scene_to_file("res://levels/PlayerBaseScene.tscn")
 
 func _on_simulator():
 	get_tree().change_scene_to_file("res://levels/Arena.tscn")

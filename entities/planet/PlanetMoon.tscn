@@ -1,0 +1,49 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://entities/planet/PlanetMoon.gd" id="1"]
+[ext_resource type="Shader" path="res://entities/planet/shaders/moon_ground.gdshader" id="2"]
+[ext_resource type="Shader" path="res://entities/planet/shaders/moon_craters.gdshader" id="3"]
+
+[sub_resource type="ShaderMaterial" id="ground_mat"]
+shader = ExtResource("2")
+shader_parameter/pixels = 100.0
+shader_parameter/rotation = 0.0
+shader_parameter/light_origin = Vector2(0.25, 0.25)
+shader_parameter/time_speed = 0.4
+shader_parameter/dither_size = 2.0
+shader_parameter/light_border_1 = 0.615
+shader_parameter/light_border_2 = 0.729
+shader_parameter/colors = PackedColorArray(0.639216, 0.654902, 0.760784, 1, 0.298039, 0.407843, 0.521569, 1, 0.227451, 0.247059, 0.368627, 1)
+shader_parameter/size = 8.0
+shader_parameter/OCTAVES = 4
+shader_parameter/seed = 1.012
+shader_parameter/time = 0.0
+shader_parameter/should_dither = true
+
+[sub_resource type="ShaderMaterial" id="crater_mat"]
+shader = ExtResource("3")
+shader_parameter/pixels = 100.0
+shader_parameter/rotation = 0.0
+shader_parameter/light_origin = Vector2(0.25, 0.25)
+shader_parameter/time_speed = 0.001
+shader_parameter/light_border = 0.465
+shader_parameter/colors = PackedColorArray(0.298039, 0.407843, 0.521569, 1, 0.227451, 0.247059, 0.368627, 1)
+shader_parameter/size = 5.0
+shader_parameter/seed = 4.517
+shader_parameter/time = 0.0
+
+[node name="PlanetMoon" type="Control"]
+custom_minimum_size = Vector2(100, 100)
+script = ExtResource("1")
+
+[node name="Ground" type="ColorRect" parent="."]
+material = SubResource("ground_mat")
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 100.0
+
+[node name="Craters" type="ColorRect" parent="."]
+material = SubResource("crater_mat")
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 100.0

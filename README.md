@@ -6,10 +6,13 @@
 [![Video Export](https://img.shields.io/badge/video%20export-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
 
-AstroSwarm is a visual swarm-behaviour simulator built in Godot 4. Design species with unique traits, program their behaviour with a drag-and-drop block editor, drop them into a resizable arena, then record, replay, and export full sessions to video. It's wrapped in a pixel-art game shell with its own animated menus, kept visually separate from the simulator.
+AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. Press **Play** to enter your **player base** — a procedurally generated home planet orbited by moons you unlock as you level up, with XP and **AstroCoin** progression saved to a local profile. It also includes a full **swarm-behaviour simulator** sandbox: design species, program their behaviour with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
+
+> Multiplayer and the tower-defense matches are not implemented yet — the base GUI, progression, and persistence come first.
 
 ## Features
 
+- **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
 - **Visual block editor.** Build per-species behaviour by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
@@ -21,10 +24,19 @@ AstroSwarm is a visual swarm-behaviour simulator built in Godot 4. Design specie
 ## Getting started
 
 1. Open the project in Godot 4.6 (or newer) and press F5.
-2. From the home screen, choose **Simulator**.
-3. Pick a species (or create your own), then left-drag in the arena to place robots.
-4. Press **Start** and scale time with the speed controls.
-5. Save layouts and export recorded runs from **Manage Setups**.
+2. From the home screen, choose **Play** for your base (enter a callsign on first launch), or **Simulator** for the sandbox.
+3. In the base, the **DEV TOOLS** buttons grant XP/AstroCoin so you can level up and unlock moons.
+4. In the simulator, pick a species, left-drag to place robots, press **Start**, then save/replay/export from **Manage Setups**.
+
+## Player base
+
+Reached from **Play** — your home planet sits centre-screen with unlocked moons orbiting it, over the animated starfield:
+
+- **Home planet & moons.** A procedural Terran-Wet planet plus No-Atmosphere moons, each generated from a saved seed so they look identical every run. Moons revolve on their own random orbits, passing in front of and behind the planet.
+- **Progression.** Earn XP to level up; moons unlock with level (up to 5). AstroCoin is the in-game currency. Username, level, XP, coins, and all seeds persist to a local config file.
+- **First launch.** A modal asks for your callsign before you claim your planet.
+
+Multiplayer matches (the eventual XP/coin source) are stubbed for now — the DEV buttons stand in.
 
 ## Controls
 

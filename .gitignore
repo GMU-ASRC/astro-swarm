@@ -9,3 +9,6 @@ bin/windows/ffmpeg.exe
 bin/macos/ffmpeg
 
 info.md
+
+# Reference project (Deep-Fold PixelPlanets) — reimplemented natively, not part of the build
+PixelPlanets/
