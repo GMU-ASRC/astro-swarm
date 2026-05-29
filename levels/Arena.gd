@@ -222,10 +222,12 @@ var _controlled_robot: Node2D = null
 var _controlled_robots: Array = []
 
 func _restore_placements():
-	for p in SimulationManager.placements:
+	for i in SimulationManager.placements.size():
+		var p = SimulationManager.placements[i]
 		var robot := robot_scene.instantiate()
 		robot.type_id = p.type_id
 		robot.robot_name = p.get("name", SimulationManager.get_random_name())
+		robot.spawn_id = int(p.get("id", i))
 		robot.global_position = p.position
 		robot.rotation = p.rotation
 		robot.clicked.connect(_on_robot_clicked)
@@ -375,8 +377,10 @@ func _spawn_robot(start_pos: Vector2, end_pos: Vector2):
 		push_error("robot_scene is not assigned in Arena!")
 		return
 	var robot := robot_scene.instantiate()
+	var spawn_id := SimulationManager.next_robot_id()
 	robot.type_id = SimulationManager.selected_type_id
 	robot.robot_name = SimulationManager.get_random_name()
+	robot.spawn_id = spawn_id
 	robot.global_position = start_pos
 	if start_pos.distance_to(end_pos) > 4.0:
 		robot.rotation = start_pos.angle_to_point(end_pos)
@@ -387,6 +391,7 @@ func _spawn_robot(start_pos: Vector2, end_pos: Vector2):
 	SimulationManager.placements.append({
 		"type_id": robot.type_id,
 		"name": robot.robot_name,
+		"id": spawn_id,
 		"position": robot.global_position,
 		"rotation": robot.rotation
 	})
@@ -581,7 +586,6 @@ func _run_video_export() -> void:
 	await get_tree().process_frame
 
 	var frames: Array = SimulationManager.current_replay
-	var robots: Array = get_tree().get_nodes_in_group("robots")
 	var fps := int(round(1.0 / SimulationManager.RECORD_INTERVAL))
 	var total := frames.size()
 
@@ -599,10 +603,7 @@ func _run_video_export() -> void:
 	overlay.visible = false
 
 	for i in range(total):
-		var frame: Array = frames[i]
-		for j in range(min(frame.size(), robots.size())):
-			robots[j].global_position = frame[j].pos
-			robots[j].rotation = frame[j].rot
+		SimulationManager._apply_replay_frame(frames[i])
 		SimulationManager.replay_time = i * SimulationManager.RECORD_INTERVAL
 		await RenderingServer.frame_post_draw
 		var img: Image = get_viewport().get_texture().get_image()

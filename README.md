@@ -6,13 +6,12 @@
 [![Video Export](https://img.shields.io/badge/video%20export-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
 
-AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. Press **Play** to enter your **player base** — a procedurally generated home planet orbited by moons you unlock as you level up, with XP and **AstroCoin** progression saved to a local profile. It also includes a full **swarm-behaviour simulator** sandbox: design species, program their behaviour with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
-
-> Multiplayer and the tower-defense matches are not implemented yet — the base GUI, progression, and persistence come first.
+AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. It also includes a full **swarm-behaviour simulator** sandbox: design species, program their behaviour with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
 
 ## Features
 
 - **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
+- **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Workspace Moon's block editor.
 - **Visual block editor.** Build per-species behaviour by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
@@ -25,8 +24,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 
 1. Open the project in Godot 4.6 (or newer) and press F5.
 2. From the home screen, choose **Play** for your base (enter a callsign on first launch), or **Simulator** for the sandbox.
-3. In the base, the **DEV TOOLS** buttons grant XP/AstroCoin so you can level up and unlock moons.
-4. In the simulator, pick a species, left-drag to place robots, press **Start**, then save/replay/export from **Manage Setups**.
+3. In the simulator, pick a species, left-drag to place robots, press **Start**, then save/replay/export from **Manage Setups**.
 
 ## Player base
 
@@ -36,11 +34,17 @@ Reached from **Play** — your home planet sits centre-screen with unlocked moon
 - **Progression.** Earn XP to level up; moons unlock with level (up to 5). AstroCoin is the in-game currency. Username, level, XP, coins, and all seeds persist to a local config file.
 - **First launch.** A modal asks for your callsign before you claim your planet.
 
-Multiplayer matches (the eventual XP/coin source) are stubbed for now — the DEV buttons stand in.
+The top-right buttons open **Moons**, **Shop**, and the ship **Workspace**; choose a game mode (**Timed Local**) and press **Find Match** to play. Online matchmaking isn't wired up yet.
+
+## Timed Local
+
+Deploy up to five ships (left-click + drag in your deploy zone) to wipe out the protector swarm orbiting the star before time runs out. Middle-drag to pan, scroll to zoom. Lose your whole fleet and it's game over.
+
+**Raiders.** A squad of enemy ships defends the protectors. Rather than orbiting, they run a block program of their own: wander the arena, turn away from the star/planet and the outer rim to stay in play, and face-and-fire on any of your ships they spot — so they roam in to intercept your attack.
 
 ## Controls
 
-- **Place robots** — left-click + drag (with the Place Robots tool); the drag direction sets the facing.
+- **Place robots / deploy ships** — left-click + drag (Place Robots tool in the simulator, or inside the deploy zone in Timed Local); the drag direction sets the facing.
 - **Robot menu** — right-click a robot to take over, release, remove, toggle its trail, or pin its coordinates.
 - **Camera** — middle-mouse drag to pan, scroll wheel to zoom.
 - **Drive a taken-over robot** — WASD / arrow keys, or a gamepad's left stick.
@@ -79,7 +83,7 @@ From **Manage Setups**, **Export to Video** renders a recorded run to an H.264 M
 
 ## Player settings
 
-Display (window mode), graphics (V-Sync, FPS cap, anti-aliasing), rebindable keybinds, and audio volumes — all persisted between sessions.
+Display (window mode, resolution, with Apply buttons), graphics (V-Sync, FPS cap, anti-aliasing), rebindable keybinds, audio volumes, and a Player tab to reset your profile — all persisted between sessions.
 
 ## Building from source
 

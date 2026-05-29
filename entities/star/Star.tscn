@@ -1,0 +1,72 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://entities/star/Star.gd" id="1"]
+[ext_resource type="Shader" path="res://entities/star/shaders/star_blobs.gdshader" id="2"]
+[ext_resource type="Shader" path="res://entities/star/shaders/star_body.gdshader" id="3"]
+[ext_resource type="Shader" path="res://entities/star/shaders/star_flares.gdshader" id="4"]
+
+[sub_resource type="ShaderMaterial" id="blobs_mat"]
+shader = ExtResource("2")
+shader_parameter/pixels = 160.0
+shader_parameter/colors = PackedColorArray(0.960784, 1, 0.909804, 1)
+shader_parameter/time_speed = 0.05
+shader_parameter/time = 0.0
+shader_parameter/rotation = 0.0
+shader_parameter/seed = 3.078
+shader_parameter/circle_amount = 2.0
+shader_parameter/circle_size = 1.0
+shader_parameter/size = 4.93
+shader_parameter/OCTAVES = 4
+
+[sub_resource type="ShaderMaterial" id="body_mat"]
+shader = ExtResource("3")
+shader_parameter/pixels = 100.0
+shader_parameter/time_speed = 0.05
+shader_parameter/time = 0.0
+shader_parameter/rotation = 0.0
+shader_parameter/colors = PackedColorArray(0.960784, 1, 0.909804, 1, 1, 0.847059, 0.196078, 1, 1, 0.509804, 0.231373, 1, 0.486275, 0.098039, 0.101961, 1)
+shader_parameter/n_colors = 4
+shader_parameter/should_dither = true
+shader_parameter/seed = 4.837
+shader_parameter/size = 4.463
+shader_parameter/OCTAVES = 4
+shader_parameter/TILES = 1.0
+
+[sub_resource type="ShaderMaterial" id="flares_mat"]
+shader = ExtResource("4")
+shader_parameter/pixels = 160.0
+shader_parameter/colors = PackedColorArray(1, 0.847059, 0.196078, 1, 0.960784, 1, 0.909804, 1)
+shader_parameter/time_speed = 0.05
+shader_parameter/time = 0.0
+shader_parameter/rotation = 0.0
+shader_parameter/should_dither = true
+shader_parameter/storm_width = 0.3
+shader_parameter/storm_dither_width = 0.0
+shader_parameter/scale = 1.0
+shader_parameter/seed = 3.078
+shader_parameter/circle_amount = 2.0
+shader_parameter/circle_scale = 1.0
+shader_parameter/size = 1.6
+shader_parameter/OCTAVES = 4
+
+[node name="Star" type="Control"]
+custom_minimum_size = Vector2(100, 100)
+script = ExtResource("1")
+
+[node name="Blobs" type="ColorRect" parent="."]
+material = SubResource("blobs_mat")
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 100.0
+
+[node name="Body" type="ColorRect" parent="."]
+material = SubResource("body_mat")
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 100.0
+
+[node name="Flares" type="ColorRect" parent="."]
+material = SubResource("flares_mat")
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 100.0

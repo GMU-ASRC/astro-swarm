@@ -4,6 +4,13 @@ extends Control
 @onready var fps_option = $VBox/TabContainer/Graphics/Margin/VBox/FpsOption
 @onready var msaa_option = $VBox/TabContainer/Graphics/Margin/VBox/MsaaOption
 @onready var window_mode_option = $VBox/TabContainer/Display/Margin/VBox/WindowModeOption
+@onready var resolution_option = $VBox/TabContainer/Display/Margin/VBox/ResolutionOption
+@onready var display_apply_btn = $VBox/TabContainer/Display/Margin/VBox/DisplayApply
+@onready var graphics_apply_btn = $VBox/TabContainer/Graphics/Margin/VBox/GraphicsApply
+@onready var reset_game_btn = $VBox/TabContainer/Player/Margin/VBox/ResetButton
+@onready var reset_modal: Control = $ResetModal
+@onready var reset_cancel_btn: Button = $ResetModal/Panel/VBox/Buttons/CancelButton
+@onready var reset_confirm_btn: Button = $ResetModal/Panel/VBox/Buttons/ConfirmButton
 @onready var device_option = $VBox/TabContainer/Sound/Margin/VBox/DeviceOption
 @onready var master_vol_slider = $VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox/Slider
 @onready var master_vol_label = $VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox/ValueLabel
@@ -22,16 +29,20 @@ func _ready():
 	back_btn.pressed.connect(_on_back)
 
 	window_mode_option.select(PlayerSettings.get_window_mode_idx())
-	window_mode_option.item_selected.connect(PlayerSettings.set_window_mode)
+	window_mode_option.item_selected.connect(func(_idx): _update_resolution_enabled())
+
+	_populate_resolutions()
+	_update_resolution_enabled()
+	display_apply_btn.pressed.connect(_on_display_apply)
 
 	vsync_check.button_pressed = PlayerSettings.get_vsync()
-	vsync_check.toggled.connect(PlayerSettings.set_vsync)
-
 	fps_option.select(PlayerSettings.get_fps_idx())
-	fps_option.item_selected.connect(PlayerSettings.set_fps)
-
 	msaa_option.select(PlayerSettings.get_msaa_idx())
-	msaa_option.item_selected.connect(PlayerSettings.set_msaa)
+	graphics_apply_btn.pressed.connect(_on_graphics_apply)
+
+	reset_game_btn.pressed.connect(_on_reset_pressed)
+	reset_cancel_btn.pressed.connect(func(): reset_modal.visible = false)
+	reset_confirm_btn.pressed.connect(_on_reset_confirmed)
 
 	var devices := AudioServer.get_output_device_list()
 	var saved_device := PlayerSettings.get_device()
@@ -51,6 +62,32 @@ func _ready():
 
 	reset_binds_btn.pressed.connect(_on_reset_binds)
 	_build_keybind_rows()
+
+func _populate_resolutions():
+	resolution_option.clear()
+	for i in PlayerSettings.RESOLUTIONS.size():
+		var res: Vector2i = PlayerSettings.RESOLUTIONS[i]
+		resolution_option.add_item("%d x %d" % [res.x, res.y], i)
+	resolution_option.select(PlayerSettings.get_resolution_idx())
+
+func _update_resolution_enabled():
+	resolution_option.disabled = window_mode_option.selected != 0
+
+func _on_display_apply():
+	PlayerSettings.set_window_mode(window_mode_option.selected)
+	PlayerSettings.set_resolution(resolution_option.selected)
+
+func _on_graphics_apply():
+	PlayerSettings.set_vsync(vsync_check.button_pressed)
+	PlayerSettings.set_fps(fps_option.selected)
+	PlayerSettings.set_msaa(msaa_option.selected)
+
+func _on_reset_pressed():
+	reset_modal.visible = true
+
+func _on_reset_confirmed():
+	PlayerData.reset_game()
+	reset_modal.visible = false
 
 func _init_bus_slider(bus_name: String, slider: HSlider, label: Label):
 	var val: float = PlayerSettings.get_bus_volume(bus_name)

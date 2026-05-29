@@ -7,27 +7,33 @@ const PLANET_PIXELS := 80.0
 const PLANET_DISP := 300.0
 const MOON_PIXELS := 40.0
 const MOON_DISP := 52.0
-const ORBIT_MIN := 190.0
-const ORBIT_MAX := 300.0
+const ORBIT_MIN := 170.0
+const ORBIT_MAX := 255.0
 
 @onready var planet_layer: Control = $PlanetLayer
-@onready var username_label: Label = $HUD/Username
-@onready var level_label: Label = $HUD/Level
+@onready var username_label: Label = $HUD/PlayerInfo/Username
+@onready var level_label: Label = $HUD/PlayerInfo/Level
 @onready var xp_bar: ProgressBar = $HUD/XPBar
 @onready var xp_label: Label = $HUD/XPLabel
-@onready var coin_label: Label = $HUD/CoinLabel
-@onready var moons_title: Label = $HUD/MoonsTitle
+@onready var coin_label: Label = $HUD/Navbar/CoinLabel
 @onready var back_btn: Button = $BackButton
 @onready var find_btn: Button = $FindMatchButton
-@onready var add_xp_btn: Button = $DevPanel/AddXP
-@onready var add_coins_btn: Button = $DevPanel/AddCoins
+@onready var game_mode_btn: Button = $GameModeButton
+@onready var moons_btn: Button = $HUD/Navbar/MoonsButton
+@onready var shop_btn: Button = $HUD/Navbar/ShopButton
+@onready var workspace_btn: Button = $HUD/Navbar/WorkspaceButton
 @onready var modal: Control = $UsernameModal
 @onready var name_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/NameEdit
 @onready var confirm_btn: Button = $UsernameModal/Panel/Margin/VBox/Confirm
 
+const GAME_MODES := [
+	{"id": "timed_local", "label": "Timed Local", "scene": "res://levels/GameArena.tscn"},
+]
+
 var _planet: Control
 var _moons: Array = []
 var _orbit_time: float = 0.0
+var _mode_index: int = 0
 
 func _ready():
 	get_tree().paused = false
@@ -35,8 +41,11 @@ func _ready():
 
 	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/HomeScene.tscn"))
 	find_btn.pressed.connect(_on_find_match)
-	add_xp_btn.pressed.connect(func(): PlayerData.add_xp(50))
-	add_coins_btn.pressed.connect(func(): PlayerData.add_coins(25))
+	game_mode_btn.pressed.connect(_on_cycle_game_mode)
+	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/MoonsScene.tscn"))
+	workspace_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://ui/workspace/ShipWorkspace.tscn"))
+	shop_btn.pressed.connect(_on_shop)
+	_init_game_mode()
 
 	confirm_btn.pressed.connect(_on_confirm_username)
 	name_edit.text_changed.connect(func(t): confirm_btn.disabled = t.strip_edges() == "")
@@ -94,13 +103,12 @@ func _build_moons():
 		_disable_mouse(moon)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = sd
-		var a: float = rng.randf_range(ORBIT_MIN, ORBIT_MAX)
 		_moons.append({
 			"node": moon,
-			"a": a,
-			"b": a * rng.randf_range(0.35, 0.85),
-			"phi": rng.randf_range(0.0, PI),
-			"speed": rng.randf_range(0.15, 0.4) * (1.0 if rng.randf() < 0.5 else -1.0),
+			"r": rng.randf_range(ORBIT_MIN, ORBIT_MAX),
+			"incl": rng.randf_range(deg_to_rad(58.0), deg_to_rad(78.0)),
+			"alpha": rng.randf_range(0.0, PI),
+			"speed": rng.randf_range(0.25, 0.55) * (1.0 if rng.randf() < 0.5 else -1.0),
 			"phase": rng.randf_range(0.0, TAU),
 		})
 	_update_moons()
@@ -113,9 +121,11 @@ func _update_moons():
 	for m in _moons:
 		var theta: float = float(m["phase"]) + float(m["speed"]) * _orbit_time
 		var depth: float = sin(theta)
-		var local := Vector2(cos(theta) * float(m["a"]), sin(theta) * float(m["b"]))
-		var offset: Vector2 = local.rotated(float(m["phi"]))
-		var sc: float = base_scale * (1.0 + depth * 0.15)
+		var r: float = float(m["r"])
+		var cos_i: float = cos(float(m["incl"]))
+		var local := Vector2(cos(theta) * r, depth * r * cos_i)
+		var offset: Vector2 = local.rotated(float(m["alpha"]))
+		var sc: float = base_scale * (1.0 + depth * 0.18)
 		var node: Control = m["node"]
 		node.scale = Vector2(sc, sc)
 		var visual: float = MOON_PIXELS * sc
@@ -140,15 +150,6 @@ func _refresh_hud():
 	level_label.text = "Level %d" % PlayerData.level
 	coin_label.text = str(PlayerData.coins)
 	_update_xp()
-	_refresh_moons_label()
-
-func _refresh_moons_label():
-	var n: int = PlayerData.moon_seeds.size()
-	if n >= PlayerData.MAX_MOONS:
-		moons_title.text = "MOONS  %d / %d" % [n, PlayerData.MAX_MOONS]
-	else:
-		var next_lvl: int = (n + 1) * PlayerData.MOON_LEVEL_STEP
-		moons_title.text = "MOONS  %d / %d   -   NEXT: LV %d" % [n, PlayerData.MAX_MOONS, next_lvl]
 
 func _update_xp():
 	var needed: int = PlayerData.xp_needed()
@@ -167,7 +168,6 @@ func _on_coins_changed(amount: int):
 
 func _on_moons_changed():
 	_build_moons()
-	_refresh_moons_label()
 
 func _on_confirm_username():
 	var n: String = name_edit.text.strip_edges()
@@ -177,5 +177,20 @@ func _on_confirm_username():
 	modal.visible = false
 	_refresh_hud()
 
+func _init_game_mode():
+	for i in GAME_MODES.size():
+		if GAME_MODES[i].id == PlayerData.game_mode:
+			_mode_index = i
+			break
+	game_mode_btn.text = GAME_MODES[_mode_index].label
+
+func _on_cycle_game_mode():
+	_mode_index = (_mode_index + 1) % GAME_MODES.size()
+	PlayerData.set_game_mode(GAME_MODES[_mode_index].id)
+	game_mode_btn.text = GAME_MODES[_mode_index].label
+
+func _on_shop():
+	print("Shop coming soon")
+
 func _on_find_match():
-	print("Find match requested (multiplayer not implemented yet)")
+	get_tree().change_scene_to_file(GAME_MODES[_mode_index].scene)

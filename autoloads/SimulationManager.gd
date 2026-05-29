@@ -46,6 +46,7 @@ var robot_types: Array = [
 ]
 
 var _next_species_id: int = 1
+var _next_robot_id: int = 0
 
 var behaviors: Dictionary = {}
 
@@ -77,7 +78,7 @@ var settings: Dictionary = {
 
 const BLOCK_DEFS := {
 	"set_speed":     {"category": "config",    "label": "Set speed to",        "input": {"min": 0.5,  "max": 10.0, "default": 3.75, "step": 0.05, "suffix": " m/s"}},
-	"set_turn":      {"category": "config",    "label": "Set turn rate to",    "input": {"min": 0.2,  "max": 8.0,  "default": 2.0,  "step": 0.1,  "suffix": " rad/s"}},
+	"set_turn":      {"category": "config",    "label": "Set turn rate to",    "input": {"min": 15.0, "max": 360.0, "default": 120.0, "step": 5.0, "suffix": "°/s"}},
 	"set_view":      {"category": "config",    "label": "Set vision range to", "input": {"min": 0.5,  "max": 12.5, "default": 3.75, "step": 0.1,  "suffix": " m"}},
 	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 20.0, "max": 360.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
 
@@ -88,24 +89,30 @@ const BLOCK_DEFS := {
 	"when_sees_wall":       {"category": "condition", "label": "When I see a wall",    "input": null},
 	"when_sees_species":    {"category": "condition", "label": "When I see a",         "input": {"type": "species", "default": "hunter"}},
 	"when_no_sees_species": {"category": "condition", "label": "When I don't see a",   "input": {"type": "species", "default": "hunter"}},
+	"when_sees_enemy":      {"category": "condition", "label": "When I see an enemy",  "input": null},
+	"when_sees_ally":       {"category": "condition", "label": "When I see an ally",   "input": null},
+	"when_sees_object":     {"category": "condition", "label": "When I see an object",    "input": null},
+	"when_sees_rim":        {"category": "condition", "label": "When I see the outer rim", "input": null},
 
 	"do_forward":    {"category": "action", "label": "Move forward",    "input": null},
 	"do_backward":   {"category": "action", "label": "Move backward",   "input": null},
 	"do_stop":       {"category": "action", "label": "Stop",            "input": null},
 	"do_wander":     {"category": "action", "label": "Wander randomly", "input": null},
-	"do_turn_left":  {"category": "action", "label": "Turn left at",    "input": {"min": 0.1, "max": 5.0, "default": 1.0, "step": 0.1, "suffix": " rad/s"}},
-	"do_turn_right": {"category": "action", "label": "Turn right at",   "input": {"min": 0.1, "max": 5.0, "default": 1.0, "step": 0.1, "suffix": " rad/s"}},
+	"do_random_walk":{"category": "action", "label": "Random walk",     "input": null},
+	"do_turn_left":  {"category": "action", "label": "Turn left at",    "input": {"min": 15.0, "max": 360.0, "default": 90.0, "step": 5.0, "suffix": "°/s"}},
+	"do_turn_right": {"category": "action", "label": "Turn right at",   "input": {"min": 15.0, "max": 360.0, "default": 90.0, "step": 5.0, "suffix": "°/s"}},
 	"do_turn_left_by":  {"category": "action", "label": "Turn left by",  "input": {"min": 1.0, "max": 360.0, "default": 180.0, "step": 1.0, "suffix": "°"}},
 	"do_turn_right_by": {"category": "action", "label": "Turn right by", "input": {"min": 1.0, "max": 360.0, "default": 180.0, "step": 1.0, "suffix": "°"}},
 	"do_face":       {"category": "action", "label": "Face the target",  "input": null},
 	"do_flee":       {"category": "action", "label": "Flee the target",  "input": null},
+	"do_fire":       {"category": "action", "label": "Fire",             "input": null},
 	"do_throttle":   {"category": "action", "label": "Throttle to",     "input": {"min": 0.0, "max": 1.5, "default": 1.0, "step": 0.05, "suffix": "×"}},
 }
 
 const PALETTE_ORDER := {
 	"config":    ["set_speed", "set_turn", "set_view", "set_fov"],
 	"condition": ["when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
-	"action":    ["do_forward", "do_backward", "do_stop", "do_wander", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle"],
+	"action":    ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle"],
 }
 
 func _ready():
@@ -117,7 +124,7 @@ func _ready():
 func _install_defaults():
 	behaviors["hunter"] = {"blocks": [
 		{"type": "set_speed", "params": {"value": 5.25}},
-		{"type": "set_turn",  "params": {"value": 3.0}},
+		{"type": "set_turn",  "params": {"value": 170.0}},
 		{"type": "set_view",  "params": {"value": 5.5}},
 		{"type": "set_fov",   "params": {"value": 55.0}},
 		{"type": "when_sees", "params": {}},
@@ -127,7 +134,7 @@ func _install_defaults():
 	]}
 	behaviors["scout"] = {"blocks": [
 		{"type": "set_speed", "params": {"value": 3.75}},
-		{"type": "set_turn",  "params": {"value": 2.0}},
+		{"type": "set_turn",  "params": {"value": 115.0}},
 		{"type": "set_view",  "params": {"value": 4.5}},
 		{"type": "set_fov",   "params": {"value": 110.0}},
 		{"type": "when_always", "params": {}},
@@ -136,7 +143,7 @@ func _install_defaults():
 	]}
 	behaviors["worker"] = {"blocks": [
 		{"type": "set_speed", "params": {"value": 2.4}},
-		{"type": "set_turn",  "params": {"value": 1.4}},
+		{"type": "set_turn",  "params": {"value": 80.0}},
 		{"type": "set_view",  "params": {"value": 3.25}},
 		{"type": "set_fov",   "params": {"value": 180.0}},
 		{"type": "when_sees",   "params": {}},
@@ -192,10 +199,10 @@ func compile(type_id: String):
 		var p: Dictionary = b.get("params", {})
 		match t:
 			"set_speed":  cfg.speed         = float(p.get("value", settings.speed)) * PX_PER_METER
-			"set_turn":   cfg.turn_speed    = float(p.get("value", settings.turn_speed))
+			"set_turn":   cfg.turn_speed    = deg_to_rad(float(p.get("value", 120.0)))
 			"set_view":   cfg.view_distance = float(p.get("value", settings.view_distance)) * PX_PER_METER
 			"set_fov":    cfg.fov_degrees   = float(p.get("value", settings.fov_degrees))
-			"when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species":
+			"when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species", "when_sees_enemy", "when_sees_ally", "when_sees_object", "when_sees_rim":
 				current_rule = {"condition": t.substr(5), "condition_params": p.duplicate(), "actions": []}
 				rules.append(current_rule)
 			_:
@@ -235,8 +242,13 @@ func reset_time():
 	simulation_time = 0.0
 	has_started = false
 
+func next_robot_id() -> int:
+	var id := _next_robot_id
+	_next_robot_id += 1
+	return id
+
 func add_placement(type_id: String, pos: Vector2, rot: float):
-	placements.append({"type_id": type_id, "position": pos, "rotation": rot})
+	placements.append({"type_id": type_id, "id": next_robot_id(), "position": pos, "rotation": rot})
 
 func clear_placements():
 	placements.clear()
@@ -314,17 +326,40 @@ func load_setup(path: String) -> bool:
 	if typeof(data) == TYPE_DICTIONARY:
 		robot_types = data.get("robot_types", robot_types)
 		behaviors = data.get("behaviors", behaviors)
-		type_configs = data.get("type_configs", type_configs)
-		compiled_rules = data.get("compiled_rules", compiled_rules)
 		placements = data.get("placements", placements)
 		obstacles = data.get("obstacles", [])
 		settings = data.get("settings", settings)
+		_resync_species_counter()
+		_normalize_placement_ids()
+		for t in robot_types:
+			compile(t.id)
 
 		species_list_changed.emit()
 		settings_changed.emit()
 		obstacles_changed.emit()
 		return true
 	return false
+
+func _resync_species_counter():
+	var max_id := 0
+	for t in robot_types:
+		var id: String = t.get("id", "")
+		if id.begins_with("species_"):
+			var n := int(id.substr(8))
+			if n > max_id:
+				max_id = n
+	_next_species_id = max_id + 1
+
+func _normalize_placement_ids():
+	var max_id := -1
+	for p in placements:
+		if p.has("id"):
+			max_id = maxi(max_id, int(p["id"]))
+	for p in placements:
+		if not p.has("id"):
+			max_id += 1
+			p["id"] = max_id
+	_next_robot_id = max_id + 1
 
 func load_run(path: String) -> bool:
 	var f = FileAccess.open(path, FileAccess.READ)
@@ -334,11 +369,13 @@ func load_run(path: String) -> bool:
 		var setup = data["setup"]
 		robot_types = setup.get("robot_types", robot_types)
 		behaviors = setup.get("behaviors", behaviors)
-		type_configs = setup.get("type_configs", type_configs)
-		compiled_rules = setup.get("compiled_rules", compiled_rules)
 		placements = setup.get("placements", placements)
 		obstacles = setup.get("obstacles", [])
 		settings = setup.get("settings", settings)
+		_resync_species_counter()
+		_normalize_placement_ids()
+		for t in robot_types:
+			compile(t.id)
 
 		species_list_changed.emit()
 		settings_changed.emit()
@@ -399,11 +436,7 @@ func _physics_process(delta: float):
 		replay_time += delta * settings.get("time_scale", 1.0)
 		var idx = int(replay_time / RECORD_INTERVAL)
 		if idx < current_replay.size():
-			var frame = current_replay[idx]
-			var robots = get_tree().get_nodes_in_group("robots")
-			for i in range(min(frame.size(), robots.size())):
-				robots[i].global_position = frame[i]["pos"]
-				robots[i].rotation = frame[i]["rot"]
+			_apply_replay_frame(current_replay[idx])
 		else:
 			get_tree().paused = true
 			has_started = false
@@ -415,7 +448,24 @@ func _physics_process(delta: float):
 			var frame = []
 			for r in get_tree().get_nodes_in_group("robots"):
 				frame.append({
+					"id": r.spawn_id,
 					"pos": r.global_position,
 					"rot": r.rotation
 				})
 			recorded_frames.append(frame)
+
+func _apply_replay_frame(frame: Array):
+	var robots := get_tree().get_nodes_in_group("robots")
+	var by_id := {}
+	for r in robots:
+		by_id[r.spawn_id] = r
+	for k in frame.size():
+		var entry: Dictionary = frame[k]
+		var target = null
+		if entry.has("id"):
+			target = by_id.get(int(entry["id"]), null)
+		elif k < robots.size():
+			target = robots[k]
+		if target != null:
+			target.global_position = entry["pos"]
+			target.rotation = entry["rot"]

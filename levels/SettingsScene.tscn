@@ -4,6 +4,22 @@
 [ext_resource type="Script" uid="uid://cpvlhldx6nblg" path="res://levels/SettingsScene.gd" id="2_script"]
 [ext_resource type="Texture2D" uid="uid://ddu0dit8tejvl" path="res://assets/icons/pixelarticons--arrow-left.png" id="3_arrow"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resetpanel"]
+content_margin_left = 26.0
+content_margin_top = 26.0
+content_margin_right = 26.0
+content_margin_bottom = 26.0
+bg_color = Color(0.13, 0.12, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.451, 0.616, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="SettingsScene" type="Control" unique_id=2147393334]
 layout_mode = 3
 anchors_preset = 15
@@ -99,6 +115,29 @@ popup/item_1/id = 1
 popup/item_2/text = "Borderless"
 popup/item_2/id = 2
 
+[node name="ResolutionLabel" type="Label" parent="VBox/TabContainer/Display/Margin/VBox"]
+layout_mode = 2
+text = "Resolution"
+
+[node name="ResolutionOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/VBox"]
+layout_mode = 2
+
+[node name="ResolutionHint" type="Label" parent="VBox/TabContainer/Display/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.45, 0.51, 1)
+theme_override_font_sizes/font_size = 11
+text = "Resolution applies in Windowed mode. UI scales to fit the window."
+
+[node name="DisplaySpacer" type="Control" parent="VBox/TabContainer/Display/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DisplayApply" type="Button" parent="VBox/TabContainer/Display/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 8
+focus_mode = 0
+text = " Apply "
+
 [node name="Graphics" type="PanelContainer" parent="VBox/TabContainer" unique_id=1546908855]
 visible = false
 layout_mode = 2
@@ -152,6 +191,16 @@ popup/item_2/text = "4x"
 popup/item_2/id = 2
 popup/item_3/text = "8x"
 popup/item_3/id = 3
+
+[node name="GraphicsSpacer" type="Control" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GraphicsApply" type="Button" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 8
+focus_mode = 0
+text = " Apply "
 
 [node name="Keybinds" type="PanelContainer" parent="VBox/TabContainer" unique_id=439197885]
 visible = false
@@ -269,3 +318,109 @@ value = 100.0
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "100%"
+
+[node name="Player" type="PanelContainer" parent="VBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 4
+
+[node name="Margin" type="MarginContainer" parent="VBox/TabContainer/Player"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Player/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ResetTitle" type="Label" parent="VBox/TabContainer/Player/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+text = "Reset Game"
+
+[node name="ResetInfo" type="Label" parent="VBox/TabContainer/Player/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 12
+text = "Erases your callsign, level, XP, AstroCoin, planet, moons and ship program, returning you to a fresh profile. This cannot be undone."
+autowrap_mode = 2
+
+[node name="ResetButton" type="Button" parent="VBox/TabContainer/Player/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 0
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.55, 0.5, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = " Reset Game "
+
+[node name="ResetModal" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="ResetModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Panel" type="PanelContainer" parent="ResetModal"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -120.0
+offset_right = 230.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_resetpanel")
+
+[node name="VBox" type="VBoxContainer" parent="ResetModal/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="ResetModal/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "RESET GAME"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="ResetModal/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 13
+text = "Erase your callsign, level, XP, AstroCoin, planet, moons and ship program? This cannot be undone."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="ResetModal/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="ResetModal/Panel/VBox/Buttons"]
+layout_mode = 2
+focus_mode = 0
+text = " Cancel "
+
+[node name="ConfirmButton" type="Button" parent="ResetModal/Panel/VBox/Buttons"]
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.55, 0.5, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = " Reset Game "

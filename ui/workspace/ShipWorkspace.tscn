@@ -1,0 +1,154 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://ui/workspace/ShipWorkspace.gd" id="1_ws"]
+[ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.13, 0.12, 0.2, 1)
+border_width_bottom = 2
+border_color = Color(0.318, 0.306, 0.463, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_left"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.11, 0.103, 0.168, 1)
+border_width_right = 2
+border_color = Color(0.318, 0.306, 0.463, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_right"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.086, 0.08, 0.129, 1)
+
+[node name="ShipWorkspace" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("2_theme")
+script = ExtResource("1_ws")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.098, 0.09, 0.141, 1)
+mouse_filter = 2
+
+[node name="TopBar" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+anchor_right = 1.0
+offset_bottom = 56.0
+grow_horizontal = 2
+
+[node name="HBox" type="HBoxContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BackButton" type="Button" parent="TopBar/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = " ← Base "
+
+[node name="VSep" type="VSeparator" parent="TopBar/HBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+text = "SPACESHIP ALGORITHM"
+
+[node name="Spacer" type="Control" parent="TopBar/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ShipName" type="Label" parent="TopBar/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.451, 0.616, 1, 1)
+text = "INTERCEPTOR"
+
+[node name="Body" type="HSplitContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 56.0
+split_offset = 210
+dragger_visibility = 1
+
+[node name="Left" type="PanelContainer" parent="Body"]
+layout_mode = 2
+custom_minimum_size = Vector2(190, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_left")
+
+[node name="LeftVBox" type="VBoxContainer" parent="Body/Left"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PaletteTitle" type="Label" parent="Body/Left/LeftVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.7, 0.72, 0.84, 1)
+text = "BLOCK PALETTE"
+
+[node name="PaletteHint" type="Label" parent="Body/Left/LeftVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.5, 0.52, 0.62, 1)
+text = "Click a block to add it to the stack →"
+autowrap_mode = 2
+
+[node name="PaletteScroll" type="ScrollContainer" parent="Body/Left/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="PaletteList" type="VBoxContainer" parent="Body/Left/LeftVBox/PaletteScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="Right" type="PanelContainer" parent="Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_right")
+
+[node name="RightVBox" type="VBoxContainer" parent="Body/Right"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="Body/Right/RightVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderLabel" type="Label" parent="Body/Right/RightVBox/Header"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.85, 0.86, 0.96, 1)
+text = "Flight program"
+
+[node name="HintLabel" type="Label" parent="Body/Right/RightVBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.5, 0.52, 0.62, 1)
+text = "Drag blocks to reorder · Runs top-to-bottom"
+horizontal_alignment = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Body/Right/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="BlocksList" type="VBoxContainer" parent="Body/Right/RightVBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4

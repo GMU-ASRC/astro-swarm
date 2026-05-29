@@ -11,6 +11,9 @@ const TURN_COOLDOWN_TIME := 0.5
 
 var _prev_condition_states: Dictionary = {}
 
+var _walk_timer: float = 0.0
+var _walk_dir: float = 0.0
+
 func process_behavior(delta: float):
 	if _turn_cooldown > 0.0:
 		_turn_cooldown -= delta
@@ -94,12 +97,19 @@ func _exec_action(action: String, params: Dictionary, delta: float):
 			robot.turn_input = 0.0
 		"wander":
 			robot.turn_input = randf_range(-0.4, 0.4)
+		"random_walk":
+			_walk_timer -= delta
+			if _walk_timer <= 0.0:
+				_walk_dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
+				_walk_timer = 0.5
+			robot.rotation = _walk_dir
+			robot.forward_input = 1.0
 		"turn_left":
-			var rate: float = params.get("value", 1.0)
-			robot.turn_input = -rate
+			robot.rotation -= deg_to_rad(float(params.get("value", 90.0))) * delta
+			robot.turn_input = 0.0
 		"turn_right":
-			var rate: float = params.get("value", 1.0)
-			robot.turn_input = rate
+			robot.rotation += deg_to_rad(float(params.get("value", 90.0))) * delta
+			robot.turn_input = 0.0
 		"face":
 			if sensor.visible_targets.size() > 0:
 				var t = sensor.visible_targets[0]

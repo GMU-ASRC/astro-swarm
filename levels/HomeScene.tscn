@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dnsw3eipkvwly"]
 
-[ext_resource type="Theme" path="res://ui/GameTheme.tres" id="1_theme"]
+[ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://cxyt0xou1000m" path="res://levels/HomeScene.gd" id="2_script"]
 [ext_resource type="Script" uid="uid://dk14eq523l2l4" path="res://ui/game/Starfield.gd" id="3_starfield"]
 
@@ -86,19 +86,20 @@ offset_right = 116.0
 offset_bottom = -16.0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.62, 0.64, 0.72, 1)
-text = "v0.0.1-alpha"
+text = "v0.0.2-alpha"
 
 [node name="Author" type="Label" parent="." unique_id=1646247741]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.91800004
+anchor_left = 0.89800006
 anchor_top = 1.0
-anchor_right = 0.91800004
+anchor_right = 0.89800006
 anchor_bottom = 1.0
-offset_left = 0.95996094
+offset_left = 0.5599365
 offset_top = -36.0
-offset_right = 100.95996
+offset_right = 100.55994
 offset_bottom = -16.0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.62, 0.64, 0.72, 1)
-text = "Sir Blob"
+text = "Create Lab"
+horizontal_alignment = 1

@@ -1,0 +1,158 @@
+[gd_scene format=3 uid="uid://c683f2n1u2nd2"]
+
+[ext_resource type="Script" uid="uid://4oxynbpicour" path="res://levels/GameArena.gd" id="1_arena"]
+[ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://c2v2xxxxxxxxx" path="res://levels/DragIndicator.tscn" id="3_drag"]
+
+[node name="GameArena" type="Node2D" unique_id=1191965591]
+script = ExtResource("1_arena")
+
+[node name="DragIndicator" parent="." unique_id=97895252 instance=ExtResource("3_drag")]
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1822334783]
+
+[node name="Root" type="Control" parent="HUD" unique_id=1158555082]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="Timer" type="Label" parent="HUD/Root" unique_id=1287256661]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 16.0
+offset_right = 120.0
+offset_bottom = 52.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "1:30"
+horizontal_alignment = 1
+
+[node name="Score" type="Label" parent="HUD/Root" unique_id=1372850309]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 54.0
+offset_right = 160.0
+offset_bottom = 76.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 14
+text = "PROTECTORS 0 / 8"
+horizontal_alignment = 1
+
+[node name="Ships" type="Label" parent="HUD/Root" unique_id=1379652996]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 76.0
+offset_right = 160.0
+offset_bottom = 96.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.451, 0.616, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "SHIPS LEFT 5 / 5"
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="HUD/Root" unique_id=579835153]
+layout_mode = 1
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 110.0
+offset_bottom = 58.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 14
+text = "Leave"
+
+[node name="Hint" type="Label" parent="HUD/Root" unique_id=1250333198]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -360.0
+offset_top = -44.0
+offset_right = 360.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 13
+text = "Left-click + drag in your deploy zone to launch · Middle-drag to pan · Scroll to zoom"
+horizontal_alignment = 1
+
+[node name="Result" type="Control" parent="HUD/Root" unique_id=853930395]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="HUD/Root/Result" unique_id=776066350]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Panel" type="PanelContainer" parent="HUD/Root/Result" unique_id=1971075221]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -130.0
+offset_right = 200.0
+offset_bottom = 130.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/Root/Result/Panel" unique_id=353711598]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Root/Result/Panel/Margin" unique_id=2026958853]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ResultTitle" type="Label" parent="HUD/Root/Result/Panel/Margin/VBox" unique_id=911671200]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "VICTORY"
+horizontal_alignment = 1
+
+[node name="ResultDetail" type="Label" parent="HUD/Root/Result/Panel/Margin/VBox" unique_id=1909255400]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ReturnButton" type="Button" parent="HUD/Root/Result/Panel/Margin/VBox" unique_id=1930631663]
+layout_mode = 2
+focus_mode = 0
+text = "RETURN TO BASE"

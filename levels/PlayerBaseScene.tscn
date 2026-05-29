@@ -54,84 +54,95 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Username" type="Label" parent="HUD" unique_id=839287923]
+[node name="PlayerInfo" type="HBoxContainer" parent="HUD" unique_id=839287923]
 layout_mode = 1
 offset_left = 24.0
-offset_top = 18.0
-offset_right = 460.0
-offset_bottom = 48.0
+offset_top = 16.0
+offset_right = 620.0
+offset_bottom = 50.0
+theme_override_constants/separation = 12
+
+[node name="Username" type="Label" parent="HUD/PlayerInfo" unique_id=177501023]
+layout_mode = 2
+size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
 theme_override_font_sizes/font_size = 22
 text = "Commander"
 
-[node name="Level" type="Label" parent="HUD" unique_id=177501023]
-layout_mode = 1
-offset_left = 24.0
-offset_top = 52.0
-offset_right = 300.0
-offset_bottom = 72.0
+[node name="Level" type="Label" parent="HUD/PlayerInfo"]
+layout_mode = 2
+size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "Level 1"
 
 [node name="XPBar" type="ProgressBar" parent="HUD" unique_id=2118125224]
 layout_mode = 1
 offset_left = 24.0
-offset_top = 82.0
+offset_top = 56.0
 offset_right = 404.0
-offset_bottom = 104.0
+offset_bottom = 78.0
 show_percentage = false
 
 [node name="XPLabel" type="Label" parent="HUD" unique_id=2024566316]
 layout_mode = 1
 offset_left = 24.0
-offset_top = 82.0
+offset_top = 56.0
 offset_right = 404.0
-offset_bottom = 104.0
+offset_bottom = 78.0
 theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
 theme_override_font_sizes/font_size = 11
 text = "0 / 100 XP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CoinIcon" type="Control" parent="HUD" unique_id=1798386289]
-custom_minimum_size = Vector2(26, 26)
+[node name="Navbar" type="HBoxContainer" parent="HUD" unique_id=1291409623]
 layout_mode = 1
-anchors_preset = 1
 anchor_left = 1.0
+anchor_top = 0.0
 anchor_right = 1.0
-offset_left = -160.0
-offset_top = 22.0
-offset_right = -134.0
-offset_bottom = 48.0
+anchor_bottom = 0.0
+offset_left = -24.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 1
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="MoonsButton" type="Button" parent="HUD/Navbar"]
+layout_mode = 2
+focus_mode = 0
+text = "Moons"
+
+[node name="WorkspaceButton" type="Button" parent="HUD/Navbar"]
+layout_mode = 2
+focus_mode = 0
+text = "Workspace"
+
+[node name="ShopButton" type="Button" parent="HUD/Navbar"]
+layout_mode = 2
+focus_mode = 0
+text = "Shop"
+
+[node name="Spacer" type="Control" parent="HUD/Navbar"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+
+[node name="CoinIcon" type="Control" parent="HUD/Navbar" unique_id=1798386289]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_vertical = 4
 mouse_filter = 2
 script = ExtResource("4_coin")
 
-[node name="CoinLabel" type="Label" parent="HUD" unique_id=794321802]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -126.0
-offset_top = 20.0
-offset_right = -24.0
-offset_bottom = 48.0
+[node name="CoinLabel" type="Label" parent="HUD/Navbar" unique_id=794321802]
+layout_mode = 2
+size_flags_vertical = 4
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 18
 text = "0"
-
-[node name="MoonsTitle" type="Label" parent="HUD" unique_id=1291409623]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -118.0
-offset_right = 300.0
-offset_bottom = -98.0
-theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
-theme_override_font_sizes/font_size = 12
-text = "MOONS"
 
 [node name="BackButton" type="Button" parent="." unique_id=75014607]
 layout_mode = 1
@@ -142,6 +153,7 @@ offset_left = 24.0
 offset_top = -62.0
 offset_right = 150.0
 offset_bottom = -22.0
+grow_vertical = 0
 focus_mode = 0
 theme_override_colors/icon_normal_color = Color(0.85, 0.862, 0.961, 1)
 theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
@@ -150,6 +162,22 @@ theme_override_constants/icon_max_width = 16
 text = "Home"
 icon = ExtResource("5_arrow")
 
+[node name="GameModeButton" type="Button" parent="." unique_id=1282374285]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -228.0
+offset_top = -66.0
+offset_right = -8.0
+offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 0
+focus_mode = 0
+text = "Timed Local"
+
 [node name="FindMatchButton" type="Button" parent="." unique_id=1282374284]
 layout_mode = 1
 anchors_preset = 7
@@ -157,44 +185,14 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -120.0
+offset_left = 8.0
 offset_top = -66.0
-offset_right = 120.0
+offset_right = 228.0
 offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 0
 focus_mode = 0
 text = "FIND MATCH"
-
-[node name="DevPanel" type="VBoxContainer" parent="." unique_id=1895799079]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -188.0
-offset_top = -150.0
-offset_right = -24.0
-offset_bottom = -22.0
-theme_override_constants/separation = 6
-
-[node name="DevLabel" type="Label" parent="DevPanel" unique_id=756554703]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.52, 0.62, 1)
-theme_override_font_sizes/font_size = 10
-text = "DEV TOOLS"
-horizontal_alignment = 2
-
-[node name="AddXP" type="Button" parent="DevPanel" unique_id=188261697]
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 12
-text = "+50 XP"
-
-[node name="AddCoins" type="Button" parent="DevPanel" unique_id=1576284183]
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 12
-text = "+25 AstroCoin"
 
 [node name="UsernameModal" type="Control" parent="." unique_id=2074317537]
 visible = false

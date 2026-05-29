@@ -2,6 +2,14 @@ extends Node
 
 const SETTINGS_PATH := "user://player_settings.cfg"
 
+const RESOLUTIONS := [
+	Vector2i(1280, 720),
+	Vector2i(1366, 768),
+	Vector2i(1600, 900),
+	Vector2i(1920, 1080),
+	Vector2i(2560, 1440),
+]
+
 var _cfg: ConfigFile = ConfigFile.new()
 var _loaded: bool = false
 
@@ -14,6 +22,7 @@ func _ready():
 func _apply_all():
 	var mode_idx: int = _cfg.get_value("display", "window_mode", 0)
 	apply_window_mode(mode_idx)
+	apply_resolution(get_resolution_idx())
 
 	var vsync_on: bool = _cfg.get_value("graphics", "vsync", true)
 	apply_vsync(vsync_on)
@@ -69,6 +78,9 @@ const KEYBIND_LABELS := {
 func get_window_mode_idx() -> int:
 	return _cfg.get_value("display", "window_mode", 0)
 
+func get_resolution_idx() -> int:
+	return _cfg.get_value("display", "resolution_idx", 0)
+
 func get_vsync() -> bool:
 	return _cfg.get_value("graphics", "vsync", true)
 
@@ -93,6 +105,12 @@ func get_keybind(action: String) -> int:
 func set_window_mode(idx: int):
 	_cfg.set_value("display", "window_mode", idx)
 	apply_window_mode(idx)
+	apply_resolution(get_resolution_idx())
+	_save()
+
+func set_resolution(idx: int):
+	_cfg.set_value("display", "resolution_idx", idx)
+	apply_resolution(idx)
 	_save()
 
 func set_vsync(on: bool):
@@ -145,6 +163,18 @@ func apply_window_mode(idx: int):
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
+
+func apply_resolution(idx: int):
+	if idx < 0 or idx >= RESOLUTIONS.size():
+		return
+	if get_window_mode_idx() != 0:
+		return
+	var size: Vector2i = RESOLUTIONS[idx]
+	DisplayServer.window_set_size(size)
+	var screen: int = DisplayServer.window_get_current_screen()
+	var screen_size: Vector2i = DisplayServer.screen_get_size(screen)
+	var screen_pos: Vector2i = DisplayServer.screen_get_position(screen)
+	DisplayServer.window_set_position(screen_pos + (screen_size - size) / 2)
 
 func apply_vsync(on: bool):
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if on else DisplayServer.VSYNC_DISABLED)

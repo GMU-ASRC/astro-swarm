@@ -3,6 +3,7 @@ extends CharacterBody2D
 @export var type_id: String = "hunter"
 @export var dot_radius: float = 6.0
 var robot_name: String = ""
+var spawn_id: int = -1
 
 var forward_input: float = 1.0
 var turn_input: float = 0.0
