@@ -1,6 +1,6 @@
 extends Control
 
-const VERSION := "v0.0.2-alpha"
+const VERSION := "v0.0.3-alpha"
 
 func _ready():
 	get_tree().paused = false
