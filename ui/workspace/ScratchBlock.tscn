@@ -1,58 +1,86 @@
-[gd_scene format=3 uid="uid://scratchblock01"]
+[gd_scene load_steps=3 format=3 uid="uid://scratchblock01"]
 
 [ext_resource type="Script" path="res://ui/workspace/ScratchBlock.gd" id="1_sb"]
+[ext_resource type="Script" path="res://ui/workspace/BlockDropZone.gd" id="2_dz"]
 
 [node name="ScratchBlock" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 38)
 script = ExtResource("1_sb")
 
-[node name="HBox" type="HBoxContainer" parent="."]
+[node name="Outer" type="VBoxContainer" parent="."]
 layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="Outer"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 8
 
-[node name="DragHandle" type="Label" parent="HBox"]
+[node name="DragHandle" type="Label" parent="Outer/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_font_sizes/font_size = 14
 text = "⠿"
 
-[node name="LabelText" type="Label" parent="HBox"]
+[node name="LabelText" type="Label" parent="Outer/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_font_sizes/font_size = 13
 text = "Block"
 
-[node name="SliderBox" type="HBoxContainer" parent="HBox"]
+[node name="SliderBox" type="HBoxContainer" parent="Outer/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 theme_override_constants/separation = 6
 visible = false
 
-[node name="Slider" type="HSlider" parent="HBox/SliderBox"]
+[node name="Slider" type="HSlider" parent="Outer/HBox/SliderBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(100, 0)
 size_flags_vertical = 4
 
-[node name="ValueLabel" type="Label" parent="HBox/SliderBox"]
+[node name="ValueLabel" type="Label" parent="Outer/HBox/SliderBox"]
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 custom_minimum_size = Vector2(70, 0)
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 2
 text = "0"
 
-[node name="SpeciesSelect" type="OptionButton" parent="HBox"]
+[node name="SpeciesSelect" type="OptionButton" parent="Outer/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
 visible = false
 
-[node name="Spacer" type="Control" parent="HBox"]
+[node name="Spacer" type="Control" parent="Outer/HBox"]
 layout_mode = 2
+mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="DeleteButton" type="Button" parent="HBox"]
+[node name="DeleteButton" type="Button" parent="Outer/HBox"]
 layout_mode = 2
 focus_mode = 0
 text = "✕"
+
+[node name="InnerWrap" type="MarginContainer" parent="Outer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+visible = false
+
+[node name="InnerPanel" type="PanelContainer" parent="Outer/InnerWrap"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Children" type="VBoxContainer" parent="Outer/InnerWrap/InnerPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(150, 30)
+theme_override_constants/separation = 4
+script = ExtResource("2_dz")

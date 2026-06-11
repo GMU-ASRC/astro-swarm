@@ -2,34 +2,36 @@ extends PanelContainer
 
 signal block_changed
 signal block_deleted
-signal drag_started(block: PanelContainer)
 
 var block_type: String = ""
 var block_params: Dictionary = {}
 
 var _category: String = ""
-var _dragging: bool = false
-var _drag_offset: Vector2 = Vector2.ZERO
 
 const CAT_COLORS := {
 	"config":    Color(0.275, 0.663, 0.322, 1.0),
 	"condition": Color(0.482, 0.302, 0.686, 1.0),
+	"logic":     Color(0.851, 0.522, 0.200, 1.0),
 	"action":    Color(0.255, 0.463, 0.843, 1.0),
 }
 
 const CAT_DARK := {
 	"config":    Color(0.208, 0.518, 0.247, 1.0),
 	"condition": Color(0.361, 0.216, 0.541, 1.0),
+	"logic":     Color(0.682, 0.408, 0.137, 1.0),
 	"action":    Color(0.180, 0.345, 0.682, 1.0),
 }
 
-@onready var label_node: Label = $HBox/LabelText
-@onready var slider_node: HSlider = $HBox/SliderBox/Slider
-@onready var value_label: Label = $HBox/SliderBox/ValueLabel
-@onready var slider_box: HBoxContainer = $HBox/SliderBox
-@onready var species_select: OptionButton = $HBox/SpeciesSelect
-@onready var delete_btn: Button = $HBox/DeleteButton
-@onready var drag_handle: Label = $HBox/DragHandle
+@onready var label_node: Label = $Outer/HBox/LabelText
+@onready var slider_node: HSlider = $Outer/HBox/SliderBox/Slider
+@onready var value_label: Label = $Outer/HBox/SliderBox/ValueLabel
+@onready var slider_box: HBoxContainer = $Outer/HBox/SliderBox
+@onready var species_select: OptionButton = $Outer/HBox/SpeciesSelect
+@onready var delete_btn: Button = $Outer/HBox/DeleteButton
+@onready var drag_handle: Label = $Outer/HBox/DragHandle
+@onready var inner_wrap: MarginContainer = $Outer/InnerWrap
+@onready var inner_panel: PanelContainer = $Outer/InnerWrap/InnerPanel
+@onready var children_zone: VBoxContainer = $Outer/InnerWrap/InnerPanel/Children
 
 var _input_def = null
 var _input_type: String = "slider"
@@ -46,6 +48,12 @@ func setup(btype: String, params: Dictionary):
 	if is_inside_tree():
 		_apply_block_def()
 
+func is_container() -> bool:
+	return block_type.begins_with("when_") or block_type.begins_with("if_")
+
+func get_children_zone() -> VBoxContainer:
+	return children_zone
+
 func _apply_block_def():
 	if block_type == "":
 		return
@@ -60,6 +68,7 @@ func _apply_block_def():
 
 	_apply_style()
 	label_node.text = lbl_text
+	inner_wrap.visible = is_container()
 
 	match _input_type:
 		"slider":
@@ -128,6 +137,15 @@ func _apply_style():
 	sb.content_margin_bottom = 8
 	add_theme_stylebox_override("panel", sb)
 
+	var sb_inner := StyleBoxFlat.new()
+	sb_inner.bg_color = Color(0, 0, 0, 0.18)
+	sb_inner.set_corner_radius_all(4)
+	sb_inner.content_margin_left = 6
+	sb_inner.content_margin_right = 6
+	sb_inner.content_margin_top = 6
+	sb_inner.content_margin_bottom = 6
+	inner_panel.add_theme_stylebox_override("panel", sb_inner)
+
 	label_node.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	label_node.add_theme_font_size_override("font_size", 13)
 
@@ -178,13 +196,45 @@ func _update_value_label(val: float):
 		value_label.text = "%.1f%s" % [val, _suffix]
 
 func get_block_data() -> Dictionary:
-	return {"type": block_type, "params": block_params.duplicate()}
+	var child_blocks: Array = []
+	if is_container():
+		for c in children_zone.get_children():
+			if c is PanelContainer and c.has_method("get_block_data"):
+				child_blocks.append(c.get_block_data())
+	return {"type": block_type, "params": block_params.duplicate(), "children": child_blocks}
 
-func _gui_input(event: InputEvent):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			_dragging = true
-			_drag_offset = event.position
-			drag_started.emit(self)
-		else:
-			_dragging = false
+func _get_drag_data(_at_position: Vector2) -> Variant:
+	var preview := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = CAT_COLORS.get(_category, CAT_COLORS.action)
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 8
+	sb.content_margin_bottom = 8
+	preview.add_theme_stylebox_override("panel", sb)
+	var lbl := Label.new()
+	lbl.text = label_node.text
+	lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	lbl.add_theme_font_size_override("font_size", 13)
+	preview.add_child(lbl)
+	preview.modulate.a = 0.75
+	set_drag_preview(preview)
+	return {"blocks": [self]}
+
+func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+	var zone = _target_zone()
+	return zone != null and zone.can_accept(data)
+
+func _drop_data(_at_position: Vector2, data: Variant) -> void:
+	var zone = _target_zone()
+	if zone != null:
+		zone.do_drop(data)
+
+func _target_zone():
+	if is_container():
+		return children_zone
+	var p := get_parent()
+	if p != null and p.has_method("do_drop"):
+		return p
+	return null

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://ui/workspace/Workspace.gd" id="1_ws"]
 [ext_resource type="Theme" path="res://ui/MainTheme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://ui/workspace/BlockCanvas.gd" id="3_canvas"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
 content_margin_left = 14.0
@@ -20,6 +21,19 @@ content_margin_bottom = 10.0
 bg_color = Color(0.880, 0.880, 0.900, 1.0)
 border_width_right = 1
 border_color = Color(0.667, 0.667, 0.694, 1.0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_headerbar"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.788, 0.835, 0.965, 1.0)
+border_width_bottom = 2
+border_color = Color(0.518, 0.580, 0.788, 1.0)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_right"]
 content_margin_left = 16.0
@@ -78,7 +92,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 56.0
 split_offset = 210
-dragger_visibility = 1
+dragger_visibility = 0
 
 [node name="Left" type="PanelContainer" parent="Body"]
 layout_mode = 2
@@ -99,7 +113,7 @@ text = "BLOCK PALETTE"
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 theme_override_colors/font_color = Color(0.450, 0.450, 0.510, 1.0)
-text = "Click a block to add it to the stack →"
+text = "Click to add a block to the canvas →"
 autowrap_mode = 2
 
 [node name="PaletteScroll" type="ScrollContainer" parent="Body/Left/LeftVBox"]
@@ -121,11 +135,15 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_right")
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Header" type="HBoxContainer" parent="Body/Right/RightVBox"]
+[node name="HeaderBar" type="PanelContainer" parent="Body/Right/RightVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_headerbar")
+
+[node name="Header" type="HBoxContainer" parent="Body/Right/RightVBox/HeaderBar"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="NameEdit" type="LineEdit" parent="Body/Right/RightVBox/Header"]
+[node name="NameEdit" type="LineEdit" parent="Body/Right/RightVBox/HeaderBar/Header"]
 layout_mode = 2
 custom_minimum_size = Vector2(140, 0)
 size_flags_vertical = 4
@@ -134,33 +152,34 @@ text = "Hunter"
 placeholder_text = "Species name"
 flat = true
 
-[node name="ColorPicker" type="ColorPickerButton" parent="Body/Right/RightVBox/Header"]
+[node name="ColorPicker" type="ColorPickerButton" parent="Body/Right/RightVBox/HeaderBar/Header"]
 layout_mode = 2
 custom_minimum_size = Vector2(32, 26)
 size_flags_vertical = 4
 focus_mode = 0
 edit_alpha = false
 
-[node name="DeleteSpeciesBtn" type="Button" parent="Body/Right/RightVBox/Header"]
+[node name="DeleteSpeciesBtn" type="Button" parent="Body/Right/RightVBox/HeaderBar/Header"]
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
 text = " 🗑 Delete "
 
-[node name="HintLabel" type="Label" parent="Body/Right/RightVBox/Header"]
+[node name="HintLabel" type="Label" parent="Body/Right/RightVBox/HeaderBar/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10
-theme_override_colors/font_color = Color(0.450, 0.450, 0.510, 1.0)
-text = "Drag blocks to reorder · Runs top-to-bottom"
+theme_override_colors/font_color = Color(0.380, 0.408, 0.510, 1.0)
+text = "Drag blocks under an event · Runs in order"
 horizontal_alignment = 2
 
 [node name="Scroll" type="ScrollContainer" parent="Body/Right/RightVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="BlocksList" type="VBoxContainer" parent="Body/Right/RightVBox/Scroll"]
-layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 4
+horizontal_scroll_mode = 1
+
+[node name="Canvas" type="Control" parent="Body/Right/RightVBox/Scroll"]
+layout_mode = 2
+custom_minimum_size = Vector2(3000, 2000)
+script = ExtResource("3_canvas")

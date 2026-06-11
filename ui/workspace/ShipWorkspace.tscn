@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://ui/workspace/ShipWorkspace.gd" id="1_ws"]
 [ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://ui/workspace/BlockCanvas.gd" id="3_canvas"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
 content_margin_left = 14.0
@@ -81,7 +82,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 56.0
 split_offset = 210
-dragger_visibility = 1
+dragger_visibility = 0
 
 [node name="Left" type="PanelContainer" parent="Body"]
 layout_mode = 2
@@ -102,7 +103,7 @@ text = "BLOCK PALETTE"
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 theme_override_colors/font_color = Color(0.5, 0.52, 0.62, 1)
-text = "Click a block to add it to the stack →"
+text = "Click to add a block to the canvas →"
 autowrap_mode = 2
 
 [node name="PaletteScroll" type="ScrollContainer" parent="Body/Left/LeftVBox"]
@@ -140,15 +141,16 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10
 theme_override_colors/font_color = Color(0.5, 0.52, 0.62, 1)
-text = "Drag blocks to reorder · Runs top-to-bottom"
+text = "Drag blocks under an event · Runs in order"
 horizontal_alignment = 2
 
 [node name="Scroll" type="ScrollContainer" parent="Body/Right/RightVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="BlocksList" type="VBoxContainer" parent="Body/Right/RightVBox/Scroll"]
-layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 4
+horizontal_scroll_mode = 1
+
+[node name="Canvas" type="Control" parent="Body/Right/RightVBox/Scroll"]
+layout_mode = 2
+custom_minimum_size = Vector2(3000, 2000)
+script = ExtResource("3_canvas")
