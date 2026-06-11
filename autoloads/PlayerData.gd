@@ -99,7 +99,7 @@ func _ensure_planet():
 
 func _ensure_ship_program():
 	if ship_blocks.is_empty():
-		ship_blocks = DEFAULT_SHIP_BLOCKS.duplicate(true)
+		ship_blocks = SimulationManager.normalize_to_scripts(DEFAULT_SHIP_BLOCKS)
 		_save()
 
 func _ensure_player_id():
@@ -119,23 +119,10 @@ func _generate_uuid() -> String:
 	return "%s-%s-%s-%s-%s" % [hex.substr(0, 8), hex.substr(8, 4), hex.substr(12, 4), hex.substr(16, 4), hex.substr(20, 12)]
 
 func get_ship_algorithm() -> Array:
-	var rules: Array = []
-	var current = null
-	for b in ship_blocks:
-		var t: String = b.get("type", "")
-		var p: Dictionary = b.get("params", {})
-		if t.begins_with("when_"):
-			current = {"condition": t.substr(5), "params": p.duplicate(), "actions": []}
-			rules.append(current)
-		elif t.begins_with("do_"):
-			if current == null:
-				current = {"condition": "always", "params": {}, "actions": []}
-				rules.append(current)
-			current.actions.append({"id": t.substr(3), "params": p.duplicate()})
-	return rules
+	return SimulationManager.normalize_to_scripts(ship_blocks)
 
 func set_ship_blocks(blocks: Array):
-	ship_blocks = blocks.duplicate(true)
+	ship_blocks = SimulationManager.normalize_to_scripts(blocks)
 	_save()
 	ship_program_changed.emit()
 
@@ -203,5 +190,5 @@ func _load():
 	planet_seed = cfg.get_value("planet", "seed", 0)
 	planet_type = cfg.get_value("planet", "type", "terran")
 	moon_seeds = cfg.get_value("moons", "seeds", [])
-	ship_blocks = cfg.get_value("ship", "blocks", [])
+	ship_blocks = SimulationManager.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
 	game_mode = cfg.get_value("match", "game_mode", "timed_local")

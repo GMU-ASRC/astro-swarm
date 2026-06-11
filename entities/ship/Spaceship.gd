@@ -9,7 +9,6 @@ const HULL_BITS := {0: 16, 1: 32}
 
 const SPEED := 150.0
 const TURN_SPEED := 3.2
-const TURN_COOLDOWN := 0.5
 const VIEW_DISTANCE := 300.0
 const FOV_DEGREES := 70.0
 const FIRE_INTERVAL := 0.55
@@ -32,17 +31,14 @@ var planet_radius: float = 0.0
 var forward_input: float = 0.0
 var turn_input: float = 0.0
 
-var _rules: Array = []
+const BlockExecutor := preload("res://entities/BlockExecutor.gd")
+const STEP_TIME := 0.4
+
+var _executor
 var _visible: Array = []
 var _fire_cooldown: float = 0.0
-var _wander_turn: float = 0.0
-var _wander_timer: float = 0.0
-var _walk_timer: float = 0.0
-var _walk_dir: float = 0.0
-var _pending_turn: float = 0.0
-var _pending_dir: float = 0.0
-var _turn_cooldown: float = 0.0
-var _prev_states: Dictionary = {}
+var _throttle_mult: float = 1.0
+var _enemies_cache: Array = []
 
 var _orbit: bool = false
 var _orbit_center: Vector2 = Vector2.ZERO
@@ -80,7 +76,7 @@ func setup_player(blocks: Array, hp_value: float):
 	team = TEAM_PLAYER
 	max_hp = hp_value
 	hp = hp_value
-	_rules = _compile(blocks)
+	_set_program(blocks)
 	_orbit = false
 	ship_color = Color(0.451, 0.616, 1.0, 1.0)
 
@@ -107,9 +103,13 @@ func setup_raider(blocks: Array, hp_value: float):
 	team = TEAM_PROTECTOR
 	max_hp = hp_value
 	hp = hp_value
-	_rules = _compile(blocks)
+	_set_program(blocks)
 	_orbit = false
 	ship_color = Color(0.85, 0.4, 0.95, 1.0)
+
+func _set_program(blocks: Array):
+	_executor = BlockExecutor.new(self)
+	_executor.set_program(SimulationManager.normalize_to_scripts(blocks))
 
 func _physics_process(delta: float):
 	if _fire_cooldown > 0.0:
@@ -132,47 +132,12 @@ func _process_orbit(delta: float):
 		rotation = tangent.angle()
 
 func _process_program(delta: float):
-	if _turn_cooldown > 0.0:
-		_turn_cooldown -= delta
-	if _pending_turn > 0.0:
-		var step: float = TURN_SPEED * delta
-		if step >= _pending_turn:
-			rotation += _pending_dir * _pending_turn
-			_pending_turn = 0.0
-			_turn_cooldown = TURN_COOLDOWN
-		else:
-			rotation += _pending_dir * step
-			_pending_turn -= step
-		forward_input = 0.0
-		turn_input = 0.0
-		return
+	_enemies_cache = _live_enemies()
+	_executor.process(delta)
 
+func reset_inputs():
 	forward_input = 0.0
 	turn_input = 0.0
-	var enemies: Array = _live_enemies()
-	var current_states: Dictionary = {}
-	for i in _rules.size():
-		var rule: Dictionary = _rules[i]
-		var cond: String = rule.get("condition", "always")
-		var is_true: bool = _eval_condition(cond, rule.get("params", {}), enemies)
-		var key: String = "%d_%s" % [i, cond]
-		current_states[key] = is_true
-		if not is_true:
-			continue
-		var rising: bool = not _prev_states.get(key, false)
-		for act in rule.get("actions", []):
-			var aid: String = act.get("id", "stop")
-			if aid == "turn_left_by" or aid == "turn_right_by":
-				if rising and _turn_cooldown <= 0.0:
-					_exec_action(aid, act.get("params", {}), delta, enemies)
-			else:
-				_exec_action(aid, act.get("params", {}), delta, enemies)
-			if _pending_turn > 0.0:
-				forward_input = 0.0
-				turn_input = 0.0
-				_prev_states = current_states
-				return
-	_prev_states = current_states
 
 func _apply_movement(delta: float):
 	rotation += turn_input * TURN_SPEED * delta
@@ -196,14 +161,14 @@ func _resolve_obstacles():
 				dist = 1.0
 			global_position = planet_center + offset / dist * min_dist
 
-func _eval_condition(cond: String, params: Dictionary, enemies: Array) -> bool:
+func eval_condition(cond: String, params: Dictionary) -> bool:
 	match cond:
 		"always":
 			return true
 		"sees", "sees_species", "sees_enemy":
-			return enemies.size() > 0
+			return _enemies_cache.size() > 0
 		"alone", "no_sees_species":
-			return enemies.size() == 0
+			return _enemies_cache.size() == 0
 		"sees_ally":
 			return _live_allies().size() > 0
 		"near_wall":
@@ -214,64 +179,95 @@ func _eval_condition(cond: String, params: Dictionary, enemies: Array) -> bool:
 			return _sees_object()
 		"sees_rim":
 			return _sees_rim()
+		"within":
+			var d: float = _nearest_enemy_dist()
+			return d >= 0.0 and d <= float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
+		"beyond":
+			var d2: float = _nearest_enemy_dist()
+			return d2 >= 0.0 and d2 > float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
 	return false
 
-func _exec_action(action: String, params: Dictionary, delta: float, enemies: Array):
-	match action:
+func _nearest_enemy_dist() -> float:
+	var best: float = -1.0
+	for e in _enemies_cache:
+		var d: float = global_position.distance_to(e.global_position)
+		if best < 0.0 or d < best:
+			best = d
+	return best
+
+func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
+	if block_type.begins_with("set_"):
+		return BlockExecutor.DONE
+	match block_type.substr(3):
 		"forward":
-			forward_input = 1.0
+			forward_input = _throttle_mult
+			return _step(state, delta)
 		"backward":
-			forward_input = -1.0
+			forward_input = -_throttle_mult
+			return _step(state, delta)
 		"stop":
 			forward_input = 0.0
 			turn_input = 0.0
+			return BlockExecutor.DONE
 		"wander":
-			_do_wander(delta)
+			if not state.has("turn"):
+				state.turn = randf_range(-1.0, 1.0)
+			turn_input = state.turn
+			forward_input = _throttle_mult
+			return _step(state, delta)
 		"random_walk":
-			_do_random_walk(delta)
+			if not state.has("dir"):
+				state.dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
+			rotation = state.dir
+			forward_input = _throttle_mult
+			return _step(state, delta)
 		"turn_left":
 			rotation -= deg_to_rad(float(params.get("value", 90.0))) * delta
-			turn_input = 0.0
+			return _step(state, delta)
 		"turn_right":
 			rotation += deg_to_rad(float(params.get("value", 90.0))) * delta
-			turn_input = 0.0
-		"throttle":
-			forward_input *= float(params.get("value", 1.0))
+			return _step(state, delta)
+		"turn_left_by":
+			return _turn_by(state, delta, -1.0, float(params.get("value", 180.0)))
+		"turn_right_by":
+			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
 		"face":
-			var t = _nearest(enemies)
-			if t != null:
-				_turn_toward(global_position.angle_to_point(t.global_position), delta)
+			_rotate_toward(0.0, delta)
+			return _step(state, delta)
 		"flee":
-			var f = _nearest(enemies)
-			if f != null:
-				_turn_toward(global_position.angle_to_point(f.global_position) + PI, delta)
+			_rotate_toward(PI, delta)
+			return _step(state, delta)
+		"throttle":
+			_throttle_mult = float(params.get("value", 1.0))
+			return BlockExecutor.DONE
 		"fire":
 			_fire()
-		"turn_left_by":
-			_pending_turn = deg_to_rad(float(params.get("value", 180.0)))
-			_pending_dir = -1.0
-		"turn_right_by":
-			_pending_turn = deg_to_rad(float(params.get("value", 180.0)))
-			_pending_dir = 1.0
+			return BlockExecutor.DONE
+	return BlockExecutor.DONE
 
-func _turn_toward(target_angle: float, delta: float):
-	rotation = lerp_angle(rotation, target_angle, clampf(TURN_SPEED * delta, 0.0, 1.0))
-	turn_input = 0.0
+func _step(state: Dictionary, delta: float) -> bool:
+	if not state.has("t"):
+		state.t = STEP_TIME
+	state.t -= delta
+	return state.t <= 0.0
 
-func _do_wander(delta: float):
-	_wander_timer -= delta
-	if _wander_timer <= 0.0:
-		_wander_turn = randf_range(-1.0, 1.0)
-		_wander_timer = randf_range(0.4, 1.0)
-	turn_input = _wander_turn
+func _turn_by(state: Dictionary, delta: float, dir: float, deg: float) -> bool:
+	if not state.has("rem"):
+		state.rem = deg_to_rad(deg)
+	var step: float = TURN_SPEED * delta
+	if step >= state.rem:
+		rotation += dir * state.rem
+		return BlockExecutor.DONE
+	rotation += dir * step
+	state.rem -= step
+	return BlockExecutor.RUNNING
 
-func _do_random_walk(delta: float):
-	_walk_timer -= delta
-	if _walk_timer <= 0.0:
-		_walk_dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
-		_walk_timer = 0.5
-	rotation = _walk_dir
-	forward_input = 1.0
+func _rotate_toward(offset: float, delta: float):
+	var t = _nearest(_enemies_cache)
+	if t == null:
+		return
+	var a: float = global_position.angle_to_point(t.global_position) + offset
+	rotation = lerp_angle(rotation, a, clampf(TURN_SPEED * delta, 0.0, 1.0))
 
 func _object_in_view(center: Vector2, radius: float) -> bool:
 	var to: Vector2 = center - global_position
@@ -359,22 +355,6 @@ func _on_vision_exited(area: Area2D):
 	var ship = area.get_parent()
 	if _visible.has(ship):
 		_visible.erase(ship)
-
-func _compile(blocks: Array) -> Array:
-	var rules: Array = []
-	var current = null
-	for b in blocks:
-		var t: String = b.get("type", "")
-		var p: Dictionary = b.get("params", {})
-		if t.begins_with("when_"):
-			current = {"condition": t.substr(5), "params": p.duplicate(), "actions": []}
-			rules.append(current)
-		elif t.begins_with("do_"):
-			if current == null:
-				current = {"condition": "always", "params": {}, "actions": []}
-				rules.append(current)
-			current.actions.append({"id": t.substr(3), "params": p.duplicate()})
-	return rules
 
 func _generate_cone():
 	var polygon := PackedVector2Array()

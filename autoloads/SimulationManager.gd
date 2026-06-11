@@ -52,8 +52,6 @@ var behaviors: Dictionary = {}
 
 var type_configs: Dictionary = {}
 
-var compiled_rules: Dictionary = {}
-
 var placements: Array = []
 var obstacles: Array = []
 
@@ -82,6 +80,7 @@ const BLOCK_DEFS := {
 	"set_view":      {"category": "config",    "label": "Set vision range to", "input": {"min": 0.5,  "max": 12.5, "default": 3.75, "step": 0.1,  "suffix": " m"}},
 	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 20.0, "max": 360.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
 
+	"when_start":           {"category": "condition", "label": "On start",             "input": null},
 	"when_always":          {"category": "condition", "label": "Always",               "input": null},
 	"when_sees":            {"category": "condition", "label": "When I see anyone",    "input": null},
 	"when_alone":           {"category": "condition", "label": "When I see nobody",    "input": null},
@@ -93,6 +92,11 @@ const BLOCK_DEFS := {
 	"when_sees_ally":       {"category": "condition", "label": "When I see an ally",   "input": null},
 	"when_sees_object":     {"category": "condition", "label": "When I see an object",    "input": null},
 	"when_sees_rim":        {"category": "condition", "label": "When I see the outer rim", "input": null},
+
+	"if_sees":           {"category": "logic", "label": "If I see anyone",  "input": null},
+	"if_sees_species":   {"category": "logic", "label": "If I see a",       "input": {"type": "species", "default": "hunter"}},
+	"if_within":         {"category": "logic", "label": "If target within", "input": {"min": 0.5, "max": 12.5, "default": 3.0, "step": 0.1, "suffix": " m"}},
+	"if_beyond":         {"category": "logic", "label": "If target beyond", "input": {"min": 0.5, "max": 12.5, "default": 3.0, "step": 0.1, "suffix": " m"}},
 
 	"do_forward":    {"category": "action", "label": "Move forward",    "input": null},
 	"do_backward":   {"category": "action", "label": "Move backward",   "input": null},
@@ -111,15 +115,99 @@ const BLOCK_DEFS := {
 
 const PALETTE_ORDER := {
 	"config":    ["set_speed", "set_turn", "set_view", "set_fov"],
-	"condition": ["when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
+	"condition": ["when_start", "when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
+	"logic":     ["if_sees", "if_sees_species", "if_within", "if_beyond"],
 	"action":    ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle"],
 }
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_install_defaults()
+	_normalize_all_behaviors()
 	for t in robot_types:
 		compile(t.id)
+
+static func normalize_blocks(blocks: Array) -> Array:
+	if blocks.is_empty():
+		return []
+	if blocks[0] is Dictionary and blocks[0].has("children"):
+		return _rebuild_nested(blocks)
+	var result: Array = []
+	var current = null
+	for b in blocks:
+		var t: String = b.get("type", "")
+		var node := {"type": t, "params": (b.get("params", {}) as Dictionary).duplicate(true), "children": []}
+		if t.begins_with("when_"):
+			current = node
+			result.append(node)
+		elif t.begins_with("do_") and current != null:
+			current.children.append(node)
+		else:
+			current = null
+			result.append(node)
+	return result
+
+static func _rebuild_nested(blocks: Array) -> Array:
+	var result: Array = []
+	for b in blocks:
+		result.append({
+			"type": b.get("type", ""),
+			"params": (b.get("params", {}) as Dictionary).duplicate(true),
+			"children": _rebuild_nested(b.get("children", [])),
+		})
+	return result
+
+static func normalize_to_scripts(data) -> Array:
+	if data is Dictionary:
+		if data.has("scripts"):
+			return _rebuild_scripts(data["scripts"])
+		if data.has("blocks"):
+			return _split_into_stacks(normalize_blocks(data["blocks"]))
+		return []
+	if data is Array:
+		if data.is_empty():
+			return []
+		if data[0] is Dictionary and data[0].has("blocks"):
+			return _rebuild_scripts(data)
+		return _split_into_stacks(normalize_blocks(data))
+	return []
+
+static func _rebuild_scripts(scripts: Array) -> Array:
+	var result: Array = []
+	var y_fallback := 40.0
+	for s in scripts:
+		result.append({
+			"x": float(s.get("x", 40.0)),
+			"y": float(s.get("y", y_fallback)),
+			"blocks": _rebuild_nested(s.get("blocks", [])),
+		})
+		y_fallback += 150.0
+	return result
+
+static func _split_into_stacks(nested: Array) -> Array:
+	var configs: Array = []
+	var heads: Array = []
+	for node in nested:
+		var nt: String = node.get("type", "")
+		if nt.begins_with("set_"):
+			configs.append(node)
+		else:
+			heads.append(node)
+	var ordered: Array = []
+	if not configs.is_empty():
+		ordered.append({"type": "when_start", "params": {}, "children": configs})
+	ordered.append_array(heads)
+
+	var result: Array = []
+	for i in ordered.size():
+		var col: int = i % 2
+		var row: int = i / 2
+		result.append({"x": 40.0 + col * 400.0, "y": 30.0 + row * 280.0, "blocks": [ordered[i]]})
+	return result
+
+func _normalize_all_behaviors():
+	for id in behaviors.keys():
+		behaviors[id] = {"scripts": normalize_to_scripts(behaviors[id])}
 
 func _install_defaults():
 	behaviors["hunter"] = {"blocks": [
@@ -172,28 +260,27 @@ func get_type_config(type_id: String) -> Dictionary:
 		"fov_degrees": settings.fov_degrees,
 	})
 
-func get_compiled_rules(type_id: String) -> Array:
-	return compiled_rules.get(type_id, [])
+func get_scripts(type_id: String) -> Array:
+	return behaviors.get(type_id, {}).get("scripts", [])
 
-func get_blocks(type_id: String) -> Array:
-	return behaviors.get(type_id, {}).get("blocks", [])
-
-func set_blocks(type_id: String, blocks: Array):
-	behaviors[type_id] = {"blocks": blocks.duplicate(true)}
+func set_scripts(type_id: String, scripts: Array):
+	behaviors[type_id] = {"scripts": normalize_to_scripts(scripts)}
 	compile(type_id)
 	behavior_changed.emit(type_id)
 	type_config_changed.emit(type_id)
 
 func compile(type_id: String):
-	var blocks: Array = behaviors.get(type_id, {}).get("blocks", [])
 	var cfg := {
 		"speed":          settings.speed * PX_PER_METER,
 		"turn_speed":     settings.turn_speed,
 		"view_distance":  settings.view_distance * PX_PER_METER,
 		"fov_degrees":    settings.fov_degrees,
 	}
-	var rules: Array = []
-	var current_rule = null
+	for s in behaviors.get(type_id, {}).get("scripts", []):
+		_collect_config(s.get("blocks", []), cfg)
+	type_configs[type_id] = cfg
+
+func _collect_config(blocks: Array, cfg: Dictionary):
 	for b in blocks:
 		var t: String = b.get("type", "")
 		var p: Dictionary = b.get("params", {})
@@ -202,17 +289,9 @@ func compile(type_id: String):
 			"set_turn":   cfg.turn_speed    = deg_to_rad(float(p.get("value", 120.0)))
 			"set_view":   cfg.view_distance = float(p.get("value", settings.view_distance)) * PX_PER_METER
 			"set_fov":    cfg.fov_degrees   = float(p.get("value", settings.fov_degrees))
-			"when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species", "when_sees_enemy", "when_sees_ally", "when_sees_object", "when_sees_rim":
-				current_rule = {"condition": t.substr(5), "condition_params": p.duplicate(), "actions": []}
-				rules.append(current_rule)
-			_:
-				if t.begins_with("do_"):
-					if current_rule == null:
-						current_rule = {"condition": "always", "condition_params": {}, "actions": []}
-						rules.append(current_rule)
-					current_rule.actions.append({"id": t.substr(3), "params": p.duplicate()})
-	type_configs[type_id] = cfg
-	compiled_rules[type_id] = rules
+		var children: Array = b.get("children", [])
+		if not children.is_empty():
+			_collect_config(children, cfg)
 
 func set_selected_type(type_id: String):
 	selected_type_id = type_id
@@ -265,13 +344,13 @@ func add_species(species_name: String, color: Color) -> String:
 	var id := "species_%d" % _next_species_id
 	_next_species_id += 1
 	robot_types.append({"id": id, "name": species_name, "color": color})
-	behaviors[id] = {"blocks": [
+	behaviors[id] = {"scripts": normalize_to_scripts([
 		{"type": "set_speed", "params": {"value": 3.75}},
 		{"type": "set_view",  "params": {"value": 3.75}},
 		{"type": "when_always", "params": {}},
 		{"type": "do_wander",   "params": {}},
 		{"type": "do_forward",  "params": {}},
-	]}
+	])}
 	compile(id)
 	species_list_changed.emit()
 	return id
@@ -282,7 +361,6 @@ func remove_species(type_id: String):
 	robot_types = robot_types.filter(func(t): return t.id != type_id)
 	behaviors.erase(type_id)
 	type_configs.erase(type_id)
-	compiled_rules.erase(type_id)
 	placements = placements.filter(func(p): return p.type_id != type_id)
 	if selected_type_id == type_id:
 		selected_type_id = robot_types[0].id
@@ -308,7 +386,6 @@ func get_setup_data() -> Dictionary:
 		"robot_types": robot_types,
 		"behaviors": behaviors,
 		"type_configs": type_configs,
-		"compiled_rules": compiled_rules,
 		"placements": placements,
 		"obstacles": obstacles,
 		"settings": settings,
@@ -329,6 +406,7 @@ func load_setup(path: String) -> bool:
 		placements = data.get("placements", placements)
 		obstacles = data.get("obstacles", [])
 		settings = data.get("settings", settings)
+		_normalize_all_behaviors()
 		_resync_species_counter()
 		_normalize_placement_ids()
 		for t in robot_types:
@@ -372,6 +450,7 @@ func load_run(path: String) -> bool:
 		placements = setup.get("placements", placements)
 		obstacles = setup.get("obstacles", [])
 		settings = setup.get("settings", settings)
+		_normalize_all_behaviors()
 		_resync_species_counter()
 		_normalize_placement_ids()
 		for t in robot_types:

@@ -1,71 +1,34 @@
 extends Node
 
+const BlockExecutor := preload("res://entities/BlockExecutor.gd")
+const STEP_TIME := 0.4
+
 @onready var robot: CharacterBody2D = get_parent()
 @onready var sensor: Area2D = robot.get_node("VisionCone")
 
-var _pending_turn_remaining: float = 0.0
-var _pending_turn_dir: float = 0.0
+var _executor
+var _throttle_mult: float = 1.0
 
-var _turn_cooldown: float = 0.0
-const TURN_COOLDOWN_TIME := 0.5
+func _ready():
+	_executor = BlockExecutor.new(self)
+	_rebuild_program()
+	SimulationManager.behavior_changed.connect(_on_behavior_changed)
 
-var _prev_condition_states: Dictionary = {}
+func _on_behavior_changed(type_id: String):
+	if type_id == robot.type_id:
+		_rebuild_program()
 
-var _walk_timer: float = 0.0
-var _walk_dir: float = 0.0
+func _rebuild_program():
+	_executor.set_program(SimulationManager.get_scripts(robot.type_id))
 
 func process_behavior(delta: float):
-	if _turn_cooldown > 0.0:
-		_turn_cooldown -= delta
+	_executor.process(delta)
 
-	if _pending_turn_remaining > 0.0:
-		var cfg := SimulationManager.get_type_config(robot.type_id)
-		var turn_speed: float = cfg.turn_speed
-		var step: float = turn_speed * delta
-		if step >= _pending_turn_remaining:
-			robot.rotation += _pending_turn_dir * _pending_turn_remaining
-			_pending_turn_remaining = 0.0
-			_turn_cooldown = TURN_COOLDOWN_TIME
-		else:
-			robot.rotation += _pending_turn_dir * step
-			_pending_turn_remaining -= step
-		robot.forward_input = 0.0
-		robot.turn_input = 0.0
-		return
-
+func reset_inputs():
 	robot.forward_input = 0.0
 	robot.turn_input = 0.0
 
-	var current_states: Dictionary = {}
-	var rules: Array = SimulationManager.get_compiled_rules(robot.type_id)
-
-	for i in rules.size():
-		var rule = rules[i]
-		var cond: String = rule.get("condition", "always")
-		var cond_params: Dictionary = rule.get("condition_params", {})
-		var is_true: bool = _eval_condition(cond, cond_params)
-		var rule_key: String = "%d_%s" % [i, cond]
-		current_states[rule_key] = is_true
-
-		if is_true:
-			var was_true: bool = _prev_condition_states.get(rule_key, false)
-			var is_rising_edge: bool = not was_true
-			for act in rule.get("actions", []):
-				var act_id: String = act.get("id", "stop")
-				if act_id in ["turn_left_by", "turn_right_by"]:
-					if is_rising_edge and _turn_cooldown <= 0.0:
-						_exec_action(act_id, act.get("params", {}), delta)
-				else:
-					_exec_action(act_id, act.get("params", {}), delta)
-				if _pending_turn_remaining > 0.0:
-					robot.forward_input = 0.0
-					robot.turn_input = 0.0
-					_prev_condition_states = current_states
-					return
-
-	_prev_condition_states = current_states
-
-func _eval_condition(cond: String, params: Dictionary) -> bool:
+func eval_condition(cond: String, params: Dictionary) -> bool:
 	match cond:
 		"always":      return true
 		"sees":        return sensor.visible_targets.size() > 0
@@ -84,52 +47,90 @@ func _eval_condition(cond: String, params: Dictionary) -> bool:
 				if t is CharacterBody2D and "type_id" in t and t.type_id == target_type2:
 					return false
 			return true
+		"within":
+			var d: float = _nearest_dist()
+			return d >= 0.0 and d <= float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
+		"beyond":
+			var d2: float = _nearest_dist()
+			return d2 >= 0.0 and d2 > float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
 	return false
 
-func _exec_action(action: String, params: Dictionary, delta: float):
-	match action:
+func _nearest_dist() -> float:
+	var best: float = -1.0
+	for t in sensor.visible_targets:
+		var d: float = robot.global_position.distance_to(t.global_position)
+		if best < 0.0 or d < best:
+			best = d
+	return best
+
+func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
+	if block_type.begins_with("set_"):
+		return BlockExecutor.DONE
+	match block_type.substr(3):
 		"forward":
-			robot.forward_input = 1.0
+			robot.forward_input = _throttle_mult
+			return _step(state, delta)
 		"backward":
-			robot.forward_input = -1.0
+			robot.forward_input = -_throttle_mult
+			return _step(state, delta)
 		"stop":
 			robot.forward_input = 0.0
 			robot.turn_input = 0.0
+			return BlockExecutor.DONE
 		"wander":
-			robot.turn_input = randf_range(-0.4, 0.4)
+			if not state.has("turn"):
+				state.turn = randf_range(-0.6, 0.6)
+			robot.turn_input = state.turn
+			robot.forward_input = _throttle_mult
+			return _step(state, delta)
 		"random_walk":
-			_walk_timer -= delta
-			if _walk_timer <= 0.0:
-				_walk_dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
-				_walk_timer = 0.5
-			robot.rotation = _walk_dir
-			robot.forward_input = 1.0
+			if not state.has("dir"):
+				state.dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
+			robot.rotation = state.dir
+			robot.forward_input = _throttle_mult
+			return _step(state, delta)
 		"turn_left":
 			robot.rotation -= deg_to_rad(float(params.get("value", 90.0))) * delta
-			robot.turn_input = 0.0
+			return _step(state, delta)
 		"turn_right":
 			robot.rotation += deg_to_rad(float(params.get("value", 90.0))) * delta
-			robot.turn_input = 0.0
-		"face":
-			if sensor.visible_targets.size() > 0:
-				var t = sensor.visible_targets[0]
-				var a := robot.global_position.angle_to_point(t.global_position)
-				robot.rotation = lerp_angle(robot.rotation, a, 5.0 * delta)
-				robot.turn_input = 0.0
-		"flee":
-			if sensor.visible_targets.size() > 0:
-				var t = sensor.visible_targets[0]
-				var a: float = robot.global_position.angle_to_point(t.global_position) + PI
-				robot.rotation = lerp_angle(robot.rotation, a, 5.0 * delta)
-				robot.turn_input = 0.0
-		"throttle":
-			var mult: float = params.get("value", 1.0)
-			robot.forward_input *= mult
+			return _step(state, delta)
 		"turn_left_by":
-			var deg: float = params.get("value", 180.0)
-			_pending_turn_remaining = deg_to_rad(deg)
-			_pending_turn_dir = -1.0
+			return _turn_by(state, delta, -1.0, float(params.get("value", 180.0)))
 		"turn_right_by":
-			var deg2: float = params.get("value", 180.0)
-			_pending_turn_remaining = deg_to_rad(deg2)
-			_pending_turn_dir = 1.0
+			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
+		"face":
+			_rotate_toward(0.0, delta)
+			return _step(state, delta)
+		"flee":
+			_rotate_toward(PI, delta)
+			return _step(state, delta)
+		"throttle":
+			_throttle_mult = float(params.get("value", 1.0))
+			return BlockExecutor.DONE
+	return BlockExecutor.DONE
+
+func _step(state: Dictionary, delta: float) -> bool:
+	if not state.has("t"):
+		state.t = STEP_TIME
+	state.t -= delta
+	return state.t <= 0.0
+
+func _turn_by(state: Dictionary, delta: float, dir: float, deg: float) -> bool:
+	if not state.has("rem"):
+		state.rem = deg_to_rad(deg)
+	var cfg := SimulationManager.get_type_config(robot.type_id)
+	var step: float = cfg.turn_speed * delta
+	if step >= state.rem:
+		robot.rotation += dir * state.rem
+		return BlockExecutor.DONE
+	robot.rotation += dir * step
+	state.rem -= step
+	return BlockExecutor.RUNNING
+
+func _rotate_toward(offset: float, delta: float):
+	if sensor.visible_targets.size() == 0:
+		return
+	var target = sensor.visible_targets[0]
+	var a: float = robot.global_position.angle_to_point(target.global_position) + offset
+	robot.rotation = lerp_angle(robot.rotation, a, 5.0 * delta)
