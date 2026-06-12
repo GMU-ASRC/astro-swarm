@@ -81,12 +81,12 @@ text = "INTERCEPTOR"
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 56.0
-split_offset = 210
+split_offset = 280
 dragger_visibility = 0
 
 [node name="Left" type="PanelContainer" parent="Body"]
 layout_mode = 2
-custom_minimum_size = Vector2(190, 0)
+custom_minimum_size = Vector2(260, 0)
 theme_override_styles/panel = SubResource("StyleBoxFlat_left")
 
 [node name="LeftVBox" type="VBoxContainer" parent="Body/Left"]
@@ -109,12 +109,18 @@ autowrap_mode = 2
 [node name="PaletteScroll" type="ScrollContainer" parent="Body/Left/LeftVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-horizontal_scroll_mode = 0
+horizontal_scroll_mode = 1
 
-[node name="PaletteList" type="VBoxContainer" parent="Body/Left/LeftVBox/PaletteScroll"]
+[node name="PaletteMargin" type="MarginContainer" parent="Body/Left/LeftVBox/PaletteScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 3
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_right = 12
+
+[node name="PaletteList" type="VBoxContainer" parent="Body/Left/LeftVBox/PaletteScroll/PaletteMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
 [node name="Right" type="PanelContainer" parent="Body"]
 layout_mode = 2

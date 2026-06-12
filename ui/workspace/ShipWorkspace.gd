@@ -1,7 +1,7 @@
 extends Control
 
 @onready var back_btn: Button = $TopBar/HBox/BackButton
-@onready var palette_list: VBoxContainer = $Body/Left/LeftVBox/PaletteScroll/PaletteList
+@onready var palette_list: VBoxContainer = $Body/Left/LeftVBox/PaletteScroll/PaletteMargin/PaletteList
 @onready var canvas: Control = $Body/Right/RightVBox/Scroll/Canvas
 
 const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
@@ -32,42 +32,25 @@ func _build_palette_category(category: String, ids: Array):
 	header.add_theme_color_override("font_color", Color(0.435, 0.435, 0.498, 1.0))
 	palette_list.add_child(header)
 	for block_id in ids:
-		var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
-		var btn := Button.new()
-		btn.text = def.get("label", block_id)
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.custom_minimum_size = Vector2(0, 30)
-		_style_palette_button(btn, _cat_color(category))
-		var bid: String = block_id
-		btn.pressed.connect(func(): _add_block(bid))
-		palette_list.add_child(btn)
+		_make_palette_item(block_id)
 	var spacer := Control.new()
 	spacer.custom_minimum_size = Vector2(0, 8)
 	palette_list.add_child(spacer)
 
-func _style_palette_button(btn: Button, cat_color: Color):
-	btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-	btn.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
-	btn.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1))
-	btn.add_theme_font_size_override("font_size", 12)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = cat_color
-	sb.set_corner_radius_all(5)
-	sb.border_width_left = 4
-	sb.border_color = cat_color.darkened(0.25)
-	sb.content_margin_left = 10
-	sb.content_margin_right = 10
-	sb.content_margin_top = 5
-	sb.content_margin_bottom = 5
-	var sb_hover: StyleBoxFlat = sb.duplicate()
-	sb_hover.bg_color = cat_color.lightened(0.12)
-	var sb_pressed: StyleBoxFlat = sb.duplicate()
-	sb_pressed.bg_color = cat_color.darkened(0.12)
-	btn.add_theme_stylebox_override("normal", sb)
-	btn.add_theme_stylebox_override("hover", sb_hover)
-	btn.add_theme_stylebox_override("pressed", sb_pressed)
-	btn.add_theme_stylebox_override("focus", sb)
+func _make_palette_item(block_id: String):
+	var wrap := MarginContainer.new()
+	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
+	wrap.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var preview := SCRATCH_BLOCK.instantiate()
+	wrap.add_child(preview)
+	palette_list.add_child(wrap)
+	preview.setup_preview(block_id)
+	wrap.gui_input.connect(func(event):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_add_block(block_id)
+	)
+	wrap.mouse_entered.connect(func(): wrap.modulate = Color(1.12, 1.12, 1.12))
+	wrap.mouse_exited.connect(func(): wrap.modulate = Color(1, 1, 1))
 
 func _category_label(category: String) -> String:
 	match category:
@@ -75,12 +58,6 @@ func _category_label(category: String) -> String:
 		"logic":     return "CONDITIONS"
 	return category.to_upper()
 
-func _cat_color(category: String) -> Color:
-	match category:
-		"condition": return Color(0.482, 0.302, 0.686, 1.0)
-		"logic":     return Color(0.851, 0.522, 0.200, 1.0)
-		"action": return Color(0.255, 0.463, 0.843, 1.0)
-	return Color(0.5, 0.5, 0.5, 1.0)
 
 func _load_blocks():
 	for child in canvas.get_children():

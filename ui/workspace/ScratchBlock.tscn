@@ -31,33 +31,11 @@ mouse_filter = 2
 theme_override_font_sizes/font_size = 13
 text = "Block"
 
-[node name="SliderBox" type="HBoxContainer" parent="Outer/HBox"]
+[node name="InputsBox" type="HBoxContainer" parent="Outer/HBox"]
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_vertical = 4
 mouse_filter = 2
 theme_override_constants/separation = 6
-visible = false
-
-[node name="Slider" type="HSlider" parent="Outer/HBox/SliderBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-custom_minimum_size = Vector2(100, 0)
-size_flags_vertical = 4
-
-[node name="ValueLabel" type="Label" parent="Outer/HBox/SliderBox"]
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-custom_minimum_size = Vector2(70, 0)
-theme_override_font_sizes/font_size = 12
-horizontal_alignment = 2
-text = "0"
-
-[node name="SpeciesSelect" type="OptionButton" parent="Outer/HBox"]
-layout_mode = 2
-size_flags_vertical = 4
-focus_mode = 0
-visible = false
 
 [node name="Spacer" type="Control" parent="Outer/HBox"]
 layout_mode = 2

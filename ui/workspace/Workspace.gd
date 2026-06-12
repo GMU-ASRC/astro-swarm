@@ -2,7 +2,7 @@ extends Control
 
 @onready var back_btn:       Button = $TopBar/HBox/BackButton
 @onready var tab_box:        HBoxContainer = $TopBar/HBox/Tabs
-@onready var palette_list:   VBoxContainer = $Body/Left/LeftVBox/PaletteScroll/PaletteList
+@onready var palette_list:   VBoxContainer = $Body/Left/LeftVBox/PaletteScroll/PaletteMargin/PaletteList
 @onready var canvas:         Control = $Body/Right/RightVBox/Scroll/Canvas
 @onready var name_edit:      LineEdit = $Body/Right/RightVBox/HeaderBar/Header/NameEdit
 @onready var color_picker:   ColorPickerButton = $Body/Right/RightVBox/HeaderBar/Header/ColorPicker
@@ -23,8 +23,13 @@ func _ready():
 	name_edit.text_submitted.connect(_on_name_submitted)
 	name_edit.focus_exited.connect(_commit_species_name)
 	SimulationManager.species_list_changed.connect(_on_species_list_changed)
+	SimulationManager.variables_changed.connect(_on_variables_changed)
 	_style_color_picker()
 	_build_tabs()
+	_build_palette()
+	_refresh()
+
+func _on_variables_changed():
 	_build_palette()
 	_refresh()
 
@@ -163,8 +168,71 @@ func _on_species_list_changed():
 func _build_palette():
 	for child in palette_list.get_children():
 		child.queue_free()
-	for category in ["config", "condition", "logic", "action"]:
-		_build_palette_category(category, SimulationManager.PALETTE_ORDER.get(category, []))
+	for category in ["config", "condition", "logic", "variable", "action"]:
+		if category == "variable":
+			_build_variable_section()
+		else:
+			_build_palette_category(category, SimulationManager.PALETTE_ORDER.get(category, []))
+
+func _build_variable_section():
+	var header := Label.new()
+	header.text = "VARIABLES"
+	header.add_theme_font_size_override("font_size", 10)
+	header.add_theme_color_override("font_color", Color(0.435, 0.435, 0.498, 1.0))
+	palette_list.add_child(header)
+	for v in SimulationManager.variables:
+		var row := HBoxContainer.new()
+		var name_label := Label.new()
+		name_label.text = "%s : %s" % [v.get("name", ""), v.get("type", "int")]
+		name_label.add_theme_font_size_override("font_size", 11)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(name_label)
+		var del := Button.new()
+		del.text = "x"
+		del.focus_mode = Control.FOCUS_NONE
+		var vname: String = v.get("name", "")
+		del.pressed.connect(func(): SimulationManager.remove_variable(vname))
+		row.add_child(del)
+		palette_list.add_child(row)
+	var new_btn := Button.new()
+	new_btn.text = "  + New variable"
+	new_btn.focus_mode = Control.FOCUS_NONE
+	new_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	new_btn.custom_minimum_size = Vector2(0, 28)
+	new_btn.pressed.connect(_open_new_variable_dialog)
+	palette_list.add_child(new_btn)
+	for block_id in SimulationManager.PALETTE_ORDER.get("variable", []):
+		_make_palette_item(block_id)
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 8)
+	palette_list.add_child(spacer)
+
+func _open_new_variable_dialog():
+	var dialog := AcceptDialog.new()
+	dialog.title = "New Variable"
+	dialog.theme = preload("res://ui/MainTheme.tres")
+	var box := VBoxContainer.new()
+	box.custom_minimum_size = Vector2(240, 0)
+	box.add_theme_constant_override("separation", 8)
+	var name_edit := LineEdit.new()
+	name_edit.placeholder_text = "Variable name"
+	box.add_child(name_edit)
+	var type_select := OptionButton.new()
+	type_select.add_item("int")
+	type_select.add_item("string")
+	box.add_child(type_select)
+	dialog.add_child(box)
+	dialog.confirmed.connect(func():
+		var type_name: String = "string" if type_select.selected == 1 else "int"
+		SimulationManager.add_variable(name_edit.text, type_name)
+	)
+	dialog.visibility_changed.connect(func():
+		if not dialog.visible:
+			dialog.queue_free()
+	)
+	add_child(dialog)
+	dialog.popup_centered()
+	name_edit.grab_focus()
 
 func _build_palette_category(category: String, ids: Array):
 	var header := Label.new()
@@ -173,56 +241,31 @@ func _build_palette_category(category: String, ids: Array):
 	header.add_theme_color_override("font_color", Color(0.435, 0.435, 0.498, 1.0))
 	palette_list.add_child(header)
 	for block_id in ids:
-		var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
-		var btn := Button.new()
-		btn.text = def.get("label", block_id)
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.custom_minimum_size = Vector2(0, 30)
-		_style_palette_button(btn, _cat_color(category))
-		var bid: String = block_id
-		btn.pressed.connect(func(): _add_block(bid))
-		palette_list.add_child(btn)
+		_make_palette_item(block_id)
 	var spacer := Control.new()
 	spacer.custom_minimum_size = Vector2(0, 8)
 	palette_list.add_child(spacer)
 
-func _style_palette_button(btn: Button, cat_color: Color):
-	btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-	btn.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
-	btn.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1))
-	btn.add_theme_font_size_override("font_size", 12)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = cat_color
-	sb.set_corner_radius_all(5)
-	sb.border_width_left = 4
-	sb.border_color = cat_color.darkened(0.25)
-	sb.content_margin_left = 10
-	sb.content_margin_right = 10
-	sb.content_margin_top = 5
-	sb.content_margin_bottom = 5
-	var sb_hover: StyleBoxFlat = sb.duplicate()
-	sb_hover.bg_color = cat_color.lightened(0.12)
-	var sb_pressed: StyleBoxFlat = sb.duplicate()
-	sb_pressed.bg_color = cat_color.darkened(0.12)
-	btn.add_theme_stylebox_override("normal", sb)
-	btn.add_theme_stylebox_override("hover", sb_hover)
-	btn.add_theme_stylebox_override("pressed", sb_pressed)
-	btn.add_theme_stylebox_override("focus", sb)
+func _make_palette_item(block_id: String):
+	var wrap := MarginContainer.new()
+	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
+	wrap.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var preview := SCRATCH_BLOCK.instantiate()
+	wrap.add_child(preview)
+	palette_list.add_child(wrap)
+	preview.setup_preview(block_id)
+	wrap.gui_input.connect(func(event):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_add_block(block_id)
+	)
+	wrap.mouse_entered.connect(func(): wrap.modulate = Color(1.12, 1.12, 1.12))
+	wrap.mouse_exited.connect(func(): wrap.modulate = Color(1, 1, 1))
 
 func _category_label(category: String) -> String:
 	match category:
 		"condition": return "EVENTS"
 		"logic":     return "CONDITIONS"
 	return category.to_upper()
-
-func _cat_color(category: String) -> Color:
-	match category:
-		"config":    return Color(0.275, 0.663, 0.322, 1.0)
-		"condition": return Color(0.482, 0.302, 0.686, 1.0)
-		"logic":     return Color(0.851, 0.522, 0.200, 1.0)
-		"action":    return Color(0.255, 0.463, 0.843, 1.0)
-	return Color(0.5, 0.5, 0.5, 1.0)
 
 func _refresh():
 	var type_def := SimulationManager.get_type(_current_type_id)
