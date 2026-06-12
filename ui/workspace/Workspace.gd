@@ -248,6 +248,7 @@ func _build_palette_category(category: String, ids: Array):
 
 func _make_palette_item(block_id: String):
 	var wrap := MarginContainer.new()
+	wrap.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
 	wrap.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	var preview := SCRATCH_BLOCK.instantiate()
