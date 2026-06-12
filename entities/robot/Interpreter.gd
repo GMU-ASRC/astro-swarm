@@ -53,6 +53,39 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 		"beyond":
 			var d2: float = _nearest_dist()
 			return d2 >= 0.0 and d2 > float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
+		"see":
+			var target: String = params.get("target", "anyone")
+			match target:
+				"anyone": return sensor.visible_targets.size() > 0
+				"object": return sensor.visible_objects.size() > 0
+				"wall":   return sensor.near_wall
+				_:
+					for t in sensor.visible_targets:
+						if t is CharacterBody2D and "type_id" in t and t.type_id == target:
+							return true
+					return false
+		"compare":
+			return _compare_var(params)
+	return false
+
+func _compare_var(params: Dictionary) -> bool:
+	var left = SimulationManager.get_var(params.get("var", ""))
+	var op: String = params.get("op", "=")
+	var right = params.get("value", 0.0)
+	if left is String:
+		var rs := str(right)
+		if op == "=":  return left == rs
+		if op == "!=": return left != rs
+		return false
+	var a := float(left)
+	var b := float(right)
+	match op:
+		"=":  return a == b
+		"!=": return a != b
+		"<":  return a < b
+		">":  return a > b
+		"<=": return a <= b
+		">=": return a >= b
 	return false
 
 func _nearest_dist() -> float:
@@ -64,6 +97,19 @@ func _nearest_dist() -> float:
 	return best
 
 func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
+	match block_type:
+		"set_var":
+			SimulationManager.set_var(params.get("var", ""), params.get("value", 0))
+			return BlockExecutor.DONE
+		"set_var_random":
+			var lo: int = int(params.get("min", 0))
+			var hi: int = int(params.get("max", 0))
+			if lo > hi:
+				var tmp := lo
+				lo = hi
+				hi = tmp
+			SimulationManager.set_var(params.get("var", ""), randi_range(lo, hi))
+			return BlockExecutor.DONE
 	if block_type.begins_with("set_"):
 		return BlockExecutor.DONE
 	match block_type.substr(3):
@@ -107,6 +153,13 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			return _step(state, delta)
 		"throttle":
 			_throttle_mult = float(params.get("value", 1.0))
+			return BlockExecutor.DONE
+		"stop_sim":
+			SimulationManager.has_started = false
+			get_tree().paused = true
+			return BlockExecutor.DONE
+		"pause_sim":
+			get_tree().paused = true
 			return BlockExecutor.DONE
 	return BlockExecutor.DONE
 

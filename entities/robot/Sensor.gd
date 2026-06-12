@@ -5,6 +5,7 @@ var fov_degrees: float = 90.0
 var color: Color = Color(0.141, 0.255, 0.722, 1.0)
 
 var visible_targets: Array = []
+var visible_objects: Array = []
 var near_wall: bool = false
 var _cone_polygon: PackedVector2Array
 
@@ -49,12 +50,18 @@ func _on_body_entered(body):
 		if body.is_in_group("robots"):
 			if not visible_targets.has(body):
 				visible_targets.append(body)
+		elif body.is_in_group("obstacles"):
+			if not visible_objects.has(body):
+				visible_objects.append(body)
+			near_wall = true
 		elif body is StaticBody2D:
 			near_wall = true
 
 func _on_body_exited(body):
 	if visible_targets.has(body):
 		visible_targets.erase(body)
+	if visible_objects.has(body):
+		visible_objects.erase(body)
 	if body is StaticBody2D:
 		var found_wall := false
 		for b in get_overlapping_bodies():

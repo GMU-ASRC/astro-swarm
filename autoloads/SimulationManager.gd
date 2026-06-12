@@ -7,6 +7,7 @@ signal type_config_changed(type_id: String)
 signal species_list_changed
 signal tool_changed(tool_id: String)
 signal obstacles_changed
+signal variables_changed
 
 var simulation_time: float = 0.0
 var has_started: bool = false
@@ -20,6 +21,8 @@ var is_replaying: bool = false
 var current_replay: Array = []
 var replay_time: float = 0.0
 var is_exporting: bool = false
+var pending_upload: bool = false
+var pending_upload_run: String = ""
 
 const PX_PER_METER := 40.0
 
@@ -47,6 +50,7 @@ var robot_types: Array = [
 
 var _next_species_id: int = 1
 var _next_robot_id: int = 0
+var _next_obstacle_id: int = 0
 
 var behaviors: Dictionary = {}
 
@@ -54,6 +58,9 @@ var type_configs: Dictionary = {}
 
 var placements: Array = []
 var obstacles: Array = []
+
+var variables: Array = []
+var var_values: Dictionary = {}
 
 const TOOL_PLACE := "place_robot"
 const TOOL_MEASURE := "measure"
@@ -79,6 +86,7 @@ const BLOCK_DEFS := {
 	"set_turn":      {"category": "config",    "label": "Set turn rate to",    "input": {"min": 15.0, "max": 360.0, "default": 120.0, "step": 5.0, "suffix": "°/s"}},
 	"set_view":      {"category": "config",    "label": "Set vision range to", "input": {"min": 0.5,  "max": 12.5, "default": 3.75, "step": 0.1,  "suffix": " m"}},
 	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 20.0, "max": 360.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
+	"set_size":      {"category": "config",    "label": "Set size to",         "input": {"min": 2.0,  "max": 16.0, "default": 6.0,  "step": 0.5,  "suffix": " px"}},
 
 	"when_start":           {"category": "condition", "label": "On start",             "input": null},
 	"when_always":          {"category": "condition", "label": "Always",               "input": null},
@@ -97,6 +105,28 @@ const BLOCK_DEFS := {
 	"if_sees_species":   {"category": "logic", "label": "If I see a",       "input": {"type": "species", "default": "hunter"}},
 	"if_within":         {"category": "logic", "label": "If target within", "input": {"min": 0.5, "max": 12.5, "default": 3.0, "step": 0.1, "suffix": " m"}},
 	"if_beyond":         {"category": "logic", "label": "If target beyond", "input": {"min": 0.5, "max": 12.5, "default": 3.0, "step": 0.1, "suffix": " m"}},
+	"if_see":            {"category": "logic", "label": "If I see", "inputs": [
+		{"type": "dropdown", "key": "target", "provider": "targets"},
+	]},
+	"if_compare":        {"category": "logic", "label": "If", "inputs": [
+		{"type": "dropdown", "key": "var", "provider": "variables"},
+		{"type": "dropdown", "key": "op", "provider": "operators"},
+		{"type": "number", "key": "value", "min": -99999.0, "max": 99999.0, "step": 1.0, "default": 0.0},
+	]},
+	"else":              {"category": "logic", "label": "Else", "input": null},
+
+	"set_var":           {"category": "variable", "label": "Set", "inputs": [
+		{"type": "dropdown", "key": "var", "provider": "variables"},
+		{"type": "label", "text": "to"},
+		{"type": "number", "key": "value", "min": -99999.0, "max": 99999.0, "step": 1.0, "default": 0.0},
+	]},
+	"set_var_random":    {"category": "variable", "label": "Set", "inputs": [
+		{"type": "dropdown", "key": "var", "provider": "variables"},
+		{"type": "label", "text": "to random"},
+		{"type": "number", "key": "min", "min": -99999.0, "max": 99999.0, "step": 1.0, "default": 1.0},
+		{"type": "label", "text": "to"},
+		{"type": "number", "key": "max", "min": -99999.0, "max": 99999.0, "step": 1.0, "default": 5.0},
+	]},
 
 	"do_forward":    {"category": "action", "label": "Move forward",    "input": null},
 	"do_backward":   {"category": "action", "label": "Move backward",   "input": null},
@@ -111,13 +141,16 @@ const BLOCK_DEFS := {
 	"do_flee":       {"category": "action", "label": "Flee the target",  "input": null},
 	"do_fire":       {"category": "action", "label": "Fire",             "input": null},
 	"do_throttle":   {"category": "action", "label": "Throttle to",     "input": {"min": 0.0, "max": 1.5, "default": 1.0, "step": 0.05, "suffix": "×"}},
+	"do_stop_sim":   {"category": "action", "label": "Stop simulation",  "input": null},
+	"do_pause_sim":  {"category": "action", "label": "Pause simulation", "input": null},
 }
 
 const PALETTE_ORDER := {
-	"config":    ["set_speed", "set_turn", "set_view", "set_fov"],
+	"config":    ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
 	"condition": ["when_start", "when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
-	"logic":     ["if_sees", "if_sees_species", "if_within", "if_beyond"],
-	"action":    ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle"],
+	"logic":     ["if_see", "if_within", "if_beyond", "if_compare", "else"],
+	"variable":  ["set_var", "set_var_random"],
+	"action":    ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_stop_sim", "do_pause_sim"],
 }
 
 func _ready():
@@ -201,6 +234,7 @@ static func _split_into_stacks(nested: Array) -> Array:
 	var result: Array = []
 	for i in ordered.size():
 		var col: int = i % 2
+		@warning_ignore("integer_division")
 		var row: int = i / 2
 		result.append({"x": 40.0 + col * 400.0, "y": 30.0 + row * 280.0, "blocks": [ordered[i]]})
 	return result
@@ -258,6 +292,7 @@ func get_type_config(type_id: String) -> Dictionary:
 		"turn_speed": settings.turn_speed,
 		"view_distance": settings.view_distance * PX_PER_METER,
 		"fov_degrees": settings.fov_degrees,
+		"dot_radius": 6.0,
 	})
 
 func get_scripts(type_id: String) -> Array:
@@ -275,6 +310,7 @@ func compile(type_id: String):
 		"turn_speed":     settings.turn_speed,
 		"view_distance":  settings.view_distance * PX_PER_METER,
 		"fov_degrees":    settings.fov_degrees,
+		"dot_radius":     6.0,
 	}
 	for s in behaviors.get(type_id, {}).get("scripts", []):
 		_collect_config(s.get("blocks", []), cfg)
@@ -289,6 +325,7 @@ func _collect_config(blocks: Array, cfg: Dictionary):
 			"set_turn":   cfg.turn_speed    = deg_to_rad(float(p.get("value", 120.0)))
 			"set_view":   cfg.view_distance = float(p.get("value", settings.view_distance)) * PX_PER_METER
 			"set_fov":    cfg.fov_degrees   = float(p.get("value", settings.fov_degrees))
+			"set_size":   cfg.dot_radius    = float(p.get("value", 6.0))
 		var children: Array = b.get("children", [])
 		if not children.is_empty():
 			_collect_config(children, cfg)
@@ -304,12 +341,83 @@ func set_active_tool(tool_id: String):
 	tool_changed.emit(tool_id)
 
 func add_obstacle(data: Dictionary):
+	data["id"] = _next_obstacle_id
+	_next_obstacle_id += 1
 	obstacles.append(data)
+	obstacles_changed.emit()
+
+func remove_obstacle(id: int):
+	obstacles = obstacles.filter(func(ob): return ob.get("id", -1) != id)
 	obstacles_changed.emit()
 
 func clear_obstacles():
 	obstacles.clear()
 	obstacles_changed.emit()
+
+func add_variable(var_name: String, var_type: String) -> bool:
+	var clean := var_name.strip_edges()
+	if clean == "":
+		return false
+	for v in variables:
+		if v.get("name", "") == clean:
+			return false
+	variables.append({"name": clean, "type": var_type})
+	variables_changed.emit()
+	return true
+
+func remove_variable(var_name: String):
+	variables = variables.filter(func(v): return v.get("name", "") != var_name)
+	var_values.erase(var_name)
+	variables_changed.emit()
+
+func variable_names() -> Array:
+	var names: Array = []
+	for v in variables:
+		names.append(v.get("name", ""))
+	return names
+
+func variable_type(var_name: String) -> String:
+	for v in variables:
+		if v.get("name", "") == var_name:
+			return v.get("type", "int")
+	return "int"
+
+func reset_variables():
+	var_values.clear()
+	for v in variables:
+		var_values[v.get("name", "")] = ("" if v.get("type", "int") == "string" else 0)
+
+func dropdown_options(provider: String) -> Array:
+	var options: Array = []
+	match provider:
+		"targets":
+			options.append({"value": "anyone", "text": "anyone"})
+			options.append({"value": "object", "text": "an object"})
+			options.append({"value": "wall", "text": "a wall"})
+			for t in robot_types:
+				options.append({"value": t.id, "text": "a " + t.name})
+		"species":
+			for t in robot_types:
+				options.append({"value": t.id, "text": t.name})
+		"variables":
+			for v in variables:
+				options.append({"value": v.name, "text": v.name})
+		"operators":
+			options.append({"value": "=", "text": "="})
+			options.append({"value": "!=", "text": "≠"})
+			options.append({"value": "<", "text": "<"})
+			options.append({"value": ">", "text": ">"})
+			options.append({"value": "<=", "text": "≤"})
+			options.append({"value": ">=", "text": "≥"})
+	return options
+
+func get_var(var_name: String):
+	if not var_values.has(var_name):
+		return ("" if variable_type(var_name) == "string" else 0)
+	return var_values[var_name]
+
+func set_var(var_name: String, value):
+	var_values[var_name] = value
 
 func update_setting(key: String, value):
 	settings[key] = value
@@ -389,6 +497,7 @@ func get_setup_data() -> Dictionary:
 		"placements": placements,
 		"obstacles": obstacles,
 		"settings": settings,
+		"variables": variables,
 	}
 
 func save_setup(path: String):
@@ -406,9 +515,11 @@ func load_setup(path: String) -> bool:
 		placements = data.get("placements", placements)
 		obstacles = data.get("obstacles", [])
 		settings = data.get("settings", settings)
+		variables = data.get("variables", [])
 		_normalize_all_behaviors()
 		_resync_species_counter()
 		_normalize_placement_ids()
+		_normalize_obstacle_ids()
 		for t in robot_types:
 			compile(t.id)
 
@@ -439,6 +550,17 @@ func _normalize_placement_ids():
 			p["id"] = max_id
 	_next_robot_id = max_id + 1
 
+func _normalize_obstacle_ids():
+	var max_id := -1
+	for ob in obstacles:
+		if ob.has("id"):
+			max_id = maxi(max_id, int(ob["id"]))
+	for ob in obstacles:
+		if not ob.has("id"):
+			max_id += 1
+			ob["id"] = max_id
+	_next_obstacle_id = max_id + 1
+
 func load_run(path: String) -> bool:
 	var f = FileAccess.open(path, FileAccess.READ)
 	if f == null: return false
@@ -450,9 +572,11 @@ func load_run(path: String) -> bool:
 		placements = setup.get("placements", placements)
 		obstacles = setup.get("obstacles", [])
 		settings = setup.get("settings", settings)
+		variables = setup.get("variables", [])
 		_normalize_all_behaviors()
 		_resync_species_counter()
 		_normalize_placement_ids()
+		_normalize_obstacle_ids()
 		for t in robot_types:
 			compile(t.id)
 

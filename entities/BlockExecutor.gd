@@ -49,7 +49,7 @@ func _run_script(sc: Dictionary, delta: float):
 		return
 	if not sc.active:
 		sc.active = true
-		sc.frames = [{"blocks": sc.body, "idx": 0}]
+		sc.frames = [{"blocks": sc.body, "idx": 0, "matched": false}]
 		sc.state = {}
 
 	var guard := 0
@@ -59,7 +59,7 @@ func _run_script(sc: Dictionary, delta: float):
 			if sc.once:
 				sc.done = true
 				return
-			sc.frames = [{"blocks": sc.body, "idx": 0}]
+			sc.frames = [{"blocks": sc.body, "idx": 0, "matched": false}]
 			sc.state = {}
 			continue
 		var frame: Dictionary = sc.frames.back()
@@ -71,13 +71,25 @@ func _run_script(sc: Dictionary, delta: float):
 			continue
 		var b: Dictionary = frame.blocks[frame.idx]
 		var t: String = b.get("type", "")
-		if t.begins_with("when_") or t.begins_with("if_"):
-			if host.eval_condition(t.substr(t.find("_") + 1), b.get("params", {})):
-				sc.frames.append({"blocks": b.get("children", []), "idx": 0})
+		if t == "else":
+			var run_else: bool = not frame.matched
+			frame.matched = false
+			if run_else:
+				sc.frames.append({"blocks": b.get("children", []), "idx": 0, "matched": false})
 				sc.state = {}
 			else:
 				frame.idx += 1
 			continue
+		if t.begins_with("when_") or t.begins_with("if_"):
+			var result: bool = host.eval_condition(t.substr(t.find("_") + 1), b.get("params", {}))
+			frame.matched = result
+			if result:
+				sc.frames.append({"blocks": b.get("children", []), "idx": 0, "matched": false})
+				sc.state = {}
+			else:
+				frame.idx += 1
+			continue
+		frame.matched = false
 		if host.exec_action(t, b.get("params", {}), delta, sc.state):
 			frame.idx += 1
 			sc.state = {}

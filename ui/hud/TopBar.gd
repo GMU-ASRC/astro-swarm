@@ -215,6 +215,7 @@ func _on_slider_changed(val: float):
 func _on_play_pressed():
 	if not SimulationManager.has_started:
 		SimulationManager.has_started = true
+		SimulationManager.reset_variables()
 		if not SimulationManager.is_replaying:
 			SimulationManager.start_recording()
 	get_tree().paused = not get_tree().paused

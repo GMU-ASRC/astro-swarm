@@ -176,6 +176,8 @@ func toggle_pin_coords():
 
 func _apply_type_config():
 	var cfg := SimulationManager.get_type_config(type_id)
+	dot_radius = cfg.get("dot_radius", 6.0)
+	queue_redraw()
 	if has_node("VisionCone"):
 		var sensor = $VisionCone
 		sensor.view_distance = cfg.view_distance
