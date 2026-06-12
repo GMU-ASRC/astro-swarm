@@ -52,7 +52,10 @@ func _ready():
 	top_bar.request_clear.connect(_clear_arena)
 	top_bar.request_stop.connect(_stop_arena)
 	$RadialMenu.action_selected.connect(_on_radial_action)
-	$RadialMenu.menu_closed.connect(func(): _selected_robot = null)
+	$RadialMenu.menu_closed.connect(func():
+		_selected_robot = null
+		_selected_obstacle = -1
+	)
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	SimulationManager.settings_changed.connect(_on_settings_changed)
 	SimulationManager.obstacles_changed.connect(_on_obstacles_changed)
@@ -75,8 +78,8 @@ func _on_settings_changed():
 
 func _reconcile_controls():
 	var controller_mode: bool = SimulationManager.settings.get("controller_mode", false)
-	var multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
-	var max_slots: int = (2 if multiplayer else 1) if controller_mode else 1
+	var is_multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
+	var max_slots: int = (2 if is_multiplayer else 1) if controller_mode else 1
 	var to_release: Array = []
 	for r in _controlled_robots:
 		if controller_mode and r.controller_index < 0:
@@ -218,6 +221,7 @@ func _fit_to_viewport():
 	right.position = Vector2(s.x + t / 2.0, s.y / 2.0)
 
 var _selected_robot: Node2D = null
+var _selected_obstacle: int = -1
 var _controlled_robot: Node2D = null
 var _controlled_robots: Array = []
 
@@ -245,6 +249,10 @@ func _spawn_obstacle_body(ob: Dictionary):
 	body.collision_layer = 1
 	body.collision_mask = 1
 	body.add_to_group("obstacles")
+	body.input_pickable = true
+	var ob_id: int = ob.get("id", -1)
+	body.set_meta("ob_id", ob_id)
+	body.input_event.connect(func(_viewport, event, _shape_idx): _on_obstacle_input(event, ob_id))
 	var shape_node := CollisionShape2D.new()
 	if ob.get("type", "") == "wall":
 		var sh := RectangleShape2D.new()
@@ -257,6 +265,16 @@ func _spawn_obstacle_body(ob: Dictionary):
 	body.add_child(shape_node)
 	body.position = ob.get("position", Vector2.ZERO)
 	obstacles_root.add_child(body)
+
+func _on_obstacle_input(event: InputEvent, ob_id: int):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		if SimulationManager.has_started and not get_tree().paused:
+			return
+		_selected_robot = null
+		_selected_obstacle = ob_id
+		var actions: Array = [{"id": "remove_obstacle", "label": "Remove", "color": Color(0.8, 0.25, 0.25, 1.0)}]
+		$RadialMenu.open(get_viewport().get_mouse_position(), actions, "Obstacle")
+		get_viewport().set_input_as_handled()
 
 func _unhandled_input(event):
 	if event.is_action_pressed("release_control") and _controlled_robot != null:
@@ -410,8 +428,8 @@ func _on_robot_clicked(robot: Node2D):
 		else:
 			var take_label: String = "Take Over"
 			var controller_mode: bool = SimulationManager.settings.get("controller_mode", false)
-			var multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
-			var max_slots: int = (2 if multiplayer else 1) if controller_mode else 1
+			var is_multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
+			var max_slots: int = (2 if is_multiplayer else 1) if controller_mode else 1
 			if controller_mode and _controlled_robots.size() < max_slots:
 				var preview_slot: int = _next_free_controller_slot(max_slots)
 				if preview_slot >= 0:
@@ -439,6 +457,11 @@ func _robot_title(robot: Node2D) -> String:
 	return "%s\n(%.1fm, %.1fm)" % [robot.robot_name, meters.x, meters.y]
 
 func _on_radial_action(action_id: String):
+	if action_id == "remove_obstacle":
+		if _selected_obstacle >= 0:
+			SimulationManager.remove_obstacle(_selected_obstacle)
+			_selected_obstacle = -1
+		return
 	if _selected_robot == null:
 		return
 	match action_id:
@@ -466,8 +489,8 @@ func _take_over(robot: Node2D):
 	if _controlled_robots.has(robot):
 		return
 	var controller_mode: bool = SimulationManager.settings.get("controller_mode", false)
-	var multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
-	var max_slots: int = (2 if multiplayer else 1) if controller_mode else 1
+	var is_multiplayer: bool = SimulationManager.settings.get("multiplayer", false)
+	var max_slots: int = (2 if is_multiplayer else 1) if controller_mode else 1
 
 	if not controller_mode:
 		_release_all_controlled()
@@ -639,7 +662,19 @@ func _run_video_export() -> void:
 	if exit_code == 0:
 		for fname in DirAccess.get_files_at(_EXPORT_FRAMES_DIR):
 			DirAccess.remove_absolute(_EXPORT_FRAMES_DIR + "/" + fname)
-		overlay.show_success(out_path)
+		if SimulationManager.pending_upload:
+			overlay.set_status("Uploading to website…")
+			await get_tree().process_frame
+			RunUploader.upload(SimulationManager.pending_upload_run, out_path, SimulationManager.get_setup_data())
+			var result = await RunUploader.upload_finished
+			SimulationManager.pending_upload = false
+			SimulationManager.pending_upload_run = ""
+			if result[0]:
+				overlay.show_success(out_path)
+			else:
+				overlay.show_error("Upload failed (%s). Video saved at:" % result[1], out_path)
+		else:
+			overlay.show_success(out_path)
 	else:
 		var pngs_path := ProjectSettings.globalize_path(_EXPORT_FRAMES_DIR)
 		var msg := "ffmpeg was not found or failed (exit %d). Install ffmpeg, or use the captured PNG frames left at:" % exit_code
@@ -653,6 +688,8 @@ func _finish_export() -> void:
 	SimulationManager.is_replaying = false
 	SimulationManager.replay_time = 0.0
 	SimulationManager.current_replay = []
+	SimulationManager.pending_upload = false
+	SimulationManager.pending_upload_run = ""
 	get_tree().change_scene_to_file("res://levels/SaveManagerScene.tscn")
 
 func _resolve_ffmpeg() -> String:

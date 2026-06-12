@@ -26,6 +26,7 @@ GameManager="*res://autoloads/GameManager.gd"
 PlayerSettings="*res://autoloads/PlayerSettings.gd"
 PlayerData="*res://autoloads/PlayerData.gd"
 Leaderboard="*res://autoloads/Leaderboard.gd"
+RunUploader="*res://autoloads/RunUploader.gd"
 
 [display]
 

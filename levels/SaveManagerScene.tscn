@@ -73,7 +73,7 @@ theme_override_constants/separation = 10
 [node name="Label" type="Label" parent="VBox/Content/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "💾 Saved Setups"
+text = "Saved Setups"
 horizontal_alignment = 1
 
 [node name="SaveList" type="ItemList" parent="VBox/Content/VBox"]
@@ -119,7 +119,7 @@ theme_override_constants/separation = 10
 [node name="Label" type="Label" parent="VBox/Content/VBox2"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "🎞 Recorded Runs"
+text = "Recorded Runs"
 horizontal_alignment = 1
 
 [node name="RunList" type="ItemList" parent="VBox/Content/VBox2"]
@@ -139,6 +139,11 @@ text = "Load Selected Run"
 layout_mode = 2
 focus_mode = 0
 text = "Export to Video"
+
+[node name="UploadRunBtn" type="Button" parent="VBox/Content/VBox2/HBox"]
+layout_mode = 2
+focus_mode = 0
+text = "Upload"
 
 [node name="DeleteRunBtn" type="Button" parent="VBox/Content/VBox2/HBox"]
 layout_mode = 2

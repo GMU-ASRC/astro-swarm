@@ -17,6 +17,7 @@ func _ready():
 
 	$VBox/Content/VBox2/HBox/LoadRunBtn.pressed.connect(_on_load_run)
 	$VBox/Content/VBox2/HBox/ExportVideoBtn.pressed.connect(_on_export_video)
+	$VBox/Content/VBox2/HBox/UploadRunBtn.pressed.connect(_on_upload_run)
 	$VBox/Content/VBox2/HBox/DeleteRunBtn.pressed.connect(_on_delete_run)
 
 func _refresh_lists():
@@ -74,6 +75,18 @@ func _on_export_video():
 		var fn = run_list.get_item_text(selected[0])
 		if SimulationManager.export_run("user://runs/" + fn):
 			get_tree().change_scene_to_file("res://levels/Arena.tscn")
+
+func _on_upload_run():
+	var selected = run_list.get_selected_items()
+	if selected.size() > 0:
+		var fn = run_list.get_item_text(selected[0])
+		var path: String = "user://runs/" + fn
+		SimulationManager.pending_upload = true
+		SimulationManager.pending_upload_run = path
+		if SimulationManager.export_run(path):
+			get_tree().change_scene_to_file("res://levels/Arena.tscn")
+		else:
+			SimulationManager.pending_upload = false
 
 func _on_delete_run():
 	var selected = run_list.get_selected_items()
