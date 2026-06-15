@@ -355,6 +355,8 @@ func _fire():
 	_fire_cooldown = FIRE_INTERVAL
 
 func take_damage(amount: float):
+	if hp <= 0.0:
+		return
 	hp -= amount
 	if hp <= 0.0:
 		destroyed.emit(self)

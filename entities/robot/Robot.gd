@@ -12,6 +12,9 @@ var controller_index: int = -1
 var _color: Color
 const STICK_DEADZONE := 0.18
 
+var _collision_cooldown: float = 0.0
+const COLLISION_BOUNCE_TIME := 0.35
+
 var trail_enabled: bool = false
 var pin_coords: bool = false
 var _trail_points: PackedVector2Array = PackedVector2Array()
@@ -98,9 +101,10 @@ func _physics_process(delta: float):
 		return
 	var ts: float = SimulationManager.settings.time_scale
 	var scaled_delta: float = delta * ts
+	_collision_cooldown = max(0.0, _collision_cooldown - delta)
 	if is_controlled:
 		_poll_control_input()
-	elif has_node("Interpreter"):
+	elif _collision_cooldown <= 0.0 and has_node("Interpreter"):
 		$Interpreter.process_behavior(scaled_delta)
 	var cfg := SimulationManager.get_type_config(type_id)
 	rotation += turn_input * cfg.turn_speed * scaled_delta
@@ -110,8 +114,11 @@ func _physics_process(delta: float):
 	var r := dot_radius
 	global_position.x = clampf(global_position.x, r, s.x - r)
 	global_position.y = clampf(global_position.y, r, s.y - r)
-	if not is_controlled and get_slide_collision_count() > 0:
-		turn_input = randf_range(0.5, 1.5)
+	if not is_controlled and _collision_cooldown <= 0.0 and get_slide_collision_count() > 0:
+		_collision_cooldown = COLLISION_BOUNCE_TIME
+		forward_input = 0.0
+		var dir: float = 1.0 if randf() > 0.5 else -1.0
+		turn_input = dir * randf_range(0.8, 1.5)
 
 func _poll_control_input():
 	if controller_index >= 0:

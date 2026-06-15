@@ -47,15 +47,26 @@ func _build_tabs():
 		btn.add_theme_color_override("font_color", t.color)
 		btn.add_theme_color_override("font_hover_color", t.color)
 		btn.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1))
-		var sb := StyleBoxFlat.new()
+		var _margins := func(s: StyleBoxFlat) -> StyleBoxFlat:
+			s.set_border_width_all(1)
+			s.set_corner_radius_all(3)
+			s.content_margin_left = 14
+			s.content_margin_right = 14
+			s.content_margin_top = 7
+			s.content_margin_bottom = 7
+			return s
+		var sb_normal := _margins.call(StyleBoxFlat.new())
+		sb_normal.bg_color = Color(t.color.r, t.color.g, t.color.b, 0.08)
+		sb_normal.border_color = t.color.darkened(0.15)
+		var sb_hover := _margins.call(StyleBoxFlat.new())
+		sb_hover.bg_color = Color(t.color.r, t.color.g, t.color.b, 0.18)
+		sb_hover.border_color = t.color
+		var sb := _margins.call(StyleBoxFlat.new())
 		sb.bg_color = t.color
 		sb.border_color = t.color
-		sb.set_border_width_all(1)
-		sb.set_corner_radius_all(3)
-		sb.content_margin_left = 14
-		sb.content_margin_right = 14
-		sb.content_margin_top = 7
-		sb.content_margin_bottom = 7
+		btn.add_theme_stylebox_override("normal", sb_normal)
+		btn.add_theme_stylebox_override("hover", sb_hover)
+		btn.add_theme_stylebox_override("focus", sb_normal)
 		btn.add_theme_stylebox_override("pressed", sb)
 		btn.add_theme_stylebox_override("hover_pressed", sb)
 		var type_id: String = t.id
