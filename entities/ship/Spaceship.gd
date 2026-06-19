@@ -107,6 +107,19 @@ func setup_raider(blocks: Array, hp_value: float):
 	_orbit = false
 	ship_color = Color(0.85, 0.4, 0.95, 1.0)
 
+func setup_player_orbit(center: Vector2, radius: float, ang_speed: float, start_angle: float, hp_value: float):
+	team = TEAM_PLAYER
+	max_hp = hp_value
+	hp = hp_value
+	_orbit = true
+	_orbit_center = center
+	_orbit_radius = radius
+	_orbit_speed = ang_speed
+	_orbit_angle = start_angle
+	ship_color = Color(0.451, 0.616, 1.0, 1.0)
+	global_position = center + Vector2(radius, 0.0).rotated(start_angle)
+	rotation = start_angle + PI / 2.0
+
 func _set_program(blocks: Array):
 	_executor = BlockExecutor.new(self)
 	_executor.set_program(SimulationManager.normalize_to_scripts(blocks))
