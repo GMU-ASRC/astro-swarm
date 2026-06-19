@@ -27,6 +27,7 @@ PlayerSettings="*res://autoloads/PlayerSettings.gd"
 PlayerData="*res://autoloads/PlayerData.gd"
 Leaderboard="*res://autoloads/Leaderboard.gd"
 RunUploader="*res://autoloads/RunUploader.gd"
+DominationData="*res://autoloads/DominationData.gd"
 
 [display]
 
