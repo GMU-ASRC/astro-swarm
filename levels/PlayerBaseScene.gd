@@ -41,7 +41,8 @@ func _ready():
 
 	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/HomeScene.tscn"))
 	find_btn.pressed.connect(_on_find_match)
-	game_mode_btn.pressed.connect(_on_cycle_game_mode)
+	game_mode_btn.pressed.connect(_on_game_mode_btn)
+	_setup_mode_popup()
 	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/MoonsScene.tscn"))
 	workspace_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://ui/workspace/ShipWorkspace.tscn"))
 	shop_btn.pressed.connect(_on_shop)
@@ -184,10 +185,28 @@ func _init_game_mode():
 			break
 	game_mode_btn.text = GAME_MODES[_mode_index].label
 
-func _on_cycle_game_mode():
-	_mode_index = (_mode_index + 1) % GAME_MODES.size()
-	PlayerData.set_game_mode(GAME_MODES[_mode_index].id)
-	game_mode_btn.text = GAME_MODES[_mode_index].label
+var _mode_popup: PopupMenu
+
+func _setup_mode_popup():
+	_mode_popup = PopupMenu.new()
+	_mode_popup.add_item("Timed Local", 0)
+	_mode_popup.add_item("Challenges", 1)
+	add_child(_mode_popup)
+	_mode_popup.id_pressed.connect(_on_mode_selected)
+
+func _on_game_mode_btn():
+	var gp: Vector2 = game_mode_btn.global_position
+	_mode_popup.reset_size()
+	_mode_popup.popup(Rect2i(Vector2i(gp.x, gp.y), Vector2i(game_mode_btn.size.x, 0)))
+
+func _on_mode_selected(id: int):
+	match id:
+		0:
+			_mode_index = 0
+			PlayerData.set_game_mode(GAME_MODES[0].id)
+			game_mode_btn.text = GAME_MODES[0].label
+		1:
+			get_tree().change_scene_to_file("res://levels/DominationScene.tscn")
 
 func _on_shop():
 	print("Shop coming soon")
