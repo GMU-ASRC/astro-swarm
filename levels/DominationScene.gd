@@ -98,6 +98,7 @@ var _placed_atk:   int = 0
 var _total_coins:  int = 0
 
 var _camera: Camera2D
+var _music: AudioStreamPlayer = null
 var _panning: bool       = false
 var _dragging: bool      = false
 var _drag_start: Vector2 = Vector2.ZERO
@@ -108,9 +109,12 @@ var _bg_stars:       Array   = []
 var _home_defenders: Array   = []
 var _attack_drones:  Array   = []
 var _wave_drones:    Array   = []
+var _mini_drones:    Array   = []
 
 var _wave_triggered: bool = false
 var _wave_timer: float    = 0.0
+
+const MARKET_PANEL := preload("res://levels/MarketPanel.gd")
 
 # ── Ready ────────────────────────────────────────────────────────────────────
 func _ready():
@@ -125,9 +129,18 @@ func _ready():
 	_build_home_planet()
 	_spawn_initial_defenders()
 
+	var stream := load("res://assets/music/domination challenge music.mp3") as AudioStreamMP3
+	if stream:
+		stream.loop = true
+		_music = AudioStreamPlayer.new()
+		_music.stream = stream
+		_music.bus = "Music"
+		add_child(_music)
+		_music.play()
+
 	back_btn.pressed.connect(_leave)
 	return_btn.pressed.connect(_leave)
-	market_btn.pressed.connect(func(): print("Market coming soon"))
+	market_btn.pressed.connect(_open_market)
 
 	hint_label.text      = "Blue circle: drop defenders · Red zone: attack the enemy planet · Enemy wave arrives after your first move"
 	result_panel.visible = false
@@ -180,7 +193,7 @@ func _spawn_initial_defenders():
 
 func _add_home_defender(angle: float, radius: float):
 	var ship := SHIP.instantiate()
-	ship.setup_player_orbit(HOME_CENTER, radius, HOME_ORBIT_SPD, angle, DRONE_HP)
+	ship.setup_player_orbit(HOME_CENTER, radius, HOME_ORBIT_SPD, angle, _drone_hp())
 	ship.arena_size = ARENA
 	add_child(ship)
 	_home_defenders.append(ship)
@@ -201,7 +214,8 @@ func _spawn_enemy_guards():
 
 func _place_attacker(pos: Vector2, rot: float):
 	var ship := SHIP.instantiate()
-	ship.setup_player(ATTACK_PROG, DRONE_HP)
+	ship.setup_player(ATTACK_PROG, _drone_hp())
+	ship.speed_mult = _drone_speed_mult()
 	ship.ship_color = BLUE
 	ship.set_obstacles(Vector2.ZERO, 0.0, ENEMY_CENTER, ENEMY_DISP * 0.5)
 	ship.arena_size = ARENA
@@ -236,6 +250,9 @@ func _begin_stage():
 	for ship in _wave_drones.duplicate():
 		if is_instance_valid(ship): ship.queue_free()
 	_wave_drones.clear()
+	for ship in _mini_drones.duplicate():
+		if is_instance_valid(ship): ship.queue_free()
+	_mini_drones.clear()
 
 	_active         = true
 	_placed_atk     = 0
@@ -260,10 +277,13 @@ func _on_home_defender_killed(ship):
 		_trigger_game_over()
 
 func _on_attack_drone_destroyed(ship):
+	var death_pos: Vector2 = ship.global_position if is_instance_valid(ship) else Vector2.ZERO
 	_attack_drones.erase(ship)
 	_placed_atk = max(0, _placed_atk - 1)
 	_update_hud()
 	queue_redraw()
+	if DominationData.death_spawn and death_pos != Vector2.ZERO:
+		_spawn_nano_drones(death_pos)
 
 func _on_wave_drone_destroyed(ship):
 	_wave_drones.erase(ship)
@@ -272,7 +292,7 @@ func _trigger_game_over():
 	_game_over           = true
 	_active              = false
 	result_title.text    = "GAME OVER"
-	result_detail.text   = "Your home planet fell!\n\nTotal AstroCoin earned: %d" % _total_coins
+	result_detail.text   = "Your home planet fell!\n\nTotal Market Tokens earned: %d" % _total_coins
 	result_panel.visible = true
 
 func _on_enemy_killed(_ship):
@@ -281,15 +301,15 @@ func _on_enemy_killed(_ship):
 	if _enemy_killed >= _enemy_total and _active:
 		_active          = false
 		var coins: int   = int(10.0 * pow(2.0, float(_stage)))
-		PlayerData.add_coins(coins)
+		DominationData.add_tokens(coins)
 		_total_coins    += coins
-		coins_label.text = "+%d AstroCoin  (Total: %d)" % [coins, _total_coins]
+		coins_label.text = "+%d Market Tokens  (Total: %d)" % [coins, _total_coins]
 		_transitioning      = true
 		_alert_timer        = ALERT_DUR
 		if _stage == 0:
-			alert_msg.text = "PLANET DOMINATED!\n+%d AstroCoin\n\nPrepare for Stage 1!" % coins
+			alert_msg.text = "PLANET DOMINATED!\n+%d Market Tokens\n\nPrepare for Stage 1!" % coins
 		else:
-			alert_msg.text = "PLANET DOMINATED!\n+%d AstroCoin\n\nStage %d incoming…" % [coins, _stage + 1]
+			alert_msg.text = "PLANET DOMINATED!\n+%d Market Tokens\n\nStage %d incoming…" % [coins, _stage + 1]
 		alert_panel.visible = true
 
 		# Camera slides RIGHT — "going deeper into space" (background is extended so no grey)
@@ -321,6 +341,7 @@ func _process(delta: float):
 
 	_check_attack_drones()
 	_check_wave_drones()
+	_check_nano_drones()
 
 func _check_attack_drones():
 	for ship in _attack_drones.duplicate():
@@ -461,6 +482,65 @@ func _draw():
 		"ATTACK ZONE  %d/%d" % [_placed_atk, MAX_ATK],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_ATK_BDR)
 
+# ── Upgrade helpers ───────────────────────────────────────────────────────────
+func _drone_speed_mult() -> float:
+	return 1.0 + DominationData.speed_level * 0.10
+
+func _drone_hp() -> float:
+	return DRONE_HP * (1.0 + DominationData.health_level * 0.25)
+
+# ── Nano drone (Death Spawn) ──────────────────────────────────────────────────
+func _spawn_nano_drones(pos: Vector2):
+	for i in 2:
+		var nano := SHIP.instantiate()
+		nano.setup_player(ATTACK_PROG, 0.75)
+		nano.speed_mult = 1.5
+		nano.ship_color = Color(0.55, 0.90, 1.0, 1.0)
+		nano.set_obstacles(Vector2.ZERO, 0.0, ENEMY_CENTER, ENEMY_DISP * 0.5)
+		nano.arena_size = ARENA
+		add_child(nano)
+		nano.scale = Vector2(0.6, 0.6)
+		nano.global_position = pos + Vector2(randf_range(-18.0, 18.0), randf_range(-18.0, 18.0))
+		nano.rotation = randf_range(0.0, TAU)
+		_mini_drones.append(nano)
+		nano.destroyed.connect(_on_nano_destroyed)
+
+func _on_nano_destroyed(nano):
+	_mini_drones.erase(nano)
+
+func _check_nano_drones():
+	if _mini_drones.is_empty() or not DominationData.kamikaze:
+		return
+	for nano in _mini_drones.duplicate():
+		if not is_instance_valid(nano):
+			_mini_drones.erase(nano)
+			continue
+		for ship in get_tree().get_nodes_in_group("ships"):
+			if not is_instance_valid(ship) or ship.team == nano.team:
+				continue
+			if nano.global_position.distance_to(ship.global_position) < 65.0:
+				_explode_nano(nano)
+				break
+
+func _explode_nano(nano):
+	if not is_instance_valid(nano):
+		return
+	var pos: Vector2 = nano.global_position
+	_mini_drones.erase(nano)
+	nano.queue_free()
+	for ship in get_tree().get_nodes_in_group("ships"):
+		if not is_instance_valid(ship) or ship.team == 0:
+			continue
+		if ship.global_position.distance_to(pos) < 90.0:
+			ship.take_damage(1.5)
+
+# ── Market ────────────────────────────────────────────────────────────────────
+func _open_market():
+	var panel := MARKET_PANEL.new()
+	add_child(panel)
+	panel.closed.connect(func(): market_btn.disabled = false)
+	market_btn.disabled = true
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 func _disable_mouse(node: Node):
 	if node is Control:
@@ -469,4 +549,6 @@ func _disable_mouse(node: Node):
 		_disable_mouse(c)
 
 func _leave():
+	if is_instance_valid(_music):
+		_music.stop()
 	get_tree().change_scene_to_file("res://levels/PlayerBaseScene.tscn")

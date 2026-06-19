@@ -22,6 +22,7 @@ var team: int = TEAM_PLAYER
 var hp: float = 3.0
 var max_hp: float = 3.0
 var arena_size: Vector2 = Vector2(1280, 720)
+var speed_mult: float = 1.0
 
 var star_center: Vector2 = Vector2.ZERO
 var star_radius: float = 0.0
@@ -154,7 +155,7 @@ func reset_inputs():
 
 func _apply_movement(delta: float):
 	rotation += turn_input * TURN_SPEED * delta
-	var vel: Vector2 = Vector2.RIGHT.rotated(rotation) * SPEED * forward_input
+	var vel: Vector2 = Vector2.RIGHT.rotated(rotation) * SPEED * speed_mult * forward_input
 	global_position += vel * delta
 	global_position.x = clampf(global_position.x, 14.0, arena_size.x - 14.0)
 	global_position.y = clampf(global_position.y, 14.0, arena_size.y - 14.0)
