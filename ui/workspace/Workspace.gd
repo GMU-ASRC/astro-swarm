@@ -55,13 +55,13 @@ func _build_tabs():
 			s.content_margin_top = 7
 			s.content_margin_bottom = 7
 			return s
-		var sb_normal := _margins.call(StyleBoxFlat.new())
+		var sb_normal: StyleBoxFlat = _margins.call(StyleBoxFlat.new())
 		sb_normal.bg_color = Color(t.color.r, t.color.g, t.color.b, 0.08)
 		sb_normal.border_color = t.color.darkened(0.15)
-		var sb_hover := _margins.call(StyleBoxFlat.new())
+		var sb_hover: StyleBoxFlat = _margins.call(StyleBoxFlat.new())
 		sb_hover.bg_color = Color(t.color.r, t.color.g, t.color.b, 0.18)
 		sb_hover.border_color = t.color
-		var sb := _margins.call(StyleBoxFlat.new())
+		var sb: StyleBoxFlat = _margins.call(StyleBoxFlat.new())
 		sb.bg_color = t.color
 		sb.border_color = t.color
 		btn.add_theme_stylebox_override("normal", sb_normal)
