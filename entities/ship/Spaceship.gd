@@ -23,6 +23,8 @@ var hp: float = 3.0
 var max_hp: float = 3.0
 var arena_size: Vector2 = Vector2(1280, 720)
 var speed_mult: float = 1.0
+var view_distance: float = VIEW_DISTANCE
+var fov_degrees: float = FOV_DEGREES
 
 var star_center: Vector2 = Vector2.ZERO
 var star_radius: float = 0.0
@@ -325,9 +327,9 @@ func _rotate_toward(offset: float, delta: float):
 
 func _object_in_view(center: Vector2, radius: float) -> bool:
 	var to: Vector2 = center - global_position
-	if to.length() - radius > VIEW_DISTANCE:
+	if to.length() - radius > view_distance:
 		return false
-	return absf(angle_difference(rotation, to.angle())) <= deg_to_rad(FOV_DEGREES) * 0.5
+	return absf(angle_difference(rotation, to.angle())) <= deg_to_rad(fov_degrees) * 0.5
 
 func _sees_object() -> bool:
 	if star_radius > 0.0 and _object_in_view(star_center, star_radius):
@@ -348,7 +350,7 @@ func _sees_rim() -> bool:
 		dist = min(dist, (arena_size.y - global_position.y) / dir.y)
 	elif dir.y < -0.0001:
 		dist = min(dist, -global_position.y / dir.y)
-	return dist <= VIEW_DISTANCE
+	return dist <= view_distance
 
 func _near_wall() -> bool:
 	var m := 24.0
@@ -412,15 +414,19 @@ func _on_vision_exited(area: Area2D):
 	if _visible.has(ship):
 		_visible.erase(ship)
 
+func refresh_cone():
+	_generate_cone()
+	queue_redraw()
+
 func _generate_cone():
 	var polygon := PackedVector2Array()
 	polygon.append(Vector2.ZERO)
-	var fov_rad: float = deg_to_rad(FOV_DEGREES)
+	var fov_rad: float = deg_to_rad(fov_degrees)
 	var num_points := 16
 	var start_angle: float = -fov_rad / 2.0
 	for i in range(num_points + 1):
 		var angle: float = start_angle + (fov_rad * i / float(num_points))
-		polygon.append(Vector2.RIGHT.rotated(angle) * VIEW_DISTANCE)
+		polygon.append(Vector2.RIGHT.rotated(angle) * view_distance)
 	$Vision/VisionShape.polygon = polygon
 	_cone_polygon = polygon
 

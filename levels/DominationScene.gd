@@ -39,8 +39,8 @@ const BLUE          := Color(0.451, 0.616, 1.0, 1.0)
 const RED           := Color(1.0, 0.42, 0.32, 1.0)
 const ZONE_DEF_FILL := Color(0.451, 0.616, 1.0, 0.06)
 const ZONE_DEF_BDR  := Color(0.451, 0.616, 1.0, 0.45)
-const ZONE_ATK_FILL := Color(1.0, 0.35, 0.35, 0.05)
-const ZONE_ATK_BDR  := Color(1.0, 0.35, 0.35, 0.40)
+const ZONE_ATK_FILL := Color(0.451, 0.616, 1.0, 0.05)
+const ZONE_ATK_BDR  := Color(0.451, 0.616, 1.0, 0.40)
 
 # ── Programs ─────────────────────────────────────────────────────────────────
 const ATTACK_PROG := [
@@ -75,12 +75,9 @@ const ENEMY_ATTACK_PROG := [
 @onready var coins_label:    Label   = $HUD/Root/CoinsLabel
 @onready var market_btn:     Button  = $HUD/Root/MarketButton
 
-# Attack zone rectangle matching the yellow dashed shape:
-#   left ≈62% across arena (x≈1590), right near arena right (x≈2530)
-#   top ≈6% (y≈90), bottom ≈95% (y≈1370)
-# Enemy planet at (2060,720) sits inside. Wave spawns at x≈1390 are outside (left of rect).
-const ATK_RECT   := Rect2(1590.0, 90.0, 940.0, 1280.0)
-const ATK_HOLE_R := 230.0   # dashed circle around enemy planet (its guard exclusion zone)
+# Launch zone — player's left side; attack drones placed here fly toward enemy
+const ATK_RECT   := Rect2(30.0, 30.0, 980.0, 1380.0)
+const ATK_HOLE_R := 320.0   # input exclusion radius around HOME_CENTER
 
 # ── State ────────────────────────────────────────────────────────────────────
 var _stage: int          = 0
@@ -214,7 +211,7 @@ func _spawn_enemy_guards():
 
 func _place_attacker(pos: Vector2, rot: float):
 	var ship := SHIP.instantiate()
-	ship.setup_player(ATTACK_PROG, _drone_hp())
+	ship.setup_player(PlayerData.get_ship_algorithm(), _drone_hp())
 	ship.speed_mult = _drone_speed_mult()
 	ship.ship_color = BLUE
 	ship.set_obstacles(Vector2.ZERO, 0.0, ENEMY_CENTER, ENEMY_DISP * 0.5)
@@ -404,7 +401,7 @@ func _unhandled_input(event):
 			var p: Vector2   = get_global_mouse_position()
 			var in_def: bool = p.distance_to(HOME_CENTER) <= HOME_ZONE_R and _placed_def < MAX_DEF
 			var in_atk: bool = ATK_RECT.has_point(p) \
-				and p.distance_to(ENEMY_CENTER) > ATK_HOLE_R \
+				and p.distance_to(HOME_CENTER) > ATK_HOLE_R \
 				and _placed_atk < MAX_ATK
 			if in_def:
 				_dragging   = true
@@ -466,20 +463,11 @@ func _draw():
 		"DEFENSE %d/%d" % [_home_defenders.size(), MAX_DEF + INIT_DEF],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_DEF_BDR)
 
-	# Attack zone — rectangle matching yellow dashed shape
+	# Launch zone — player's left side, blue fill + single border
 	draw_rect(ATK_RECT, ZONE_ATK_FILL)
-	draw_rect(ATK_RECT, ZONE_ATK_BDR, false, 2.0)
-	# Dashed circle (the "hole") — enemy guard exclusion zone inside the rectangle
-	var hole_segs := 48
-	for i in hole_segs:
-		var a0 := float(i)       / float(hole_segs) * TAU
-		var a1 := float(i + 1)   / float(hole_segs) * TAU
-		if i % 3 != 0:   # every third segment skipped → dashed look
-			draw_line(ENEMY_CENTER + Vector2(ATK_HOLE_R, 0.0).rotated(a0),
-				ENEMY_CENTER + Vector2(ATK_HOLE_R, 0.0).rotated(a1),
-				ZONE_ATK_BDR, 1.5, true)
+	draw_rect(ATK_RECT, ZONE_ATK_BDR, false, 1.5)
 	draw_string(font, ATK_RECT.position + Vector2(8.0, 18.0),
-		"ATTACK ZONE  %d/%d" % [_placed_atk, MAX_ATK],
+		"LAUNCH ZONE  %d/%d" % [_placed_atk, MAX_ATK],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_ATK_BDR)
 
 # ── Upgrade helpers ───────────────────────────────────────────────────────────
@@ -551,4 +539,4 @@ func _disable_mouse(node: Node):
 func _leave():
 	if is_instance_valid(_music):
 		_music.stop()
-	get_tree().change_scene_to_file("res://levels/PlayerBaseScene.tscn")
+	get_tree().change_scene_to_file("res://levels/LevelsScene.tscn")

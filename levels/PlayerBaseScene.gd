@@ -28,7 +28,10 @@ const ORBIT_MAX := 255.0
 
 const GAME_MODES := [
 	{"id": "timed_local", "label": "Timed Local", "scene": "res://levels/GameArena.tscn"},
+	{"id": "levels",      "label": "Levels",       "scene": "res://levels/LevelsScene.tscn"},
 ]
+
+const MARKET_PANEL := preload("res://levels/MarketPanel.gd")
 
 var _planet: Control
 var _moons: Array = []
@@ -56,6 +59,7 @@ func _ready():
 	PlayerData.level_changed.connect(_on_level_changed)
 	PlayerData.coins_changed.connect(_on_coins_changed)
 	PlayerData.moons_changed.connect(_on_moons_changed)
+	DominationData.tokens_changed.connect(_on_domination_tokens_changed)
 
 	get_viewport().size_changed.connect(_reposition)
 
@@ -165,7 +169,12 @@ func _on_level_changed(lvl: int):
 	level_label.text = "Level %d" % lvl
 
 func _on_coins_changed(amount: int):
-	coin_label.text = str(amount)
+	if PlayerData.game_mode != "domination":
+		coin_label.text = str(amount)
+
+func _on_domination_tokens_changed(amount: int):
+	if PlayerData.game_mode == "levels":
+		coin_label.text = str(amount)
 
 func _on_moons_changed():
 	_build_moons()
@@ -179,18 +188,22 @@ func _on_confirm_username():
 	_refresh_hud()
 
 func _init_game_mode():
+	# Migrate old "domination" save to "levels"
+	if PlayerData.game_mode == "domination":
+		PlayerData.set_game_mode("levels")
 	for i in GAME_MODES.size():
 		if GAME_MODES[i].id == PlayerData.game_mode:
 			_mode_index = i
 			break
 	game_mode_btn.text = GAME_MODES[_mode_index].label
+	_refresh_mode_ui()
 
 var _mode_popup: PopupMenu
 
 func _setup_mode_popup():
 	_mode_popup = PopupMenu.new()
-	_mode_popup.add_item("Timed Local", 0)
-	_mode_popup.add_item("Challenges", 1)
+	for i in GAME_MODES.size():
+		_mode_popup.add_item(GAME_MODES[i].label, i)
 	add_child(_mode_popup)
 	_mode_popup.id_pressed.connect(_on_mode_selected)
 
@@ -200,16 +213,29 @@ func _on_game_mode_btn():
 	_mode_popup.popup(Rect2i(Vector2i(gp.x, gp.y), Vector2i(game_mode_btn.size.x, 0)))
 
 func _on_mode_selected(id: int):
-	match id:
-		0:
-			_mode_index = 0
-			PlayerData.set_game_mode(GAME_MODES[0].id)
-			game_mode_btn.text = GAME_MODES[0].label
-		1:
-			get_tree().change_scene_to_file("res://levels/DominationScene.tscn")
+	_mode_index = id
+	PlayerData.set_game_mode(GAME_MODES[id].id)
+	game_mode_btn.text = GAME_MODES[id].label
+	_refresh_mode_ui()
+
+func _refresh_mode_ui():
+	var is_dom: bool = PlayerData.game_mode == "levels"
+	shop_btn.text = "Market" if is_dom else "Shop"
+	if is_dom:
+		coin_label.text = str(DominationData.tokens)
+		coin_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
+	else:
+		coin_label.text = str(PlayerData.coins)
+		coin_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.40))
 
 func _on_shop():
-	print("Shop coming soon")
+	if PlayerData.game_mode == "levels":
+		var panel := MARKET_PANEL.new()
+		add_child(panel)
+		panel.closed.connect(func(): shop_btn.disabled = false)
+		shop_btn.disabled = true
+	else:
+		print("Shop coming soon")
 
 func _on_find_match():
 	get_tree().change_scene_to_file(GAME_MODES[_mode_index].scene)
