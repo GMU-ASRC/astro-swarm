@@ -5,7 +5,7 @@ const SHIP := preload("res://entities/ship/Spaceship.tscn")
 const ARENA         := Vector2(2560.0, 1440.0)
 const PLANET_CENTER := Vector2(1280.0, 720.0)
 const PLANET_RADIUS := 120.0
-const PLACE_RADIUS  := 360.0
+const MAX_DEFENDERS  := 6
 const DEFENDER_HP   := 99.0
 const ENEMY_HP      := 3.0
 const ENEMY_SPEED   := 105.0
@@ -14,14 +14,12 @@ const ENEMY_PROGRAM := [
 	{"type": "do_forward", "params": {}},
 ]
 
-const DEFAULT_N_MAX  := 40
-const DEFAULT_TRIALS := 20
+const DEFAULT_TRIALS := 100
 const MATCH_SECONDS  := 25.0
-const BASE_VIEW      := 300.0
-const BASE_FOV       := 70.0
+const RECORD_EVERY   := 5
 
 var _algorithm: Array = []
-var _n_max: int = DEFAULT_N_MAX
+var _placements: Array = []
 var _trials: int = DEFAULT_TRIALS
 var _out_path: String = "user://farp_bench.json"
 var _rng := RandomNumberGenerator.new()
@@ -32,10 +30,11 @@ var _enemy: Node2D = null
 var _frame: int = 0
 var _match_frames: int = 0
 
-var _current_n: int = 1
 var _current_trial: int = 0
 var _success_count: int = 0
-var _results: Array = []
+var _outcomes: Array = []
+var _runs: Array = []
+var _replay_frames: Array = []
 var _running: bool = false
 
 func _ready():
@@ -44,6 +43,7 @@ func _ready():
 	_running = true
 	_parse_args()
 	_match_frames = int(MATCH_SECONDS * Engine.physics_ticks_per_second)
+	print("[bench] start defenders=%d trials=%d" % [_placements.size(), _trials])
 	_world = Node2D.new()
 	add_child(_world)
 	_start_match()
@@ -57,49 +57,72 @@ func _parse_args():
 	for arg in OS.get_cmdline_user_args() + OS.get_cmdline_args():
 		if arg.begins_with("--algorithm="):
 			_load_algorithm(arg.split("=", true, 1)[1])
+		elif arg.begins_with("--placements="):
+			_load_placements(arg.split("=", true, 1)[1])
 		elif arg.begins_with("--out="):
 			_out_path = arg.split("=", true, 1)[1]
-		elif arg.begins_with("--nmax="):
-			_n_max = maxi(1, int(arg.split("=", true, 1)[1]))
 		elif arg.begins_with("--trials="):
 			_trials = maxi(1, int(arg.split("=", true, 1)[1]))
 		elif arg.begins_with("--seed="):
 			_rng.seed = int(arg.split("=", true, 1)[1])
 	if _algorithm.is_empty():
 		_algorithm = SimulationManager.normalize_to_scripts(PlayerData.DEFAULT_SHIP_BLOCKS)
+	if _placements.size() > MAX_DEFENDERS:
+		_placements.resize(MAX_DEFENDERS)
 
 func _load_algorithm(path: String):
-	var text := ""
-	if FileAccess.file_exists(path):
-		text = FileAccess.get_file_as_string(path)
-	if text.strip_edges() == "":
-		return
-	var data = JSON.parse_string(text)
+	var data = _read_json(path)
 	if typeof(data) == TYPE_DICTIONARY and data.has("algorithm"):
 		data = data["algorithm"]
 	if typeof(data) == TYPE_ARRAY:
 		_algorithm = SimulationManager.normalize_to_scripts(data)
 
+func _load_placements(path: String):
+	var data = _read_json(path)
+	if typeof(data) == TYPE_DICTIONARY and data.has("placements"):
+		data = data["placements"]
+	if typeof(data) != TYPE_ARRAY:
+		return
+	for entry in data:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		_placements.append({
+			"pos": Vector2(float(entry.get("x", 0.0)), float(entry.get("y", 0.0))),
+			"rot": float(entry.get("rot", 0.0)),
+		})
+
+func _read_json(path: String):
+	if not FileAccess.file_exists(path):
+		return null
+	var text := FileAccess.get_file_as_string(path)
+	if text.strip_edges() == "":
+		return null
+	return JSON.parse_string(text)
+
 func _start_match():
 	_clear_world()
 	_frame = 0
-	_spawn_defenders(_current_n)
+	_replay_frames = []
+	_spawn_defenders()
 	_spawn_enemy()
+	_replay_frames.append(_snapshot())
 
-func _spawn_defenders(count: int):
-	var cfg: Dictionary = SimulationManager.ship_config_from_scripts(_algorithm, BASE_VIEW, BASE_FOV)
-	for i in count:
-		var angle: float = float(i) * TAU / float(count)
+func _spawn_defenders():
+	for placement in _placements:
 		var ship := SHIP.instantiate()
 		ship.setup_player(_algorithm, DEFENDER_HP)
 		ship.set_obstacles(Vector2.ZERO, 0.0, PLANET_CENTER, PLANET_RADIUS)
 		ship.arena_size = ARENA
 		ship.can_fire = false
+		_world.add_child(ship)
+		var cfg: Dictionary = SimulationManager.ship_config_from_scripts(_algorithm, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
 		ship.view_distance = cfg.view_distance
 		ship.fov_degrees = cfg.fov_degrees
-		_world.add_child(ship)
-		ship.global_position = PLANET_CENTER + Vector2(PLACE_RADIUS, 0.0).rotated(angle)
-		ship.rotation = angle
+		ship.max_speed = cfg.speed
+		ship.turn_rate = cfg.turn_speed
+		ship.hull_radius = cfg.dot_radius
+		ship.global_position = placement.pos
+		ship.rotation = placement.rot
 		ship.refresh_cone()
 		_defenders.append(ship)
 
@@ -124,26 +147,52 @@ func _physics_process(_delta: float):
 	if not _running:
 		return
 	_frame += 1
+	if _frame % RECORD_EVERY == 0:
+		_replay_frames.append(_snapshot())
 	var intercepted: bool = _any_defender_sees_enemy()
 	var reached: bool = is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0
 	var timed_out: bool = _frame >= _match_frames
 	if intercepted or reached or timed_out:
-		_finish_match(intercepted)
+		var outcome := "win" if intercepted else ("lose" if reached else "timeout")
+		_finish_match(intercepted, outcome)
 
-func _finish_match(intercepted: bool):
+func _finish_match(intercepted: bool, outcome: String):
+	_replay_frames.append(_snapshot())
+	_runs.append({
+		"trial": _current_trial,
+		"outcome": outcome,
+		"frames": _replay_frames,
+	})
+	_outcomes.append(outcome)
 	if intercepted:
 		_success_count += 1
+	print("PROGRESS %d/%d  trial=%d outcome=%s" % [_current_trial + 1, _trials, _current_trial + 1, outcome])
 	_current_trial += 1
 	if _current_trial >= _trials:
-		var rate: float = 100.0 * float(_success_count) / float(_trials)
-		_results.append({"n": _current_n, "success_rate": snappedf(rate, 0.1)})
-		_success_count = 0
-		_current_trial = 0
-		_current_n += 1
-		if _current_n > _n_max:
-			_write_output()
-			return
+		_write_output()
+		return
 	_start_match()
+
+func _snapshot() -> Array:
+	var frame: Array = []
+	for ship in _defenders:
+		if is_instance_valid(ship):
+			frame.append(int(ship.global_position.x))
+			frame.append(int(ship.global_position.y))
+			frame.append(int(rad_to_deg(ship.rotation)))
+		else:
+			frame.append(0)
+			frame.append(0)
+			frame.append(0)
+	if is_instance_valid(_enemy):
+		frame.append(int(_enemy.global_position.x))
+		frame.append(int(_enemy.global_position.y))
+		frame.append(int(rad_to_deg(_enemy.rotation)))
+	else:
+		frame.append(-1)
+		frame.append(-1)
+		frame.append(0)
+	return frame
 
 func _any_defender_sees_enemy() -> bool:
 	if not is_instance_valid(_enemy):
@@ -170,10 +219,21 @@ func _clear_world():
 
 func _write_output():
 	_running = false
+	var success_rate: float = 100.0 * float(_success_count) / float(maxi(1, _trials))
 	var payload := {
-		"n_max": _n_max,
 		"trials": _trials,
-		"results": _results,
+		"results": {
+			"trials": _trials,
+			"success_rate": snappedf(success_rate, 0.1),
+			"outcomes": _outcomes,
+		},
+		"replays": {
+			"fps": int(Engine.physics_ticks_per_second / RECORD_EVERY),
+			"defenders": _placements.size(),
+			"planet": [int(PLANET_CENTER.x), int(PLANET_CENTER.y), int(PLANET_RADIUS)],
+			"arena": [int(ARENA.x), int(ARENA.y)],
+			"runs": _runs,
+		},
 	}
 	var file := FileAccess.open(_out_path, FileAccess.WRITE)
 	if file != null:

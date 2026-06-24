@@ -15,12 +15,12 @@ const TILE_SIZE := Vector2(120, 64)
 const GRID_COLUMNS := 3
 
 const LEVELS := [
-	{"scene": "res://levels/modes/FARPScene.tscn",       "locked": false},
-	{"scene": "res://levels/modes/DominationScene.tscn", "locked": false},
-	{"scene": "",                                  "locked": true},
-	{"scene": "",                                  "locked": true},
-	{"scene": "",                                  "locked": true},
-	{"scene": "",                                  "locked": true},
+	{"name": "FARP",       "scene": "res://levels/modes/FARPScene.tscn",       "locked": false},
+	{"name": "DOMINATION", "scene": "res://levels/modes/DominationScene.tscn", "locked": false},
+	{"name": "LOCKED",     "scene": "",                                        "locked": true},
+	{"name": "LOCKED",     "scene": "",                                        "locked": true},
+	{"name": "LOCKED",     "scene": "",                                        "locked": true},
+	{"name": "LOCKED",     "scene": "",                                        "locked": true},
 ]
 
 func _ready():
@@ -67,7 +67,7 @@ func _make_tile(number: int, level: Dictionary) -> Control:
 	tile.custom_minimum_size = TILE_SIZE
 	tile.focus_mode = Control.FOCUS_NONE
 	tile.disabled = locked
-	tile.text = "LEVEL %d" % number
+	tile.text = ("LEVEL %d" % number) if locked else "%d · %s" % [number, level["name"]]
 	tile.add_theme_font_override("font", FONT_REG)
 	tile.add_theme_font_size_override("font_size", 16)
 

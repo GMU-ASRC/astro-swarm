@@ -232,6 +232,13 @@ func _deploy(start: Vector2, end: Vector2):
 	ship.arena_size = ARENA
 	ship.destroyed.connect(_on_player_ship_destroyed)
 	add_child(ship)
+	var cfg: Dictionary = SimulationManager.ship_config_from_scripts(PlayerData.ship_blocks, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
+	ship.view_distance = cfg.view_distance
+	ship.fov_degrees = cfg.fov_degrees
+	ship.max_speed = cfg.speed
+	ship.turn_rate = cfg.turn_speed
+	ship.hull_radius = cfg.dot_radius
+	ship.refresh_cone()
 	ship.global_position = start
 	if start.distance_to(end) > 6.0:
 		ship.rotation = start.angle_to_point(end)

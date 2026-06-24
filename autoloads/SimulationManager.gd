@@ -330,8 +330,14 @@ func _collect_config(blocks: Array, cfg: Dictionary):
 		if not children.is_empty():
 			_collect_config(children, cfg)
 
-func ship_config_from_scripts(scripts: Array, base_view: float, base_fov: float) -> Dictionary:
-	var cfg := {"view_distance": base_view, "fov_degrees": base_fov}
+func ship_config_from_scripts(scripts: Array, base_view: float, base_fov: float, base_speed: float = 150.0, base_turn: float = 3.2, base_size: float = 9.0) -> Dictionary:
+	var cfg := {
+		"view_distance": base_view,
+		"fov_degrees": base_fov,
+		"speed": base_speed,
+		"turn_speed": base_turn,
+		"dot_radius": base_size,
+	}
 	for s in scripts:
 		_collect_config(s.get("blocks", []), cfg)
 	return cfg

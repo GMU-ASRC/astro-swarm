@@ -25,6 +25,9 @@ var arena_size: Vector2 = Vector2(1280, 720)
 var speed_mult: float = 1.0
 var view_distance: float = VIEW_DISTANCE
 var fov_degrees: float = FOV_DEGREES
+var max_speed: float = SPEED
+var turn_rate: float = TURN_SPEED
+var hull_radius: float = HULL_RADIUS
 
 var star_center: Vector2 = Vector2.ZERO
 var star_radius: float = 0.0
@@ -157,19 +160,19 @@ func reset_inputs():
 	turn_input = 0.0
 
 func _apply_movement(delta: float):
-	rotation += turn_input * TURN_SPEED * delta
-	var vel: Vector2 = Vector2.RIGHT.rotated(rotation) * SPEED * speed_mult * forward_input
+	rotation += turn_input * turn_rate * delta
+	var vel: Vector2 = Vector2.RIGHT.rotated(rotation) * max_speed * speed_mult * forward_input
 	global_position += vel * delta
 	global_position.x = clampf(global_position.x, 14.0, arena_size.x - 14.0)
 	global_position.y = clampf(global_position.y, 14.0, arena_size.y - 14.0)
 	_resolve_obstacles()
 
 func _resolve_obstacles():
-	if star_radius > 0.0 and global_position.distance_to(star_center) < star_radius + HULL_RADIUS:
+	if star_radius > 0.0 and global_position.distance_to(star_center) < star_radius + hull_radius:
 		take_damage(max_hp)
 		return
 	if planet_radius > 0.0:
-		var min_dist: float = planet_radius + HULL_RADIUS
+		var min_dist: float = planet_radius + hull_radius
 		var offset: Vector2 = global_position - planet_center
 		var dist: float = offset.length()
 		if dist < min_dist:
@@ -311,7 +314,7 @@ func _step(state: Dictionary, delta: float) -> bool:
 func _turn_by(state: Dictionary, delta: float, dir: float, deg: float) -> bool:
 	if not state.has("rem"):
 		state.rem = deg_to_rad(deg)
-	var step: float = TURN_SPEED * delta
+	var step: float = turn_rate * delta
 	if step >= state.rem:
 		rotation += dir * state.rem
 		return BlockExecutor.DONE
@@ -324,7 +327,7 @@ func _rotate_toward(offset: float, delta: float):
 	if t == null:
 		return
 	var a: float = global_position.angle_to_point(t.global_position) + offset
-	rotation = lerp_angle(rotation, a, clampf(TURN_SPEED * delta, 0.0, 1.0))
+	rotation = lerp_angle(rotation, a, clampf(turn_rate * delta, 0.0, 1.0))
 
 func _object_in_view(center: Vector2, radius: float) -> bool:
 	var to: Vector2 = center - global_position
@@ -368,7 +371,7 @@ func _fire():
 	proj.damage = DAMAGE
 	proj.speed = PROJECTILE_SPEED
 	proj.color = _team_color()
-	proj.global_position = global_position + Vector2(HULL_RADIUS + 4.0, 0.0).rotated(rotation)
+	proj.global_position = global_position + Vector2(hull_radius + 4.0, 0.0).rotated(rotation)
 	proj.rotation = rotation
 	get_parent().add_child(proj)
 	_fire_cooldown = FIRE_INTERVAL
@@ -441,9 +444,10 @@ func _draw():
 	if _cone_polygon.size() >= 3:
 		var fill := Color(col.r, col.g, col.b, 0.05)
 		draw_polygon(_cone_polygon, PackedColorArray([fill]))
-	var tip := Vector2(13.0, 0.0)
-	var back_a := Vector2(-9.0, -7.0)
-	var back_b := Vector2(-9.0, 7.0)
+	var ss: float = hull_radius / HULL_RADIUS
+	var tip := Vector2(13.0, 0.0) * ss
+	var back_a := Vector2(-9.0, -7.0) * ss
+	var back_b := Vector2(-9.0, 7.0) * ss
 	draw_colored_polygon(PackedVector2Array([tip, back_a, back_b]), col)
 	draw_polyline(PackedVector2Array([tip, back_a, back_b, tip]), Color(0.05, 0.05, 0.1, 1.0), 1.5, true)
 	if hp < max_hp:

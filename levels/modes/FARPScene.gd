@@ -234,9 +234,12 @@ func _spawn_defender(placement: Dictionary, running: bool):
 	ship.can_fire = false
 	ship.destroyed.connect(_on_defender_destroyed)
 	add_child(ship)
-	var cfg: Dictionary = SimulationManager.ship_config_from_scripts(PlayerData.ship_blocks, ship.view_distance, ship.fov_degrees)
+	var cfg: Dictionary = SimulationManager.ship_config_from_scripts(PlayerData.ship_blocks, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
 	ship.view_distance = cfg.view_distance
 	ship.fov_degrees = cfg.fov_degrees
+	ship.max_speed = cfg.speed
+	ship.turn_rate = cfg.turn_speed
+	ship.hull_radius = cfg.dot_radius
 	ship.refresh_cone()
 	ship.global_position = placement.pos
 	ship.rotation = placement.rot
@@ -326,13 +329,19 @@ func _spawn_enemy():
 	_enemy.global_position = spawn_pos
 	_enemy.rotation = (PLANET_CENTER - spawn_pos).angle()
 
+func _placements_payload() -> Array:
+	var out: Array = []
+	for placement in _placements:
+		out.append({"x": placement.pos.x, "y": placement.pos.y, "rot": placement.rot})
+	return out
+
 func _trigger_win():
 	_phase = Phase.WIN
 	if is_instance_valid(_enemy):
 		_enemy.queue_free()
 		_enemy = null
 	_stop_all_ships()
-	EvalUploader.submit(PlayerData.ship_blocks)
+	EvalUploader.submit(PlayerData.ship_blocks, _placements_payload())
 	_phase_label.text = "INTERCEPTED!"
 	_phase_label.add_theme_color_override("font_color", C_GREEN)
 	var detail := "Drone destroyed %.1fs into the wave.\n\nThe planet is safe." % _active_time
