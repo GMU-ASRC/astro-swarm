@@ -39,8 +39,8 @@ const TOOLS := [
 ]
 
 func _ready():
-	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/HomeScene.tscn"))
-	setup_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/SaveManagerScene.tscn"))
+	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn"))
+	setup_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/SaveManagerScene.tscn"))
 	workspace_btn.pressed.connect(func(): open_workspace.emit())
 	clear_btn.pressed.connect(func(): request_clear.emit())
 	settings_btn.pressed.connect(_on_settings)

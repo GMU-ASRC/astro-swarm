@@ -35,7 +35,7 @@ func _refresh_lists():
 			run_list.add_item(r)
 
 func _on_back():
-	get_tree().change_scene_to_file("res://levels/Arena.tscn")
+	get_tree().change_scene_to_file("res://levels/modes/Arena.tscn")
 
 func _on_save_current():
 	var n = save_name_edit.text.strip_edges()
@@ -74,7 +74,7 @@ func _on_export_video():
 	if selected.size() > 0:
 		var fn = run_list.get_item_text(selected[0])
 		if SimulationManager.export_run("user://runs/" + fn):
-			get_tree().change_scene_to_file("res://levels/Arena.tscn")
+			get_tree().change_scene_to_file("res://levels/modes/Arena.tscn")
 
 func _on_upload_run():
 	var selected = run_list.get_selected_items()
@@ -84,7 +84,7 @@ func _on_upload_run():
 		SimulationManager.pending_upload = true
 		SimulationManager.pending_upload_run = path
 		if SimulationManager.export_run(path):
-			get_tree().change_scene_to_file("res://levels/Arena.tscn")
+			get_tree().change_scene_to_file("res://levels/modes/Arena.tscn")
 		else:
 			SimulationManager.pending_upload = false
 

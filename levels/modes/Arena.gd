@@ -690,7 +690,7 @@ func _finish_export() -> void:
 	SimulationManager.current_replay = []
 	SimulationManager.pending_upload = false
 	SimulationManager.pending_upload_run = ""
-	get_tree().change_scene_to_file("res://levels/SaveManagerScene.tscn")
+	get_tree().change_scene_to_file("res://levels/menus/SaveManagerScene.tscn")
 
 func _resolve_ffmpeg() -> String:
 	var platform := _ffmpeg_platform_subdir()

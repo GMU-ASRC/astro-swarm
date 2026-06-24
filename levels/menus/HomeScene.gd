@@ -53,13 +53,13 @@ func _parse_version(version: String) -> Array:
 	return nums
 
 func _on_play():
-	get_tree().change_scene_to_file("res://levels/PlayerBaseScene.tscn")
+	get_tree().change_scene_to_file("res://levels/menus/PlayerBaseScene.tscn")
 
 func _on_simulator():
-	get_tree().change_scene_to_file("res://levels/Arena.tscn")
+	get_tree().change_scene_to_file("res://levels/modes/Arena.tscn")
 
 func _on_settings():
-	get_tree().change_scene_to_file("res://levels/SettingsScene.tscn")
+	get_tree().change_scene_to_file("res://levels/menus/SettingsScene.tscn")
 
 func _on_quit():
 	get_tree().quit()

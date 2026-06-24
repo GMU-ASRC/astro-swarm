@@ -330,6 +330,12 @@ func _collect_config(blocks: Array, cfg: Dictionary):
 		if not children.is_empty():
 			_collect_config(children, cfg)
 
+func ship_config_from_scripts(scripts: Array, base_view: float, base_fov: float) -> Dictionary:
+	var cfg := {"view_distance": base_view, "fov_degrees": base_fov}
+	for s in scripts:
+		_collect_config(s.get("blocks", []), cfg)
+	return cfg
+
 func set_selected_type(type_id: String):
 	selected_type_id = type_id
 	selected_type_changed.emit(type_id)

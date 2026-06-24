@@ -21,17 +21,18 @@ const ORBIT_MAX := 255.0
 @onready var game_mode_btn: Button = $GameModeButton
 @onready var moons_btn: Button = $HUD/Navbar/MoonsButton
 @onready var shop_btn: Button = $HUD/Navbar/ShopButton
-@onready var workspace_btn: Button = $HUD/Navbar/WorkspaceButton
 @onready var modal: Control = $UsernameModal
 @onready var name_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/NameEdit
 @onready var confirm_btn: Button = $UsernameModal/Panel/Margin/VBox/Confirm
 
 const GAME_MODES := [
-	{"id": "timed_local", "label": "Timed Local", "scene": "res://levels/GameArena.tscn"},
-	{"id": "levels",      "label": "Levels",       "scene": "res://levels/LevelsScene.tscn"},
+	{"id": "timed_local", "label": "Timed Local", "scene": "res://levels/modes/GameArena.tscn"},
+	{"id": "levels",      "label": "Levels",       "scene": "res://levels/menus/LevelsScene.tscn"},
 ]
 
-const MARKET_PANEL := preload("res://levels/MarketPanel.gd")
+const MARKET_PANEL := preload("res://levels/components/MarketPanel.gd")
+
+const C_COIN := Color(1.0, 0.88, 0.40, 1.0)
 
 var _planet: Control
 var _moons: Array = []
@@ -42,13 +43,12 @@ func _ready():
 	get_tree().paused = false
 	_style_xp_bar()
 
-	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/HomeScene.tscn"))
+	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn"))
 	find_btn.pressed.connect(_on_find_match)
+	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/MoonsScene.tscn"))
+	shop_btn.pressed.connect(_on_shop)
 	game_mode_btn.pressed.connect(_on_game_mode_btn)
 	_setup_mode_popup()
-	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/MoonsScene.tscn"))
-	workspace_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://ui/workspace/ShipWorkspace.tscn"))
-	shop_btn.pressed.connect(_on_shop)
 	_init_game_mode()
 
 	confirm_btn.pressed.connect(_on_confirm_username)
@@ -59,7 +59,6 @@ func _ready():
 	PlayerData.level_changed.connect(_on_level_changed)
 	PlayerData.coins_changed.connect(_on_coins_changed)
 	PlayerData.moons_changed.connect(_on_moons_changed)
-	DominationData.tokens_changed.connect(_on_domination_tokens_changed)
 
 	get_viewport().size_changed.connect(_reposition)
 
@@ -169,12 +168,7 @@ func _on_level_changed(lvl: int):
 	level_label.text = "Level %d" % lvl
 
 func _on_coins_changed(amount: int):
-	if PlayerData.game_mode != "domination":
-		coin_label.text = str(amount)
-
-func _on_domination_tokens_changed(amount: int):
-	if PlayerData.game_mode == "levels":
-		coin_label.text = str(amount)
+	coin_label.text = str(amount)
 
 func _on_moons_changed():
 	_build_moons()
@@ -208,9 +202,12 @@ func _setup_mode_popup():
 	_mode_popup.id_pressed.connect(_on_mode_selected)
 
 func _on_game_mode_btn():
+	var btn_width: int = int(game_mode_btn.size.x)
 	var gp: Vector2 = game_mode_btn.global_position
 	_mode_popup.reset_size()
-	_mode_popup.popup(Rect2i(Vector2i(gp.x, gp.y), Vector2i(game_mode_btn.size.x, 0)))
+	_mode_popup.min_size = Vector2i(btn_width, 0)
+	var pos := Vector2i(int(gp.x), int(gp.y + game_mode_btn.size.y))
+	_mode_popup.popup(Rect2i(pos, Vector2i(btn_width, 0)))
 
 func _on_mode_selected(id: int):
 	_mode_index = id
@@ -219,14 +216,9 @@ func _on_mode_selected(id: int):
 	_refresh_mode_ui()
 
 func _refresh_mode_ui():
-	var is_dom: bool = PlayerData.game_mode == "levels"
-	shop_btn.text = "Market" if is_dom else "Shop"
-	if is_dom:
-		coin_label.text = str(DominationData.tokens)
-		coin_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
-	else:
-		coin_label.text = str(PlayerData.coins)
-		coin_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.40))
+	shop_btn.text = "Shop"
+	coin_label.text = str(PlayerData.coins)
+	coin_label.add_theme_color_override("font_color", C_COIN)
 
 func _on_shop():
 	if PlayerData.game_mode == "levels":

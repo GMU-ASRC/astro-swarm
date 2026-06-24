@@ -28,6 +28,7 @@ var planet_seed: int = 0
 var planet_type: String = "terran"
 var moon_seeds: Array = []
 var ship_blocks: Array = []
+var ship_algorithms: Dictionary = {}
 var game_mode: String = "timed_local"
 
 var _rng := RandomNumberGenerator.new()
@@ -126,6 +127,23 @@ func set_ship_blocks(blocks: Array):
 	_save()
 	ship_program_changed.emit()
 
+func save_algorithm(algo_name: String, scripts: Array):
+	var key: String = algo_name.strip_edges()
+	if key == "":
+		return
+	ship_algorithms[key] = SimulationManager.normalize_to_scripts(scripts)
+	_save()
+
+func get_algorithm(algo_name: String) -> Array:
+	return SimulationManager.normalize_to_scripts(ship_algorithms.get(algo_name, []))
+
+func delete_algorithm(algo_name: String):
+	if ship_algorithms.erase(algo_name):
+		_save()
+
+func algorithm_names() -> Array:
+	return ship_algorithms.keys()
+
 func set_game_mode(mode: String):
 	game_mode = mode
 	_save()
@@ -140,6 +158,7 @@ func reset_game():
 	planet_type = "terran"
 	moon_seeds = []
 	ship_blocks = []
+	ship_algorithms = {}
 	game_mode = "timed_local"
 	_ensure_planet()
 	_sync_moons()
@@ -175,6 +194,7 @@ func _save():
 	cfg.set_value("planet", "type", planet_type)
 	cfg.set_value("moons", "seeds", moon_seeds)
 	cfg.set_value("ship", "blocks", ship_blocks)
+	cfg.set_value("ship", "algorithms", ship_algorithms)
 	cfg.set_value("match", "game_mode", game_mode)
 	cfg.save(SAVE_PATH)
 
@@ -191,4 +211,5 @@ func _load():
 	planet_type = cfg.get_value("planet", "type", "terran")
 	moon_seeds = cfg.get_value("moons", "seeds", [])
 	ship_blocks = SimulationManager.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
+	ship_algorithms = cfg.get_value("ship", "algorithms", {})
 	game_mode = cfg.get_value("match", "game_mode", "timed_local")

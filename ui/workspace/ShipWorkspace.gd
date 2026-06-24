@@ -1,12 +1,20 @@
 extends Control
 
+static var return_scene: String = "res://levels/menus/PlayerBaseScene.tscn"
+
 @onready var back_btn: Button = $TopBar/HBox/BackButton
+@onready var top_hbox: HBoxContainer = $TopBar/HBox
 @onready var palette_list: VBoxContainer = $Body/Left/LeftVBox/PaletteScroll/PaletteMargin/PaletteList
 @onready var canvas: Control = $Body/Right/RightVBox/Scroll/Canvas
+
+var _name_edit: LineEdit
+var _algo_option: OptionButton
+var _loading: bool = false
 
 const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
 
 const GAME_PALETTE := {
+	"config": ["set_view", "set_fov"],
 	"condition": ["when_start", "when_always", "when_sees_enemy", "when_sees_ally", "when_alone", "when_sees_object", "when_sees_rim"],
 	"logic": ["if_sees", "if_within", "if_beyond"],
 	"action": ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_fire", "do_throttle"],
@@ -16,13 +24,92 @@ func _ready():
 	get_tree().paused = false
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
+	_build_save_load_ui()
 	_build_palette()
 	_load_blocks()
+
+func _build_save_load_ui():
+	var spacer: Control = $TopBar/HBox/Spacer
+
+	var sep := VSeparator.new()
+	top_hbox.add_child(sep)
+	top_hbox.move_child(sep, spacer.get_index())
+
+	_name_edit = LineEdit.new()
+	_name_edit.placeholder_text = "Algorithm name"
+	_name_edit.custom_minimum_size = Vector2(150, 0)
+	_name_edit.max_length = 24
+	top_hbox.add_child(_name_edit)
+	top_hbox.move_child(_name_edit, spacer.get_index())
+
+	var save_btn := Button.new()
+	save_btn.text = "Save"
+	save_btn.focus_mode = Control.FOCUS_NONE
+	save_btn.pressed.connect(_on_save_algorithm)
+	top_hbox.add_child(save_btn)
+	top_hbox.move_child(save_btn, spacer.get_index())
+
+	_algo_option = OptionButton.new()
+	_algo_option.focus_mode = Control.FOCUS_NONE
+	_algo_option.custom_minimum_size = Vector2(150, 0)
+	top_hbox.add_child(_algo_option)
+	top_hbox.move_child(_algo_option, spacer.get_index())
+
+	var load_btn := Button.new()
+	load_btn.text = "Load"
+	load_btn.focus_mode = Control.FOCUS_NONE
+	load_btn.pressed.connect(_on_load_algorithm)
+	top_hbox.add_child(load_btn)
+	top_hbox.move_child(load_btn, spacer.get_index())
+
+	var delete_btn := Button.new()
+	delete_btn.text = "Delete"
+	delete_btn.focus_mode = Control.FOCUS_NONE
+	delete_btn.pressed.connect(_on_delete_algorithm)
+	top_hbox.add_child(delete_btn)
+	top_hbox.move_child(delete_btn, spacer.get_index())
+
+	_refresh_algo_list()
+
+func _refresh_algo_list(select_name: String = ""):
+	_algo_option.clear()
+	var names: Array = PlayerData.algorithm_names()
+	names.sort()
+	for n in names:
+		_algo_option.add_item(n)
+	if select_name != "":
+		for i in _algo_option.item_count:
+			if _algo_option.get_item_text(i) == select_name:
+				_algo_option.select(i)
+				break
+
+func _on_save_algorithm():
+	var algo_name: String = _name_edit.text.strip_edges()
+	if algo_name == "":
+		return
+	PlayerData.save_algorithm(algo_name, _current_scripts())
+	_refresh_algo_list(algo_name)
+
+func _on_load_algorithm():
+	if _algo_option.item_count == 0:
+		return
+	var algo_name: String = _algo_option.get_item_text(_algo_option.selected)
+	var scripts: Array = PlayerData.get_algorithm(algo_name)
+	_populate_canvas(scripts)
+	PlayerData.set_ship_blocks(scripts)
+	_name_edit.text = algo_name
+
+func _on_delete_algorithm():
+	if _algo_option.item_count == 0:
+		return
+	var algo_name: String = _algo_option.get_item_text(_algo_option.selected)
+	PlayerData.delete_algorithm(algo_name)
+	_refresh_algo_list()
 
 func _build_palette():
 	for child in palette_list.get_children():
 		child.queue_free()
-	for category in ["condition", "logic", "action"]:
+	for category in ["config", "condition", "logic", "action"]:
 		_build_palette_category(category, GAME_PALETTE.get(category, []))
 
 func _build_palette_category(category: String, ids: Array):
@@ -55,19 +142,25 @@ func _make_palette_item(block_id: String):
 
 func _category_label(category: String) -> String:
 	match category:
+		"config":    return "SHIP CONFIG"
 		"condition": return "EVENTS"
 		"logic":     return "CONDITIONS"
 	return category.to_upper()
 
 
 func _load_blocks():
+	_populate_canvas(PlayerData.get_ship_algorithm())
+
+func _populate_canvas(scripts: Array):
+	_loading = true
 	for child in canvas.get_children():
 		child.queue_free()
-	for s in PlayerData.get_ship_algorithm():
+	for s in scripts:
 		var zone: VBoxContainer = canvas.spawn_stack(Vector2(s.get("x", 40.0), s.get("y", 40.0)))
 		for b in s.get("blocks", []):
 			_spawn_block_widget(b, zone)
 	canvas.resolve_overlaps()
+	_loading = false
 
 func _add_block(block_id: String):
 	var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
@@ -100,7 +193,7 @@ func _spawn_block_widget(data: Dictionary, parent_zone: VBoxContainer):
 		for child_data in data.get("children", []):
 			_spawn_block_widget(child_data, zone)
 
-func _save_blocks():
+func _current_scripts() -> Array:
 	canvas.remove_empty_stacks()
 	var scripts: Array = []
 	for zone in canvas.get_children():
@@ -113,8 +206,13 @@ func _save_blocks():
 		if blocks.is_empty():
 			continue
 		scripts.append({"x": zone.position.x, "y": zone.position.y, "blocks": blocks})
-	PlayerData.set_ship_blocks(scripts)
+	return scripts
+
+func _save_blocks():
+	if _loading:
+		return
+	PlayerData.set_ship_blocks(_current_scripts())
 
 func _on_back():
 	_save_blocks()
-	get_tree().change_scene_to_file("res://levels/PlayerBaseScene.tscn")
+	get_tree().change_scene_to_file(return_scene)

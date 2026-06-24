@@ -11,14 +11,15 @@ var inner_radius: float = 56.0
 var outer_radius: float = 118.0
 var hover_index: int = -1
 
-const PANEL_BG     := Color(0.965, 0.965, 0.973, 1.0)
-const PANEL_BORDER := Color(0.722, 0.722, 0.745, 1.0)
-const SHADOW       := Color(0, 0, 0, 0.18)
-const SLICE_BG     := Color(0.945, 0.945, 0.957, 1.0)
-const SEP_COLOR    := Color(0.78, 0.78, 0.80, 1.0)
-const TEXT_DARK    := Color(0.137, 0.137, 0.196, 1.0)
-const TEXT_MUTED   := Color(0.45, 0.45, 0.51, 1.0)
-const TEXT_LIGHT   := Color(1, 1, 1, 1)
+var PANEL_BG     := Color(0.965, 0.965, 0.973, 1.0)
+var PANEL_BORDER := Color(0.722, 0.722, 0.745, 1.0)
+var SHADOW       := Color(0, 0, 0, 0.18)
+var SLICE_BG     := Color(0.945, 0.945, 0.957, 1.0)
+var SEP_COLOR    := Color(0.78, 0.78, 0.80, 1.0)
+var TEXT_DARK    := Color(0.137, 0.137, 0.196, 1.0)
+var TEXT_MUTED   := Color(0.45, 0.45, 0.51, 1.0)
+var TEXT_LIGHT   := Color(1, 1, 1, 1)
+var label_font: Font = null
 
 func _ready():
 	center.draw.connect(_on_center_draw)
@@ -68,7 +69,7 @@ func _on_center_draw():
 		return
 
 	var step = TAU / _actions.size()
-	var font = ThemeDB.fallback_font
+	var font: Font = label_font if label_font != null else ThemeDB.fallback_font
 	var font_size = 12
 	var segment_points = max(20, int(96.0 / float(_actions.size())))
 
@@ -131,7 +132,7 @@ func _draw_hub():
 
 	if _title == "":
 		return
-	var font = ThemeDB.fallback_font
+	var font: Font = label_font if label_font != null else ThemeDB.fallback_font
 	var lines: PackedStringArray = _title.split("\n")
 	var name_size := 14
 	var sub_size := 11

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c2v2xxxxxxxxx"]
 
-[ext_resource type="Script" path="res://levels/DragIndicator.gd" id="1_script"]
+[ext_resource type="Script" path="res://levels/components/DragIndicator.gd" id="1_script"]
 
 [node name="DragIndicator" type="Node2D"]
 script = ExtResource("1_script")

@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://levels/LevelsScene.gd" id="1_s"]
+[ext_resource type="Script" path="res://levels/menus/LevelsScene.gd" id="1_s"]
 
 [node name="LevelsScene" type="Control"]
 layout_mode = 3

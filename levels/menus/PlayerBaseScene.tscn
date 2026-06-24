@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bksp3obk7skiq"]
 
 [ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="1_theme"]
-[ext_resource type="Script" uid="uid://2yqvphdguuod" path="res://levels/PlayerBaseScene.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://2yqvphdguuod" path="res://levels/menus/PlayerBaseScene.gd" id="2_script"]
 [ext_resource type="Script" uid="uid://dk14eq523l2l4" path="res://ui/game/Starfield.gd" id="3_star"]
 [ext_resource type="Script" uid="uid://cn5wk74ifpdyp" path="res://ui/game/CoinIcon.gd" id="4_coin"]
 [ext_resource type="Texture2D" uid="uid://ddu0dit8tejvl" path="res://assets/icons/pixelarticons--arrow-left.png" id="5_arrow"]
@@ -116,11 +116,6 @@ layout_mode = 2
 focus_mode = 0
 text = "Moons"
 
-[node name="WorkspaceButton" type="Button" parent="HUD/Navbar"]
-layout_mode = 2
-focus_mode = 0
-text = "Workspace"
-
 [node name="ShopButton" type="Button" parent="HUD/Navbar"]
 layout_mode = 2
 focus_mode = 0
@@ -192,7 +187,7 @@ offset_bottom = -22.0
 grow_horizontal = 2
 grow_vertical = 0
 focus_mode = 0
-text = "FIND MATCH"
+text = "Play"
 
 [node name="UsernameModal" type="Control" parent="." unique_id=2074317537]
 visible = false

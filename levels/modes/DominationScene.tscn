@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cekk6sh2knjol"]
 
-[ext_resource type="PackedScene" uid="uid://c683f2n1u2nd2" path="res://levels/GameArena.tscn" id="1_parent"]
-[ext_resource type="Script" path="res://levels/DominationScene.gd" id="2_script"]
+[ext_resource type="PackedScene" uid="uid://c683f2n1u2nd2" path="res://levels/modes/GameArena.tscn" id="1_parent"]
+[ext_resource type="Script" path="res://levels/modes/DominationScene.gd" id="2_script"]
 
 [node name="GameArena" instance=ExtResource("1_parent")]
 script = ExtResource("2_script")

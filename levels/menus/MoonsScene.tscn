@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3]
 
 [ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="1_theme"]
-[ext_resource type="Script" path="res://levels/MoonsScene.gd" id="2_script"]
+[ext_resource type="Script" path="res://levels/menus/MoonsScene.gd" id="2_script"]
 [ext_resource type="Script" uid="uid://dk14eq523l2l4" path="res://ui/game/Starfield.gd" id="3_star"]
 [ext_resource type="Texture2D" uid="uid://ddu0dit8tejvl" path="res://assets/icons/pixelarticons--arrow-left.png" id="4_arrow"]
 

@@ -348,4 +348,4 @@ func _save_blocks():
 func _on_back():
 	_commit_species_name()
 	_save_blocks()
-	get_tree().change_scene_to_file("res://levels/Arena.tscn")
+	get_tree().change_scene_to_file("res://levels/modes/Arena.tscn")

@@ -12,4 +12,4 @@ func _on_challenges():
 	print("Challenges mode selected")
 
 func _on_back():
-	get_tree().change_scene_to_file("res://levels/HomeScene.tscn")
+	get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn")

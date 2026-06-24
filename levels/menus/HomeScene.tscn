@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dnsw3eipkvwly"]
 
 [ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="1_theme"]
-[ext_resource type="Script" uid="uid://cxyt0xou1000m" path="res://levels/HomeScene.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://cxyt0xou1000m" path="res://levels/menus/HomeScene.gd" id="2_script"]
 [ext_resource type="Script" uid="uid://dk14eq523l2l4" path="res://ui/game/Starfield.gd" id="3_starfield"]
 
 [node name="HomeScene" type="Control" unique_id=263769714]

@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://levels/FARPScene.gd" id="1_s"]
+[ext_resource type="Script" path="res://levels/modes/FARPScene.gd" id="1_s"]
 
 [node name="FARPScene" type="Node2D"]
 script = ExtResource("1_s")

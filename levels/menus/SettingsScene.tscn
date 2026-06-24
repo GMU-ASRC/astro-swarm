@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://blf816fi5qs3j"]
 
 [ext_resource type="Theme" path="res://ui/GameTheme.tres" id="1_theme"]
-[ext_resource type="Script" uid="uid://cpvlhldx6nblg" path="res://levels/SettingsScene.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://cpvlhldx6nblg" path="res://levels/menus/SettingsScene.gd" id="2_script"]
 [ext_resource type="Texture2D" uid="uid://ddu0dit8tejvl" path="res://assets/icons/pixelarticons--arrow-left.png" id="3_arrow"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resetpanel"]

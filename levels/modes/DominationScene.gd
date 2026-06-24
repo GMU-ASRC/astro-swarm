@@ -111,7 +111,7 @@ var _mini_drones:    Array   = []
 var _wave_triggered: bool = false
 var _wave_timer: float    = 0.0
 
-const MARKET_PANEL := preload("res://levels/MarketPanel.gd")
+const MARKET_PANEL := preload("res://levels/components/MarketPanel.gd")
 
 # ── Ready ────────────────────────────────────────────────────────────────────
 func _ready():
@@ -539,4 +539,4 @@ func _disable_mouse(node: Node):
 func _leave():
 	if is_instance_valid(_music):
 		_music.stop()
-	get_tree().change_scene_to_file("res://levels/LevelsScene.tscn")
+	get_tree().change_scene_to_file("res://levels/menus/LevelsScene.tscn")

@@ -33,6 +33,7 @@ var planet_radius: float = 0.0
 
 var forward_input: float = 0.0
 var turn_input: float = 0.0
+var can_fire: bool = true
 
 const BlockExecutor := preload("res://entities/BlockExecutor.gd")
 const STEP_TIME := 0.4
@@ -358,6 +359,8 @@ func _near_wall() -> bool:
 		or global_position.x >= arena_size.x - m or global_position.y >= arena_size.y - m
 
 func _fire():
+	if not can_fire:
+		return
 	if _fire_cooldown > 0.0:
 		return
 	var proj := PROJECTILE.instantiate()

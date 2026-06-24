@@ -1,6 +1,7 @@
 extends Control
 
 const MOON := preload("res://entities/planet/PlanetMoon.tscn")
+const SHIP_WORKSPACE := preload("res://ui/workspace/ShipWorkspace.gd")
 
 const WORKSPACE_MOON_SEED := 424242
 const MOON_VIS_PIXELS := 52.0
@@ -14,7 +15,7 @@ const CARD_WIDTH := 210.0
 
 func _ready():
 	get_tree().paused = false
-	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/PlayerBaseScene.tscn"))
+	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerBaseScene.tscn"))
 	moon_slider.value_changed.connect(_on_slider)
 	get_viewport().size_changed.connect(_relayout)
 	_build_moons()
@@ -82,7 +83,9 @@ func _add_card(moon_seed: int, title: String, desc: String, is_workspace: bool):
 	btn.focus_mode = Control.FOCUS_NONE
 	if is_workspace:
 		btn.text = "OPEN"
-		btn.pressed.connect(func(): get_tree().change_scene_to_file("res://ui/workspace/ShipWorkspace.tscn"))
+		btn.pressed.connect(func():
+			SHIP_WORKSPACE.return_scene = "res://levels/menus/PlayerBaseScene.tscn"
+			get_tree().change_scene_to_file("res://ui/workspace/ShipWorkspace.tscn"))
 	else:
 		btn.text = "LOCKED"
 		btn.disabled = true

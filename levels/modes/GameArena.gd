@@ -320,4 +320,4 @@ func _draw_edges():
 	draw_texture_rect(_edge_tex_right, Rect2(w - t, 0.0, t, h), true)
 
 func _leave():
-	get_tree().change_scene_to_file("res://levels/PlayerBaseScene.tscn")
+	get_tree().change_scene_to_file("res://levels/menus/PlayerBaseScene.tscn")
