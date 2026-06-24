@@ -341,7 +341,7 @@ func _trigger_win():
 		_enemy.queue_free()
 		_enemy = null
 	_stop_all_ships()
-	EvalUploader.submit(PlayerData.ship_blocks, _placements_payload())
+	EvalUploader.submit(PlayerData.ship_blocks, _placements_payload(), "farp")
 	_phase_label.text = "INTERCEPTED!"
 	_phase_label.add_theme_color_override("font_color", C_GREEN)
 	var detail := "Drone destroyed %.1fs into the wave.\n\nThe planet is safe." % _active_time

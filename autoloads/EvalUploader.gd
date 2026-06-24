@@ -3,12 +3,13 @@ extends Node
 const URL := "https://astroswarm.autonomousrobotics.club/api/evaluations"
 const API_KEY := "damage-option-ozone"
 
-func submit(algorithm: Array, placements: Array):
+func submit(algorithm: Array, placements: Array, level_id: String):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
 		return
 	var body := JSON.stringify({
 		"player_id": PlayerData.player_id,
 		"username": PlayerData.username,
+		"level_id": level_id,
 		"algorithm": algorithm,
 		"placements": placements,
 	})

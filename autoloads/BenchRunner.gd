@@ -17,6 +17,7 @@ const ENEMY_PROGRAM := [
 const DEFAULT_TRIALS := 100
 const MATCH_SECONDS  := 25.0
 const RECORD_EVERY   := 5
+const TAIL_FRAMES    := 24
 
 var _algorithm: Array = []
 var _placements: Array = []
@@ -32,10 +33,14 @@ var _match_frames: int = 0
 
 var _current_trial: int = 0
 var _success_count: int = 0
+var _replay_view: float = 300.0
+var _replay_fov: float = 70.0
 var _outcomes: Array = []
 var _runs: Array = []
 var _replay_frames: Array = []
 var _running: bool = false
+var _in_tail: bool = false
+var _tail: int = 0
 
 func _ready():
 	if not _is_bench_mode():
@@ -102,6 +107,8 @@ func _read_json(path: String):
 func _start_match():
 	_clear_world()
 	_frame = 0
+	_in_tail = false
+	_tail = 0
 	_replay_frames = []
 	_spawn_defenders()
 	_spawn_enemy()
@@ -124,6 +131,8 @@ func _spawn_defenders():
 		ship.global_position = placement.pos
 		ship.rotation = placement.rot
 		ship.refresh_cone()
+		_replay_view = ship.view_distance
+		_replay_fov = ship.fov_degrees
 		_defenders.append(ship)
 
 func _spawn_enemy():
@@ -149,12 +158,21 @@ func _physics_process(_delta: float):
 	_frame += 1
 	if _frame % RECORD_EVERY == 0:
 		_replay_frames.append(_snapshot())
+	if _in_tail:
+		_tail -= 1
+		if _tail <= 0:
+			_finish_match(true, "win")
+		return
 	var intercepted: bool = _any_defender_sees_enemy()
 	var reached: bool = is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0
 	var timed_out: bool = _frame >= _match_frames
-	if intercepted or reached or timed_out:
-		var outcome := "win" if intercepted else ("lose" if reached else "timeout")
-		_finish_match(intercepted, outcome)
+	if intercepted:
+		_in_tail = true
+		_tail = TAIL_FRAMES
+	elif reached:
+		_finish_match(false, "lose")
+	elif timed_out:
+		_finish_match(false, "timeout")
 
 func _finish_match(intercepted: bool, outcome: String):
 	_replay_frames.append(_snapshot())
@@ -230,6 +248,8 @@ func _write_output():
 		"replays": {
 			"fps": int(Engine.physics_ticks_per_second / RECORD_EVERY),
 			"defenders": _placements.size(),
+			"view": int(_replay_view),
+			"fov": int(_replay_fov),
 			"planet": [int(PLANET_CENTER.x), int(PLANET_CENTER.y), int(PLANET_RADIUS)],
 			"arena": [int(ARENA.x), int(ARENA.y)],
 			"runs": _runs,

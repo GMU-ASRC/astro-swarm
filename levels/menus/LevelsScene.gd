@@ -11,7 +11,7 @@ const C_DIM     := Color(0.6,   0.62,  0.74,  1.0)
 const C_BLUE    := Color(0.451, 0.616, 1.0,   1.0)
 const C_LOCKED  := Color(0.35,  0.35,  0.45,  1.0)
 
-const TILE_SIZE := Vector2(120, 64)
+const TILE_SIZE := Vector2(220, 120)
 const GRID_COLUMNS := 3
 
 const LEVELS := [
@@ -67,15 +67,19 @@ func _make_tile(number: int, level: Dictionary) -> Control:
 	tile.custom_minimum_size = TILE_SIZE
 	tile.focus_mode = Control.FOCUS_NONE
 	tile.disabled = locked
-	tile.text = ("LEVEL %d" % number) if locked else "%d · %s" % [number, level["name"]]
+	tile.text = ("LEVEL %d" % number) if locked else "LEVEL %d\n%s" % [number, level["name"]]
 	tile.add_theme_font_override("font", FONT_REG)
-	tile.add_theme_font_size_override("font_size", 16)
+	tile.add_theme_font_size_override("font_size", 20)
 
 	var style := StyleBoxFlat.new()
 	style.bg_color     = C_PANEL if not locked else Color(0.08, 0.075, 0.13, 1.0)
 	style.border_color = C_BLUE if not locked else C_LOCKED
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(0)
+	style.content_margin_left = 20
+	style.content_margin_right = 20
+	style.content_margin_top = 18
+	style.content_margin_bottom = 18
 	tile.add_theme_stylebox_override("normal", style)
 	tile.add_theme_stylebox_override("hover", style)
 	tile.add_theme_stylebox_override("pressed", style)
