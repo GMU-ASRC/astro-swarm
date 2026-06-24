@@ -36,6 +36,7 @@ var planet_radius: float = 0.0
 
 var forward_input: float = 0.0
 var turn_input: float = 0.0
+var _turn_cmd: float = 0.0
 var can_fire: bool = true
 
 const BlockExecutor := preload("res://entities/BlockExecutor.gd")
@@ -160,7 +161,7 @@ func reset_inputs():
 	turn_input = 0.0
 
 func _apply_movement(delta: float):
-	rotation += turn_input * turn_rate * delta
+	rotation += (turn_input * turn_rate + _turn_cmd) * delta
 	var vel: Vector2 = Vector2.RIGHT.rotated(rotation) * max_speed * speed_mult * forward_input
 	global_position += vel * delta
 	global_position.x = clampf(global_position.x, 14.0, arena_size.x - 14.0)
@@ -268,33 +269,40 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 		"stop":
 			forward_input = 0.0
 			turn_input = 0.0
+			_turn_cmd = 0.0
 			return BlockExecutor.DONE
 		"wander":
+			_turn_cmd = 0.0
 			if not state.has("turn"):
 				state.turn = randf_range(-1.0, 1.0)
 			turn_input = state.turn
 			forward_input = _throttle_mult
 			return _step(state, delta)
 		"random_walk":
+			_turn_cmd = 0.0
 			if not state.has("dir"):
 				state.dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
 			rotation = state.dir
 			forward_input = _throttle_mult
 			return _step(state, delta)
 		"turn_left":
-			rotation -= deg_to_rad(float(params.get("value", 90.0))) * delta
-			return _step(state, delta)
+			_turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
+			return BlockExecutor.DONE
 		"turn_right":
-			rotation += deg_to_rad(float(params.get("value", 90.0))) * delta
-			return _step(state, delta)
+			_turn_cmd = deg_to_rad(float(params.get("value", 90.0)))
+			return BlockExecutor.DONE
 		"turn_left_by":
+			_turn_cmd = 0.0
 			return _turn_by(state, delta, -1.0, float(params.get("value", 180.0)))
 		"turn_right_by":
+			_turn_cmd = 0.0
 			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
 		"face":
+			_turn_cmd = 0.0
 			_rotate_toward(0.0, delta)
 			return _step(state, delta)
 		"flee":
+			_turn_cmd = 0.0
 			_rotate_toward(PI, delta)
 			return _step(state, delta)
 		"throttle":

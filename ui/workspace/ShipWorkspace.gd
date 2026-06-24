@@ -17,7 +17,7 @@ const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
 	"condition": ["when_start", "when_always", "when_sees_enemy", "when_sees_ally", "when_alone", "when_sees_object", "when_sees_rim"],
 	"logic": ["if_sees", "if_within", "if_beyond"],
-	"action": ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_fire", "do_throttle"],
+	"action": ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_fire", "do_throttle"],
 }
 
 func _ready():

@@ -7,6 +7,7 @@ var spawn_id: int = -1
 
 var forward_input: float = 1.0
 var turn_input: float = 0.0
+var turn_cmd: float = 0.0
 var is_controlled: bool = false
 var controller_index: int = -1
 var _color: Color
@@ -107,7 +108,7 @@ func _physics_process(delta: float):
 	elif _collision_cooldown <= 0.0 and has_node("Interpreter"):
 		$Interpreter.process_behavior(scaled_delta)
 	var cfg := SimulationManager.get_type_config(type_id)
-	rotation += turn_input * cfg.turn_speed * scaled_delta
+	rotation += (turn_input * cfg.turn_speed + turn_cmd) * scaled_delta
 	velocity = Vector2.RIGHT.rotated(rotation) * cfg.speed * forward_input * ts
 	move_and_slide()
 	var s = Vector2(SimulationManager.settings.arena_width, SimulationManager.settings.arena_height)

@@ -122,33 +122,40 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 		"stop":
 			robot.forward_input = 0.0
 			robot.turn_input = 0.0
+			robot.turn_cmd = 0.0
 			return BlockExecutor.DONE
 		"wander":
+			robot.turn_cmd = 0.0
 			if not state.has("turn"):
 				state.turn = randf_range(-0.6, 0.6)
 			robot.turn_input = state.turn
 			robot.forward_input = _throttle_mult
 			return _step(state, delta)
 		"random_walk":
+			robot.turn_cmd = 0.0
 			if not state.has("dir"):
 				state.dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
 			robot.rotation = state.dir
 			robot.forward_input = _throttle_mult
 			return _step(state, delta)
 		"turn_left":
-			robot.rotation -= deg_to_rad(float(params.get("value", 90.0))) * delta
-			return _step(state, delta)
+			robot.turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
+			return BlockExecutor.DONE
 		"turn_right":
-			robot.rotation += deg_to_rad(float(params.get("value", 90.0))) * delta
-			return _step(state, delta)
+			robot.turn_cmd = deg_to_rad(float(params.get("value", 90.0)))
+			return BlockExecutor.DONE
 		"turn_left_by":
+			robot.turn_cmd = 0.0
 			return _turn_by(state, delta, -1.0, float(params.get("value", 180.0)))
 		"turn_right_by":
+			robot.turn_cmd = 0.0
 			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
 		"face":
+			robot.turn_cmd = 0.0
 			_rotate_toward(0.0, delta)
 			return _step(state, delta)
 		"flee":
+			robot.turn_cmd = 0.0
 			_rotate_toward(PI, delta)
 			return _step(state, delta)
 		"throttle":

@@ -42,7 +42,7 @@ const C_BORDER    := Color(0.318, 0.306, 0.463, 1.0)
 
 const PLACE_HINT := "Click + drag inside the blue ring to place defenders and aim them  ·  Right-click a defender to remove it  ·  Scroll to zoom  ·  Middle-drag to pan  ·  Edit ship logic in Workspace"
 
-enum Phase { PLACE, ACTIVE, WIN, LOSE }
+enum Phase { PLACE, ACTIVE, TEST, WIN, LOSE }
 var _phase: Phase = Phase.PLACE
 
 var _placements: Array = []
@@ -311,6 +311,20 @@ func _launch():
 	_spawn_enemy()
 	queue_redraw()
 
+func _test_run():
+	if _placements.is_empty():
+		_hint_label.text = "Place at least one defender first!"
+		return
+	_phase = Phase.TEST
+	_launch_btn.visible = false
+	_phase_label.text = "TESTING..."
+	_phase_label.add_theme_color_override("font_color", ACCENT)
+	_hint_label.text = "Defenders run their workspace program. No enemy spawned. Press RESTART to edit placements."
+	for ship in _defender_ships:
+		if is_instance_valid(ship):
+			ship.set_physics_process(true)
+	queue_redraw()
+
 func _spawn_enemy():
 	var margin := 40.0
 	var spawn_pos: Vector2
@@ -387,19 +401,23 @@ func _build_hud():
 	top.offset_bottom = 50
 	root.add_child(top)
 
-	var leave_btn := _make_btn("← LEAVE", 13)
+	var leave_btn := _make_btn("← LEAVE", 10)
 	leave_btn.pressed.connect(_leave)
 	top.add_child(leave_btn)
 
-	var workspace_btn := _make_btn("WORKSPACE", 13)
+	var workspace_btn := _make_btn("WORKSPACE", 10)
 	workspace_btn.pressed.connect(_open_workspace)
 	top.add_child(workspace_btn)
 
-	var restart_btn := _make_btn("RESTART", 13)
+	var test_btn := _make_btn("TEST", 10)
+	test_btn.pressed.connect(_test_run)
+	top.add_child(test_btn)
+
+	var restart_btn := _make_btn("RESTART", 10)
 	restart_btn.pressed.connect(_restart)
 	top.add_child(restart_btn)
 
-	var clear_btn := _make_btn("CLEAR", 13)
+	var clear_btn := _make_btn("CLEAR", 10)
 	clear_btn.pressed.connect(_clear_defenders)
 	top.add_child(clear_btn)
 
@@ -423,7 +441,7 @@ func _build_hud():
 	_count_label = _lbl("DEFENDERS: 0 / %d" % MAX_DEFENDERS, 11, C_DIM)
 	left.add_child(_count_label)
 
-	_launch_btn = _make_btn("LAUNCH DRONE →", 13)
+	_launch_btn = _make_btn("LAUNCH DRONE →", 11)
 	_launch_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_launch_btn.offset_left = -210
 	_launch_btn.offset_top = -54
@@ -494,11 +512,11 @@ func _build_result_panel(root: Control):
 	rbtnrow.alignment = BoxContainer.ALIGNMENT_CENTER
 	rvb.add_child(rbtnrow)
 
-	var retry := _make_btn("TRY AGAIN", 13)
+	var retry := _make_btn("TRY AGAIN", 11)
 	retry.pressed.connect(_restart)
 	rbtnrow.add_child(retry)
 
-	var leave2 := _make_btn("LEVELS", 13)
+	var leave2 := _make_btn("LEVELS", 11)
 	leave2.pressed.connect(_leave)
 	rbtnrow.add_child(leave2)
 
