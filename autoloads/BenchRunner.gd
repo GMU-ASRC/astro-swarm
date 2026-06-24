@@ -16,7 +16,7 @@ const ENEMY_PROGRAM := [
 
 const DEFAULT_TRIALS := 100
 const MATCH_SECONDS  := 25.0
-const RECORD_EVERY   := 5
+const RECORD_EVERY   := 2
 const TAIL_FRAMES    := 24
 
 var _algorithm: Array = []
