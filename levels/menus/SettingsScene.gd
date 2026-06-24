@@ -7,6 +7,7 @@ extends Control
 @onready var resolution_option = $VBox/TabContainer/Display/Margin/VBox/ResolutionOption
 @onready var display_apply_btn = $VBox/TabContainer/Display/Margin/VBox/DisplayApply
 @onready var graphics_apply_btn = $VBox/TabContainer/Graphics/Margin/VBox/GraphicsApply
+@onready var player_vbox: VBoxContainer = $VBox/TabContainer/Player/Margin/VBox
 @onready var reset_game_btn = $VBox/TabContainer/Player/Margin/VBox/ResetButton
 @onready var reset_modal: Control = $ResetModal
 @onready var reset_cancel_btn: Button = $ResetModal/Panel/VBox/Buttons/CancelButton
@@ -25,8 +26,12 @@ extends Control
 var _capturing_action: String = ""
 var _capturing_btn: Button = null
 
+var _callsign_edit: LineEdit
+var _callsign_info: Label
+
 func _ready():
 	back_btn.pressed.connect(_on_back)
+	_build_callsign_ui()
 
 	window_mode_option.select(PlayerSettings.get_window_mode_idx())
 	window_mode_option.item_selected.connect(func(_idx): _update_resolution_enabled())
@@ -81,6 +86,55 @@ func _on_graphics_apply():
 	PlayerSettings.set_vsync(vsync_check.button_pressed)
 	PlayerSettings.set_fps(fps_option.selected)
 	PlayerSettings.set_msaa(msaa_option.selected)
+
+func _build_callsign_ui():
+	var title := Label.new()
+	title.text = "Callsign"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.93, 0.94, 1, 1))
+
+	var info := Label.new()
+	info.text = "Change your callsign. Your player ID stays the same."
+	info.add_theme_font_size_override("font_size", 12)
+	info.add_theme_color_override("font_color", Color(0.6, 0.62, 0.74, 1))
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	_callsign_edit = LineEdit.new()
+	_callsign_edit.text = PlayerData.username
+	_callsign_edit.placeholder_text = "Enter callsign"
+	_callsign_edit.max_length = 30
+	_callsign_edit.custom_minimum_size = Vector2(260, 0)
+	_callsign_edit.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_callsign_edit.text_submitted.connect(func(_text): _on_save_callsign())
+
+	var save_btn := Button.new()
+	save_btn.text = " Save Callsign "
+	save_btn.focus_mode = Control.FOCUS_NONE
+	save_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	save_btn.pressed.connect(_on_save_callsign)
+
+	_callsign_info = Label.new()
+	_callsign_info.text = "ID: %s" % PlayerData.player_id
+	_callsign_info.add_theme_font_size_override("font_size", 11)
+	_callsign_info.add_theme_color_override("font_color", Color(0.5, 0.52, 0.62, 1))
+
+	var separator := HSeparator.new()
+
+	var nodes: Array = [title, info, _callsign_edit, save_btn, _callsign_info, separator]
+	for i in nodes.size():
+		player_vbox.add_child(nodes[i])
+		player_vbox.move_child(nodes[i], i)
+
+func _on_save_callsign():
+	var new_name: String = _callsign_edit.text.strip_edges()
+	if new_name == "":
+		_callsign_info.add_theme_color_override("font_color", Color(1, 0.55, 0.5, 1))
+		_callsign_info.text = "Callsign cannot be empty."
+		return
+	PlayerData.set_username(new_name)
+	_callsign_edit.text = PlayerData.username
+	_callsign_info.add_theme_color_override("font_color", Color(0.4, 0.85, 0.45, 1))
+	_callsign_info.text = "Saved as %s  (ID unchanged: %s)" % [PlayerData.username, PlayerData.player_id]
 
 func _on_reset_pressed():
 	reset_modal.visible = true
