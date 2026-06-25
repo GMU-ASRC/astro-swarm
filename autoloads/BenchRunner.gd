@@ -20,7 +20,7 @@ const DEFAULT_SWEEP_TRIALS := 1
 const DEFAULT_SEED         := 987654321
 const DEFAULT_SPAWN_POINTS := 20
 const DEFAULT_MATCH_SECONDS := 4 * 60.0
-const SWEEP_RADIUS  := 400.0
+const SWEEP_RADIUS  := 300.0
 const RECORD_EVERY   := 2
 const REPLAY_TAIL    := 90
 
@@ -38,6 +38,7 @@ var _trial_start: int = 0
 var _trial_count: int = -1
 var _n_start: int = 1
 var _n_count: int = -1
+var _enemy_start: Vector2 = Vector2(-1.0, -1.0)
 var _out_path: String = "user://farp_bench.json"
 
 var _spawn_rng := RandomNumberGenerator.new()
@@ -84,6 +85,8 @@ func _ready():
 	if _n_count < 0:
 		_n_count = _sweep_max
 	_build_spawn_points()
+	if _enemy_start.x < 0.0 or _enemy_start.y < 0.0:
+		_enemy_start = _spawn_points[0]
 	_match_frames = int(_match_seconds * Engine.physics_ticks_per_second)
 	_global_total = maxi(1, _trial_count + _n_count * _sweep_trials)
 	print("[bench] start defenders=%d trials=%d trial_start=%d trial_count=%d n_start=%d n_count=%d seed=%d" % [_placements.size(), _trials, _trial_start, _trial_count, _n_start, _n_count, _seed])
@@ -129,6 +132,10 @@ func _parse_args():
 			_n_start = maxi(1, int(arg.split("=", true, 1)[1]))
 		elif arg.begins_with("--n-count="):
 			_n_count = maxi(0, int(arg.split("=", true, 1)[1]))
+		elif arg.begins_with("--enemy-x="):
+			_enemy_start.x = float(arg.split("=", true, 1)[1])
+		elif arg.begins_with("--enemy-y="):
+			_enemy_start.y = float(arg.split("=", true, 1)[1])
 	if _algorithm.is_empty():
 		_algorithm = SimulationManager.normalize_to_scripts(PlayerData.DEFAULT_SHIP_BLOCKS)
 	if _placements.size() > MAX_DEFENDERS:
@@ -194,17 +201,17 @@ func _start_match():
 	_replay_stop = -1
 	_replay_frames = []
 	var placements: Array
-	var spawn_index: int
+	var spawn_pos: Vector2
 	if _phase == Phase.PLACEMENT:
 		placements = _placements
-		spawn_index = _current_trial
+		spawn_pos = _spawn_points[_current_trial % _spawn_points.size()]
 		seed(_seed + _current_trial)
 	else:
 		placements = _ring_placements(_sweep_n)
-		spawn_index = 0
+		spawn_pos = _enemy_start
 		seed(_seed + 1000000 + _sweep_n)
 	_spawn_defenders(placements)
-	_spawn_enemy(spawn_index)
+	_spawn_enemy(spawn_pos)
 	_replay_frames.append(_snapshot())
 
 func _spawn_defenders(placements: Array):
@@ -229,8 +236,7 @@ func _spawn_defenders(placements: Array):
 		_replay_fov = ship.fov_degrees
 		_defenders.append(ship)
 
-func _spawn_enemy(index: int):
-	var spawn_pos: Vector2 = _spawn_points[index % _spawn_points.size()]
+func _spawn_enemy(spawn_pos: Vector2):
 	_enemy = SHIP.instantiate()
 	_enemy.setup_raider(ENEMY_PROGRAM, ENEMY_HP)
 	_enemy.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
