@@ -15,7 +15,7 @@ const PLANET_DISP   := 240.0
 const PLANET_RADIUS := PLANET_DISP * 0.5
 
 const PLACE_MIN     := PLANET_RADIUS + 50.0
-const PLACE_MAX     := 620.0
+const PLACE_MAX     := 465.0
 const MAX_DEFENDERS := 6
 const DEFENDER_HP   := 99.0
 
