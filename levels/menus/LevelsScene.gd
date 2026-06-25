@@ -54,6 +54,12 @@ func _build_ui():
 	for i in LEVELS.size():
 		grid.add_child(_make_tile(i + 1, LEVELS[i]))
 
+	var entries_wrap := CenterContainer.new()
+	vbox.add_child(entries_wrap)
+	var entries_btn := _make_btn("MY ENTRIES")
+	entries_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerEntriesScene.tscn"))
+	entries_wrap.add_child(entries_btn)
+
 	var back_wrap := CenterContainer.new()
 	vbox.add_child(back_wrap)
 	var back := _make_btn("← BACK TO BASE")
