@@ -8,8 +8,8 @@ const SHIP_WORKSPACE := preload("res://ui/workspace/ShipWorkspace.gd")
 const FONT_REG       := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const GAME_THEME     := preload("res://ui/GameTheme.tres")
 
-const ARENA         := Vector2(2560.0, 1440.0)
-const PLANET_CENTER := Vector2(1280.0, 720.0)
+const ARENA         := Vector2(3840.0, 2160.0)
+const PLANET_CENTER := Vector2(1920.0, 1080.0)
 const PLANET_PIXELS := 80.0
 const PLANET_DISP   := 240.0
 const PLANET_RADIUS := PLANET_DISP * 0.5
