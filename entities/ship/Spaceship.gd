@@ -160,6 +160,9 @@ func reset_inputs():
 	forward_input = 0.0
 	turn_input = 0.0
 
+func on_deactivate():
+	_turn_cmd = 0.0
+
 func _apply_movement(delta: float):
 	rotation += (turn_input * turn_rate + _turn_cmd) * delta
 	var vel: Vector2 = Vector2.RIGHT.rotated(rotation) * max_speed * speed_mult * forward_input
@@ -188,14 +191,16 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 			return true
 		"sees", "sees_species", "sees_enemy":
 			return _enemies_cache.size() > 0
-		"alone", "no_sees_species":
+		"alone":
+			return _enemies_cache.size() == 0 and _live_allies().size() == 0
+		"no_sees_species":
 			return _enemies_cache.size() == 0
 		"sees_ally":
 			return _live_allies().size() > 0
 		"near_wall":
 			return _near_wall()
 		"sees_wall":
-			return false
+			return _sees_rim()
 		"sees_object":
 			return _sees_object()
 		"sees_rim":
@@ -271,20 +276,17 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			turn_input = 0.0
 			_turn_cmd = 0.0
 			return BlockExecutor.DONE
-		"wander":
+		"random_walk", "wander":
 			_turn_cmd = 0.0
-			if not state.has("turn"):
-				state.turn = randf_range(-1.0, 1.0)
-			turn_input = state.turn
+			if not state.has("heading"):
+				state.heading = randf() * TAU
+				state.remaining = _levy_step_time()
+			rotation = state.heading
 			forward_input = _throttle_mult
-			return _step(state, delta)
-		"random_walk":
-			_turn_cmd = 0.0
-			if not state.has("dir"):
-				state.dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
-			rotation = state.dir
-			forward_input = _throttle_mult
-			return _step(state, delta)
+			state.remaining -= delta
+			if state.remaining <= 0.0:
+				return BlockExecutor.DONE
+			return BlockExecutor.RUNNING
 		"turn_left":
 			_turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
 			return BlockExecutor.DONE
@@ -312,6 +314,13 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			_fire()
 			return BlockExecutor.DONE
 	return BlockExecutor.DONE
+
+func _levy_step_time() -> float:
+	var shortest := 0.2
+	var longest := 3.0
+	var sample := randf()
+	var step := shortest / maxf(0.001, 1.0 - sample)
+	return minf(step, longest)
 
 func _step(state: Dictionary, delta: float) -> bool:
 	if not state.has("t"):

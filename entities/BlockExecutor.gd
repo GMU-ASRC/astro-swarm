@@ -42,7 +42,13 @@ func process(delta: float):
 func _run_script(sc: Dictionary, delta: float):
 	if sc.done:
 		return
+	if sc.body.is_empty():
+		if sc.once:
+			sc.done = true
+		return
 	if not (sc.once or host.eval_condition(sc.cond, sc.cond_params)):
+		if sc.active and host.has_method("on_deactivate"):
+			host.on_deactivate()
 		sc.active = false
 		sc.frames = []
 		sc.state = {}
@@ -89,7 +95,6 @@ func _run_script(sc: Dictionary, delta: float):
 			else:
 				frame.idx += 1
 			continue
-		frame.matched = false
 		if host.exec_action(t, b.get("params", {}), delta, sc.state):
 			frame.idx += 1
 			sc.state = {}

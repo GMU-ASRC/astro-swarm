@@ -28,6 +28,9 @@ func reset_inputs():
 	robot.forward_input = 0.0
 	robot.turn_input = 0.0
 
+func on_deactivate():
+	robot.turn_cmd = 0.0
+
 func eval_condition(cond: String, params: Dictionary) -> bool:
 	match cond:
 		"always":      return true
@@ -38,13 +41,13 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 		"sees_species":
 			var target_type: String = params.get("value", "")
 			for t in sensor.visible_targets:
-				if t is CharacterBody2D and "type_id" in t and t.type_id == target_type:
+				if is_instance_valid(t) and t is CharacterBody2D and "type_id" in t and t.type_id == target_type:
 					return true
 			return false
 		"no_sees_species":
 			var target_type2: String = params.get("value", "")
 			for t in sensor.visible_targets:
-				if t is CharacterBody2D and "type_id" in t and t.type_id == target_type2:
+				if is_instance_valid(t) and t is CharacterBody2D and "type_id" in t and t.type_id == target_type2:
 					return false
 			return true
 		"within":
@@ -61,7 +64,7 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 				"wall":   return sensor.near_wall
 				_:
 					for t in sensor.visible_targets:
-						if t is CharacterBody2D and "type_id" in t and t.type_id == target:
+						if is_instance_valid(t) and t is CharacterBody2D and "type_id" in t and t.type_id == target:
 							return true
 					return false
 		"compare":
@@ -91,6 +94,8 @@ func _compare_var(params: Dictionary) -> bool:
 func _nearest_dist() -> float:
 	var best: float = -1.0
 	for t in sensor.visible_targets:
+		if not is_instance_valid(t):
+			continue
 		var d: float = robot.global_position.distance_to(t.global_position)
 		if best < 0.0 or d < best:
 			best = d
@@ -124,20 +129,17 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			robot.turn_input = 0.0
 			robot.turn_cmd = 0.0
 			return BlockExecutor.DONE
-		"wander":
+		"random_walk", "wander":
 			robot.turn_cmd = 0.0
-			if not state.has("turn"):
-				state.turn = randf_range(-0.6, 0.6)
-			robot.turn_input = state.turn
+			if not state.has("heading"):
+				state.heading = randf() * TAU
+				state.remaining = _levy_step_time()
+			robot.rotation = state.heading
 			robot.forward_input = _throttle_mult
-			return _step(state, delta)
-		"random_walk":
-			robot.turn_cmd = 0.0
-			if not state.has("dir"):
-				state.dir = [0.0, PI / 2.0, PI, -PI / 2.0][randi() % 4]
-			robot.rotation = state.dir
-			robot.forward_input = _throttle_mult
-			return _step(state, delta)
+			state.remaining -= delta
+			if state.remaining <= 0.0:
+				return BlockExecutor.DONE
+			return BlockExecutor.RUNNING
 		"turn_left":
 			robot.turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
 			return BlockExecutor.DONE
@@ -170,6 +172,13 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			return BlockExecutor.DONE
 	return BlockExecutor.DONE
 
+func _levy_step_time() -> float:
+	var shortest := 0.2
+	var longest := 3.0
+	var sample := randf()
+	var step := shortest / maxf(0.001, 1.0 - sample)
+	return minf(step, longest)
+
 func _step(state: Dictionary, delta: float) -> bool:
 	if not state.has("t"):
 		state.t = STEP_TIME
@@ -189,8 +198,12 @@ func _turn_by(state: Dictionary, delta: float, dir: float, deg: float) -> bool:
 	return BlockExecutor.RUNNING
 
 func _rotate_toward(offset: float, delta: float):
-	if sensor.visible_targets.size() == 0:
+	var target = null
+	for t in sensor.visible_targets:
+		if is_instance_valid(t):
+			target = t
+			break
+	if target == null:
 		return
-	var target = sensor.visible_targets[0]
 	var a: float = robot.global_position.angle_to_point(target.global_position) + offset
 	robot.rotation = lerp_angle(robot.rotation, a, 5.0 * delta)

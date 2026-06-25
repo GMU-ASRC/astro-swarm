@@ -150,7 +150,7 @@ const PALETTE_ORDER := {
 	"condition": ["when_start", "when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
 	"logic":     ["if_see", "if_within", "if_beyond", "if_compare", "else"],
 	"variable":  ["set_var", "set_var_random"],
-	"action":    ["do_forward", "do_backward", "do_stop", "do_wander", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_stop_sim", "do_pause_sim"],
+	"action":    ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_stop_sim", "do_pause_sim"],
 }
 
 func _ready():
@@ -326,9 +326,8 @@ func _collect_config(blocks: Array, cfg: Dictionary):
 			"set_view":   cfg.view_distance = float(p.get("value", settings.view_distance)) * PX_PER_METER
 			"set_fov":    cfg.fov_degrees   = float(p.get("value", settings.fov_degrees))
 			"set_size":   cfg.dot_radius    = float(p.get("value", 6.0))
-		var children: Array = b.get("children", [])
-		if not children.is_empty():
-			_collect_config(children, cfg)
+			"when_start":
+				_collect_config(b.get("children", []), cfg)
 
 func ship_config_from_scripts(scripts: Array, base_view: float, base_fov: float, base_speed: float = 150.0, base_turn: float = 3.2, base_size: float = 9.0) -> Dictionary:
 	var cfg := {
