@@ -33,6 +33,7 @@ var star_center: Vector2 = Vector2.ZERO
 var star_radius: float = 0.0
 var planet_center: Vector2 = Vector2.ZERO
 var planet_radius: float = 0.0
+var collisions_enabled: bool = true
 
 var forward_input: float = 0.0
 var turn_input: float = 0.0
@@ -172,6 +173,8 @@ func _apply_movement(delta: float):
 	_resolve_obstacles()
 
 func _resolve_obstacles():
+	if not collisions_enabled:
+		return
 	if star_radius > 0.0 and global_position.distance_to(star_center) < star_radius + hull_radius:
 		take_damage(max_hp)
 		return

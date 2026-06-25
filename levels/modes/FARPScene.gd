@@ -229,7 +229,8 @@ func _place_defender(start: Vector2, end: Vector2):
 func _spawn_defender(placement: Dictionary, running: bool):
 	var ship := SHIP.instantiate()
 	ship.setup_player(PlayerData.ship_blocks, DEFENDER_HP)
-	ship.set_obstacles(Vector2.ZERO, 0.0, PLANET_CENTER, PLANET_RADIUS)
+	ship.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
+	ship.collisions_enabled = false
 	ship.arena_size = ARENA
 	ship.can_fire = false
 	ship.destroyed.connect(_on_defender_destroyed)
@@ -336,7 +337,8 @@ func _spawn_enemy():
 
 	_enemy = SHIP.instantiate()
 	_enemy.setup_raider(ENEMY_PROGRAM, ENEMY_HP)
-	_enemy.set_obstacles(Vector2.ZERO, 0.0, PLANET_CENTER, PLANET_RADIUS)
+	_enemy.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
+	_enemy.collisions_enabled = false
 	_enemy.arena_size = ARENA
 	_enemy.speed_mult = ENEMY_SPEED / 150.0
 	add_child(_enemy)
