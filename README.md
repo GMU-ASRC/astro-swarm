@@ -5,6 +5,7 @@
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macOS-lightgrey)](#building-from-source)
 [![Video Export](https://img.shields.io/badge/video%20export-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
+[![Version](https://img.shields.io/badge/version-v0.0.4--alpha-blue)](#)
 
 AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. It also includes a full **swarm-behaviour simulator** sandbox: design species, program their behaviour with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
 
@@ -51,20 +52,23 @@ Deploy up to five ships (left-click + drag in your deploy zone) to wipe out the 
 
 ## Block reference
 
-Behaviour is built from three block types:
+Behaviour is built from four block types:
 
-- **Config** — set a physical parameter (speed, turn rate, vision range, FOV).
-- **Condition** — start a rule (Always; When I see anyone / nobody; When I touch or see a wall; When I see / don't see a species).
-- **Action** — run while the condition holds (move, stop, wander, turn, face target, flee).
+- **Config** — set a physical parameter (speed, turn rate, vision range, FOV, size).
+- **Condition** — start a rule (On start; Always; When I see anyone / nobody; When I touch or see a wall; When I see / don't see a species).
+- **Logic** — branch inside a rule (If I see ...; If target within / beyond a distance; Else).
+- **Action** — run while the condition holds (move, stop, random walk, turn, face target, flee, throttle, and — in the ship workspace — fire).
 
-Actions placed before any condition run under `Always`.
+Actions placed before any condition run under `Always`. **Random walk** steers on a Lévy-flight pattern: mostly short hops with the occasional long straight run. For branching, place an **Else** block directly after its **If** at the same level — the `Else` runs when that `If`'s condition was false.
+
+The FARP ship workspace uses the same block set as the simulator (minus the variable blocks).
 
 ## Default species
 
 | Species | Speed | Turn rate | Vision | FOV | Default behaviour |
 |---|---|---|---|---|---|
 | Hunter | 5.25 m/s | 3.0 rad/s | 5.5 m | 55° | Face anyone it sees |
-| Scout | 3.75 m/s | 2.0 rad/s | 4.5 m | 110° | Wander |
+| Scout | 3.75 m/s | 2.0 rad/s | 4.5 m | 110° | Random walk |
 | Worker | 2.4 m/s | 1.4 rad/s | 3.25 m | 180° | Flee anyone it sees |
 
 All move forward by default; add your own species with the **+** button.

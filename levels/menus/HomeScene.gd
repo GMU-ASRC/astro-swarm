@@ -1,6 +1,6 @@
 extends Control
 
-const VERSION := "v0.0.3-alpha"
+const VERSION := "v0.0.4-alpha"
 const VERSION_URL := "https://astroswarm.autonomousrobotics.club/api/version"
 const API_KEY := "damage-option-ozone"
 
