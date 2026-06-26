@@ -20,7 +20,7 @@ const DEFAULT_SWEEP_TRIALS := 1
 const DEFAULT_SEED         := 987654321
 const DEFAULT_MATCH_SECONDS := 4 * 60.0
 const SWEEP_RADIUS  := 300.0
-const RECORD_EVERY   := 2
+const RECORD_EVERY   := 1
 const REPLAY_TAIL    := 90
 
 enum Phase { PLACEMENT, SWEEP }
