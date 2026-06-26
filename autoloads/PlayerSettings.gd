@@ -207,6 +207,13 @@ func apply_bus_volume(bus_name: String, val: float):
 		AudioServer.set_bus_mute(bus_idx, false)
 		AudioServer.set_bus_volume_db(bus_idx, linear_to_db(val / 100.0))
 
+func get_flag(key: String, default_value: bool = false) -> bool:
+	return _cfg.get_value("progress", key, default_value)
+
+func set_flag(key: String, value: bool):
+	_cfg.set_value("progress", key, value)
+	_save()
+
 func _save():
 	if not _loaded:
 		return

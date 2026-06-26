@@ -30,6 +30,7 @@ var moon_seeds: Array = []
 var ship_blocks: Array = []
 var ship_algorithms: Dictionary = {}
 var game_mode: String = "timed_local"
+var farp_placements: Array = []
 
 var _rng := RandomNumberGenerator.new()
 
@@ -148,6 +149,13 @@ func set_game_mode(mode: String):
 	game_mode = mode
 	_save()
 
+func set_farp_placements(placements: Array):
+	farp_placements = placements
+	_save()
+
+func get_farp_placements() -> Array:
+	return farp_placements
+
 func reset_game():
 	username = ""
 	player_id = ""
@@ -160,6 +168,7 @@ func reset_game():
 	ship_blocks = []
 	ship_algorithms = {}
 	game_mode = "timed_local"
+	farp_placements = []
 	_ensure_planet()
 	_sync_moons()
 	_ensure_ship_program()
@@ -196,6 +205,7 @@ func _save():
 	cfg.set_value("ship", "blocks", ship_blocks)
 	cfg.set_value("ship", "algorithms", ship_algorithms)
 	cfg.set_value("match", "game_mode", game_mode)
+	cfg.set_value("farp", "placements", farp_placements)
 	cfg.save(SAVE_PATH)
 
 func _load():
@@ -213,3 +223,4 @@ func _load():
 	ship_blocks = SimulationManager.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
 	ship_algorithms = cfg.get_value("ship", "algorithms", {})
 	game_mode = cfg.get_value("match", "game_mode", "timed_local")
+	farp_placements = cfg.get_value("farp", "placements", [])

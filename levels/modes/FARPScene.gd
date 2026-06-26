@@ -40,7 +40,11 @@ const C_RED       := Color(1.0, 0.42, 0.32, 1.0)
 const C_GREEN     := Color(0.40, 0.85, 0.45, 1.0)
 const C_BORDER    := Color(0.318, 0.306, 0.463, 1.0)
 
-const PLACE_HINT := "Click + drag inside the blue ring to place defenders and aim them  ·  Right-click a defender to remove it  ·  Scroll to zoom  ·  Middle-drag to pan  ·  Edit ship logic in Workspace"
+const TUTORIAL_FLAG := "farp_tutorial_seen"
+
+const PLACE_HINT := "Drag inside the blue ring to place a defender and aim its vision cone  ·  Right-click a defender to remove it  ·  Program how they scan in WORKSPACE  ·  Press LAUNCH DRONE to start the wave  ·  Scroll to zoom, middle-drag to pan"
+const ACTIVE_HINT := "Your defenders run their workspace program. Catch the drone in a vision cone before it reaches the planet."
+const TEST_HINT := "Defenders run their workspace program with no enemy spawned. Press RESTART to edit placements."
 
 enum Phase { PLACE, ACTIVE, TEST, WIN, LOSE }
 var _phase: Phase = Phase.PLACE
@@ -52,6 +56,7 @@ var _active_time: float = 0.0
 
 var _radial: CanvasLayer
 var _radial_target: Node2D = null
+var _music: AudioStreamPlayer = null
 
 static var _persisted_placements: Array = []
 
@@ -72,9 +77,11 @@ var _timer_label: Label
 var _count_label: Label
 var _hint_label: Label
 var _launch_btn: Button
+var _clear_btn: Button
 var _result_panel: Control
 var _result_title: Label
 var _result_detail: Label
+var _tutorial_panel: Control
 
 func _ready():
 	get_tree().paused = false
@@ -94,6 +101,7 @@ func _ready():
 
 	_make_bg_stars()
 	_build_planet()
+	_start_music()
 
 	_drag_indicator = DRAG_INDICATOR.instantiate()
 	_drag_indicator.z_index = 8
@@ -117,12 +125,40 @@ func _ready():
 	_restore_placements()
 	queue_redraw()
 
+	if not PlayerSettings.get_flag(TUTORIAL_FLAG):
+		PlayerSettings.set_flag(TUTORIAL_FLAG, true)
+		_show_tutorial()
+
+func _start_music():
+	var stream := load("res://assets/music/domination challenge music.mp3") as AudioStreamMP3
+	if stream == null:
+		return
+	stream.loop = true
+	_music = AudioStreamPlayer.new()
+	_music.stream = stream
+	_music.bus = "Music"
+	add_child(_music)
+	_music.play()
+
 func _restore_placements():
-	for placement in _persisted_placements:
-		var p: Dictionary = placement.duplicate(true)
+	var source: Array = _persisted_placements if not _persisted_placements.is_empty() else _placements_from_disk()
+	for placement in source:
+		var p: Dictionary = {"pos": placement.pos, "rot": placement.rot}
 		_placements.append(p)
 		_spawn_defender(p, false)
 	_update_count()
+
+func _placements_from_disk() -> Array:
+	var out: Array = []
+	for p in PlayerData.get_farp_placements():
+		out.append({"pos": Vector2(p.get("x", 0.0), p.get("y", 0.0)), "rot": p.get("rot", 0.0)})
+	return out
+
+func _save_placements_to_disk():
+	var out: Array = []
+	for placement in _placements:
+		out.append({"x": placement.pos.x, "y": placement.pos.y, "rot": placement.rot})
+	PlayerData.set_farp_placements(out)
 
 func _make_bg_stars():
 	var rng := RandomNumberGenerator.new()
@@ -233,7 +269,7 @@ func _spawn_defender(placement: Dictionary, running: bool):
 	ship.collisions_enabled = false
 	ship.arena_size = ARENA
 	ship.can_fire = false
-	ship.destroyed.connect(_on_defender_destroyed)
+	ship.show_health = false
 	add_child(ship)
 	var cfg: Dictionary = SimulationManager.ship_config_from_scripts(PlayerData.ship_blocks, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
 	ship.view_distance = cfg.view_distance
@@ -247,9 +283,6 @@ func _spawn_defender(placement: Dictionary, running: bool):
 	ship.set_meta("placement", placement)
 	ship.set_physics_process(running)
 	_defender_ships.append(ship)
-
-func _on_defender_destroyed(ship):
-	_defender_ships.erase(ship)
 
 func _defender_at(world_pos: Vector2) -> Node2D:
 	for ship in _defender_ships:
@@ -304,8 +337,9 @@ func _launch():
 		return
 	_phase = Phase.ACTIVE
 	_launch_btn.visible = false
+	_clear_btn.disabled = true
 	_phase_label.text = "INTERCEPTING..."
-	_hint_label.text = "Your defenders run their workspace program. Stop the drone before it reaches the planet."
+	_hint_label.text = ACTIVE_HINT
 	for ship in _defender_ships:
 		if is_instance_valid(ship):
 			ship.set_physics_process(true)
@@ -318,9 +352,10 @@ func _test_run():
 		return
 	_phase = Phase.TEST
 	_launch_btn.visible = false
+	_clear_btn.disabled = true
 	_phase_label.text = "TESTING..."
 	_phase_label.add_theme_color_override("font_color", ACCENT)
-	_hint_label.text = "Defenders run their workspace program. No enemy spawned. Press RESTART to edit placements."
+	_hint_label.text = TEST_HINT
 	for ship in _defender_ships:
 		if is_instance_valid(ship):
 			ship.set_physics_process(true)
@@ -340,6 +375,7 @@ func _spawn_enemy():
 	_enemy.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
 	_enemy.collisions_enabled = false
 	_enemy.arena_size = ARENA
+	_enemy.show_health = false
 	_enemy.speed_mult = ENEMY_SPEED / 150.0
 	add_child(_enemy)
 	_enemy.global_position = spawn_pos
@@ -396,32 +432,36 @@ func _build_hud():
 
 	var top := HBoxContainer.new()
 	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top.add_theme_constant_override("separation", 12)
-	top.offset_left = 16
-	top.offset_top = 14
-	top.offset_right = -16
-	top.offset_bottom = 50
+	top.add_theme_constant_override("separation", 6)
+	top.offset_left = 12
+	top.offset_top = 12
+	top.offset_right = -12
+	top.offset_bottom = 40
 	root.add_child(top)
 
-	var leave_btn := _make_btn("← LEAVE", 10)
+	var leave_btn := _make_compact_btn("← LEAVE")
 	leave_btn.pressed.connect(_leave)
 	top.add_child(leave_btn)
 
-	var workspace_btn := _make_btn("WORKSPACE", 10)
+	var workspace_btn := _make_compact_btn("WORKSPACE")
 	workspace_btn.pressed.connect(_open_workspace)
 	top.add_child(workspace_btn)
 
-	var test_btn := _make_btn("TEST", 10)
+	var test_btn := _make_compact_btn("TEST")
 	test_btn.pressed.connect(_test_run)
 	top.add_child(test_btn)
 
-	var restart_btn := _make_btn("RESTART", 10)
+	var restart_btn := _make_compact_btn("RESTART")
 	restart_btn.pressed.connect(_restart)
 	top.add_child(restart_btn)
 
-	var clear_btn := _make_btn("CLEAR", 10)
-	clear_btn.pressed.connect(_clear_defenders)
-	top.add_child(clear_btn)
+	_clear_btn = _make_compact_btn("CLEAR")
+	_clear_btn.pressed.connect(_clear_defenders)
+	top.add_child(_clear_btn)
+
+	var help_btn := _make_compact_btn("? HELP")
+	help_btn.pressed.connect(_show_tutorial)
+	top.add_child(help_btn)
 
 	var sp := Control.new()
 	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -464,6 +504,7 @@ func _build_hud():
 	root.add_child(_hint_label)
 
 	_build_result_panel(root)
+	_build_tutorial_panel(root)
 
 func _build_result_panel(root: Control):
 	_result_panel = Control.new()
@@ -522,6 +563,79 @@ func _build_result_panel(root: Control):
 	leave2.pressed.connect(_leave)
 	rbtnrow.add_child(leave2)
 
+func _build_tutorial_panel(root: Control):
+	_tutorial_panel = Control.new()
+	_tutorial_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_tutorial_panel.visible = false
+	root.add_child(_tutorial_panel)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.78)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_tutorial_panel.add_child(dim)
+
+	var card := _panel(Color(0.129, 0.122, 0.196, 1.0), C_BORDER, 2, 8)
+	card.set_anchors_preset(Control.PRESET_CENTER)
+	card.offset_left = -300
+	card.offset_top = -210
+	card.offset_right = 300
+	card.offset_bottom = 210
+	_tutorial_panel.add_child(card)
+
+	var mar := MarginContainer.new()
+	for s in ["left", "right", "top", "bottom"]:
+		mar.add_theme_constant_override("margin_" + s, 28)
+	card.add_child(mar)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 12)
+	mar.add_child(vb)
+
+	var title := _lbl("HOW TO PLAY · FARP", 20, C_TEXT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vb.add_child(title)
+
+	var subtitle := _lbl("Spot the incoming drone before it reaches your planet.", 11, ACCENT)
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vb.add_child(subtitle)
+
+	var sep := ColorRect.new()
+	sep.color = C_BORDER
+	sep.custom_minimum_size = Vector2(0, 1)
+	vb.add_child(sep)
+
+	var steps := [
+		"1.  Drag inside the blue ring to place a defender and aim its vision cone.",
+		"2.  Right-click a defender to remove it. Place up to %d." % MAX_DEFENDERS,
+		"3.  Open WORKSPACE to program how your defenders move and scan.",
+		"4.  Press LAUNCH DRONE to start the wave. Catch the drone in any vision cone to win.",
+		"5.  Use TEST to dry-run your defenders with no enemy.",
+		"Scroll to zoom  ·  Middle-drag to pan.",
+	]
+	for step_text in steps:
+		var l := _lbl(step_text, 11, C_DIM)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(520, 0)
+		vb.add_child(l)
+
+	var btnrow := HBoxContainer.new()
+	btnrow.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_child(btnrow)
+
+	var got_it := _make_btn("GOT IT", 11)
+	got_it.pressed.connect(_hide_tutorial)
+	btnrow.add_child(got_it)
+
+func _show_tutorial():
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = true
+
+func _hide_tutorial():
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = false
+
 func _update_count():
 	_count_label.text = "DEFENDERS: %d / %d" % [_placements.size(), MAX_DEFENDERS]
 
@@ -545,6 +659,7 @@ func _restart():
 	_phase_label.add_theme_color_override("font_color", ACCENT)
 	_hint_label.text = PLACE_HINT
 	_launch_btn.visible = true
+	_clear_btn.disabled = false
 	_result_panel.visible = false
 	for placement in _placements:
 		_spawn_defender(placement, false)
@@ -552,7 +667,10 @@ func _restart():
 	queue_redraw()
 
 func _leave():
+	_save_placements_to_disk()
 	_persisted_placements = []
+	if is_instance_valid(_music):
+		_music.stop()
 	get_tree().change_scene_to_file("res://levels/menus/LevelsScene.tscn")
 
 func _draw():
@@ -609,6 +727,33 @@ func _make_btn(text: String, size: int = 12) -> Button:
 	b.add_theme_font_size_override("font_size", size)
 	b.focus_mode = Control.FOCUS_NONE
 	return b
+
+func _make_compact_btn(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.add_theme_font_override("font", FONT_REG)
+	b.add_theme_font_size_override("font_size", 9)
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_stylebox_override("normal", _compact_btn_style(Color(0.129, 0.122, 0.196, 1.0), C_BORDER))
+	b.add_theme_stylebox_override("hover", _compact_btn_style(Color(0.18, 0.17, 0.27, 1.0), ACCENT))
+	b.add_theme_stylebox_override("pressed", _compact_btn_style(Color(0.1, 0.095, 0.155, 1.0), ACCENT))
+	b.add_theme_stylebox_override("focus", _compact_btn_style(Color(0.129, 0.122, 0.196, 1.0), C_BORDER))
+	b.add_theme_color_override("font_color", C_TEXT)
+	b.add_theme_color_override("font_hover_color", C_TEXT)
+	b.add_theme_color_override("font_pressed_color", ACCENT)
+	return b
+
+func _compact_btn_style(bg: Color, border: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.border_color = border
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(0)
+	style.content_margin_left = 9
+	style.content_margin_right = 9
+	style.content_margin_top = 5
+	style.content_margin_bottom = 5
+	return style
 
 func _panel(bg: Color, border: Color, bw: int, radius: int) -> PanelContainer:
 	var pc := PanelContainer.new()

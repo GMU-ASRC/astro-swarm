@@ -21,6 +21,7 @@ const PROJECTILE := preload("res://entities/ship/Projectile.tscn")
 var team: int = TEAM_PLAYER
 var hp: float = 3.0
 var max_hp: float = 3.0
+var show_health: bool = true
 var arena_size: Vector2 = Vector2(1280, 720)
 var speed_mult: float = 1.0
 var view_distance: float = VIEW_DISTANCE
@@ -470,7 +471,7 @@ func _draw():
 	var back_b := Vector2(-9.0, 7.0) * ss
 	draw_colored_polygon(PackedVector2Array([tip, back_a, back_b]), col)
 	draw_polyline(PackedVector2Array([tip, back_a, back_b, tip]), Color(0.05, 0.05, 0.1, 1.0), 1.5, true)
-	if hp < max_hp:
+	if show_health and hp < max_hp:
 		_draw_hp_bar()
 
 func _draw_hp_bar():
