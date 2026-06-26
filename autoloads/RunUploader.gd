@@ -3,7 +3,7 @@ extends Node
 signal upload_finished(success: bool, message: String)
 
 const URL := "https://astroswarm.autonomousrobotics.club/api/runs"
-const API_KEY := "damage-option-ozone"
+const API_KEY := "world-unfair-file"
 
 func _emit_deferred(success: bool, message: String):
 	upload_finished.emit.call_deferred(success, message)

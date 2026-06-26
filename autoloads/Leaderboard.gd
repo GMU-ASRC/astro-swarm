@@ -1,7 +1,7 @@
 extends Node
 
 const URL := "https://astroswarm.autonomousrobotics.club/api/leaderboard"
-const API_KEY := "damage-option-ozone"
+const API_KEY := "world-unfair-file"
 
 func submit_time(time_seconds: float, algorithm: Array = []):
 	if PlayerData.player_id.length() != 36:

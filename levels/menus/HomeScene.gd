@@ -2,7 +2,7 @@ extends Control
 
 const VERSION := "v0.0.4-alpha"
 const VERSION_URL := "https://astroswarm.autonomousrobotics.club/api/version"
-const API_KEY := "damage-option-ozone"
+const API_KEY := "world-unfair-file"
 
 func _ready():
 	get_tree().paused = false

@@ -5,7 +5,7 @@ const GAME_THEME := preload("res://ui/GameTheme.tres")
 const ENTRY_SCENE := preload("res://levels/menus/PlayerEntryScene.gd")
 
 const ENTRIES_URL := "https://astroswarm.autonomousrobotics.club/api/evaluations"
-const API_KEY := "damage-option-ozone"
+const API_KEY := "world-unfair-file"
 
 const C_BG     := Color(0.035, 0.031, 0.059, 1.0)
 const C_PANEL  := Color(0.129, 0.122, 0.196, 1.0)

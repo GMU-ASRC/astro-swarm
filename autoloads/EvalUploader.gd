@@ -1,7 +1,7 @@
 extends Node
 
 const URL := "https://astroswarm.autonomousrobotics.club/api/evaluations"
-const API_KEY := "damage-option-ozone"
+const API_KEY := "world-unfair-file"
 
 func submit(algorithm: Array, placements: Array, level_id: String):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
