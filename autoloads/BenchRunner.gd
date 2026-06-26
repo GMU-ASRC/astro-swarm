@@ -72,7 +72,7 @@ var _sweep_runs: Array = []
 
 var _detect_frame: int = -1
 var _capture_frame: int = -1
-var _replay_stop: int = -1
+var _end_frame: int = -1
 var _running: bool = false
 
 func _ready():
@@ -198,7 +198,7 @@ func _start_match():
 	_frame = 0
 	_detect_frame = -1
 	_capture_frame = -1
-	_replay_stop = -1
+	_end_frame = -1
 	_replay_frames = []
 	var placements: Array
 	var spawn_pos: Vector2
@@ -251,24 +251,24 @@ func _physics_process(_delta: float):
 	if not _running:
 		return
 	_frame += 1
-	if _frame % RECORD_EVERY == 0 and (_replay_stop < 0 or _frame <= _replay_stop):
+	if _frame % RECORD_EVERY == 0 and (_end_frame < 0 or _frame <= _end_frame):
 		_replay_frames.append(_snapshot())
 
 	if _detect_frame < 0 and _any_defender_sees_enemy():
 		_detect_frame = _frame
+		if _end_frame >= 0:
+			_end_frame = maxi(_end_frame, _detect_frame + REPLAY_TAIL)
 	if _capture_frame < 0 and is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0:
 		_capture_frame = _frame
-		if _replay_stop < 0:
-			_replay_stop = _frame + REPLAY_TAIL
+		_end_frame = _frame + REPLAY_TAIL
+		if _detect_frame >= 0:
+			_end_frame = maxi(_end_frame, _detect_frame + REPLAY_TAIL)
 
-	var timed_out: bool = _frame >= _match_frames
-	if _phase == Phase.PLACEMENT:
-		var both_known: bool = _detect_frame >= 0 and _capture_frame >= 0
-		if both_known or timed_out:
+	var finished: bool = (_end_frame >= 0 and _frame >= _end_frame) or _frame >= _match_frames
+	if finished:
+		if _phase == Phase.PLACEMENT:
 			_finish_placement_match()
-	else:
-		var captured_with_tail: bool = _capture_frame >= 0 and _frame >= _capture_frame + REPLAY_TAIL
-		if captured_with_tail or timed_out:
+		else:
 			_finish_sweep_match()
 
 func _frame_to_time(frame: int) -> float:
