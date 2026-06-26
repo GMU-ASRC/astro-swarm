@@ -18,7 +18,6 @@ const DEFAULT_TRIALS := 100
 const DEFAULT_SWEEP_MAX    := 100
 const DEFAULT_SWEEP_TRIALS := 1
 const DEFAULT_SEED         := 987654321
-const DEFAULT_SPAWN_POINTS := 20
 const DEFAULT_MATCH_SECONDS := 4 * 60.0
 const SWEEP_RADIUS  := 300.0
 const RECORD_EVERY   := 2
@@ -32,7 +31,6 @@ var _trials: int = DEFAULT_TRIALS
 var _sweep_max: int = DEFAULT_SWEEP_MAX
 var _sweep_trials: int = DEFAULT_SWEEP_TRIALS
 var _seed: int = DEFAULT_SEED
-var _spawn_count: int = DEFAULT_SPAWN_POINTS
 var _match_seconds: float = DEFAULT_MATCH_SECONDS
 var _trial_start: int = 0
 var _trial_count: int = -1
@@ -120,8 +118,6 @@ func _parse_args():
 			_sweep_trials = maxi(1, int(arg.split("=", true, 1)[1]))
 		elif arg.begins_with("--seed="):
 			_seed = int(arg.split("=", true, 1)[1])
-		elif arg.begins_with("--spawn-points="):
-			_spawn_count = maxi(1, int(arg.split("=", true, 1)[1]))
 		elif arg.begins_with("--match-seconds="):
 			_match_seconds = maxf(1.0, float(arg.split("=", true, 1)[1]))
 		elif arg.begins_with("--trial-start="):
@@ -172,15 +168,31 @@ func _read_json(path: String):
 
 func _build_spawn_points():
 	_spawn_rng.seed = _seed
+	var count: int = maxi(1, _trials)
 	var margin := 40.0
-	for _i in _spawn_count:
-		var pos: Vector2
-		match _spawn_rng.randi() % 4:
-			0: pos = Vector2(_spawn_rng.randf_range(margin, ARENA.x - margin), margin)
-			1: pos = Vector2(_spawn_rng.randf_range(margin, ARENA.x - margin), ARENA.y - margin)
-			2: pos = Vector2(margin, _spawn_rng.randf_range(margin, ARENA.y - margin))
-			_: pos = Vector2(ARENA.x - margin, _spawn_rng.randf_range(margin, ARENA.y - margin))
-		_spawn_points.append(pos)
+	var min_x: float = margin
+	var min_y: float = margin
+	var max_x: float = ARENA.x - margin
+	var max_y: float = ARENA.y - margin
+	var w: float = max_x - min_x
+	var h: float = max_y - min_y
+	var perimeter: float = 2.0 * w + 2.0 * h
+	var slot: float = perimeter / float(count)
+	for i in count:
+		var d: float = (float(i) + 0.2 + _spawn_rng.randf() * 0.6) * slot
+		_spawn_points.append(_perimeter_point(d, min_x, min_y, max_x, max_y, w, h))
+
+func _perimeter_point(d: float, min_x: float, min_y: float, max_x: float, max_y: float, w: float, h: float) -> Vector2:
+	if d < w:
+		return Vector2(min_x + d, min_y)
+	d -= w
+	if d < h:
+		return Vector2(max_x, min_y + d)
+	d -= h
+	if d < w:
+		return Vector2(max_x - d, max_y)
+	d -= w
+	return Vector2(min_x, max_y - d)
 
 func _ring_placements(count: int) -> Array:
 	var out: Array = []
