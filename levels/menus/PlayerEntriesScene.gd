@@ -2,6 +2,7 @@ extends Control
 
 const FONT_REG := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const GAME_THEME := preload("res://ui/GameTheme.tres")
+const ENTRY_SCENE := preload("res://levels/menus/PlayerEntryScene.gd")
 
 const ENTRIES_URL := "https://astroswarm.autonomousrobotics.club/api/evaluations"
 const API_KEY := "damage-option-ozone"
@@ -116,7 +117,12 @@ func _make_entry_row(entry: Dictionary) -> Control:
 
 	var status: String = str(entry.get("status", ""))
 	var status_label := _lbl(status.to_upper(), 12, _status_color(status))
+	status_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(status_label)
+
+	var view_btn := _make_btn("VIEW")
+	view_btn.pressed.connect(_open_entry.bind(entry))
+	top.add_child(view_btn)
 
 	var rate = entry.get("success_rate", null)
 	var rate_text: String = "%s%%" % str(rate) if rate != null else "-"
@@ -128,6 +134,11 @@ func _make_entry_row(entry: Dictionary) -> Control:
 	row.add_child(id_label)
 
 	return panel
+
+func _open_entry(entry: Dictionary):
+	ENTRY_SCENE.entry_id = str(entry.get("id", ""))
+	ENTRY_SCENE.entry_summary = entry
+	get_tree().change_scene_to_file("res://levels/menus/PlayerEntryScene.tscn")
 
 func _status_color(status: String) -> Color:
 	if status == "done":

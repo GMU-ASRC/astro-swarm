@@ -16,7 +16,7 @@ const GRID_COLUMNS := 3
 
 const LEVELS := [
 	{"name": "FARP",       "scene": "res://levels/modes/FARPScene.tscn",       "locked": false},
-	{"name": "DOMINATION", "scene": "res://levels/modes/DominationScene.tscn", "locked": false},
+	{"name": "DOMINATION", "scene": "res://levels/modes/DominationScene.tscn", "locked": true},
 	{"name": "LOCKED",     "scene": "",                                        "locked": true},
 	{"name": "LOCKED",     "scene": "",                                        "locked": true},
 	{"name": "LOCKED",     "scene": "",                                        "locked": true},

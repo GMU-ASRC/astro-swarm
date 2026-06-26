@@ -46,7 +46,7 @@ func _ready():
 	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn"))
 	find_btn.pressed.connect(_on_find_match)
 	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/MoonsScene.tscn"))
-	shop_btn.pressed.connect(_on_shop)
+	shop_btn.disabled = true
 	game_mode_btn.pressed.connect(_on_game_mode_btn)
 	_setup_mode_popup()
 	_init_game_mode()
