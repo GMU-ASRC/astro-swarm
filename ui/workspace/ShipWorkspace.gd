@@ -15,7 +15,7 @@ const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
 
 const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
-	"condition": ["when_start", "when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall"],
+	"condition": ["when_start", "when_always", "when_sees", "when_sees_enemy", "when_sees_ally", "when_alone", "when_near_wall", "when_sees_wall"],
 	"logic": ["if_see", "if_within", "if_beyond", "else"],
 	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_fire"],
 }

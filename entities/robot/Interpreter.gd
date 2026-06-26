@@ -60,6 +60,8 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 			var target: String = params.get("target", "anyone")
 			match target:
 				"anyone": return sensor.visible_targets.size() > 0
+				"enemy":  return sensor.visible_targets.size() > 0
+				"ally":   return false
 				"object": return sensor.visible_objects.size() > 0
 				"wall":   return sensor.near_wall
 				_:

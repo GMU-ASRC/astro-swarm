@@ -403,6 +403,8 @@ func dropdown_options(provider: String) -> Array:
 	match provider:
 		"targets":
 			options.append({"value": "anyone", "text": "anyone"})
+			options.append({"value": "enemy", "text": "an enemy"})
+			options.append({"value": "ally", "text": "an ally"})
 			options.append({"value": "object", "text": "an object"})
 			options.append({"value": "wall", "text": "a wall"})
 			for t in robot_types:

@@ -219,6 +219,7 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 			match params.get("target", "anyone"):
 				"object": return _sees_object()
 				"wall": return _near_wall()
+				"ally": return _live_allies().size() > 0
 				_: return _enemies_cache.size() > 0
 		"compare":
 			return _compare_var(params)
