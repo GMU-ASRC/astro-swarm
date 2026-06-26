@@ -13,6 +13,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 
 - **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
 - **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Workspace Moon's block editor.
+- **Benchmarked levels.** Play the FARP detection-defense scenario (and the Domination mode), then have your algorithm and placements graded headlessly on the dedicated server and published to the companion website, browsable in-game from My Entries.
 - **Visual block editor.** Build per-species behaviour by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
@@ -35,13 +36,21 @@ Reached from **Play** — your home planet sits centre-screen with unlocked moon
 - **Progression.** Earn XP to level up; moons unlock with level (up to 5). AstroCoin is the in-game currency. Username, level, XP, coins, and all seeds persist to a local config file.
 - **First launch.** A modal asks for your callsign before you claim your planet.
 
-The top-right buttons open **Moons**, **Shop**, and the ship **Workspace**; choose a game mode (**Timed Local**) and press **Find Match** to play. Online matchmaking isn't wired up yet.
+The top-right buttons open **Moons**, **Shop** (currently disabled), and the ship **Workspace**; choose a game mode (**Timed Local**) and press **Find Match** to play. Online matchmaking isn't wired up yet.
 
 ## Timed Local
 
 Deploy up to five ships (left-click + drag in your deploy zone) to wipe out the protector swarm orbiting the star before time runs out. Middle-drag to pan, scroll to zoom. Lose your whole fleet and it's game over.
 
 **Raiders.** A squad of enemy ships defends the protectors. Rather than orbiting, they run a block program of their own: wander the arena, turn away from the star/planet and the outer rim to stay in play, and face-and-fire on any of your ships they spot — so they roam in to intercept your attack.
+
+## Levels
+
+The **Levels** screen lists the benchmarked scenarios. **Level 1 — FARP** is playable; **Level 2 — Domination** is currently locked.
+
+**FARP** is a detection-defense scenario: place up to six defender ships in the ring around your planet, aim each one's vision cone, and program how they move and scan in the **Workspace**. Press **Launch Drone** and you win the moment any defender catches the incoming drone in its vision cone before it reaches the planet; **Test** dry-runs your defenders with no enemy. A tutorial appears the first time you enter (re-openable from the **? Help** button), and your defender layout is saved between sessions. Completing FARP uploads your algorithm and placements to the website, where the dedicated server benchmarks them headlessly (placement trials plus a ring-sweep over defender counts) and publishes the results.
+
+**My Entries** lists the evaluations you've submitted; selecting one opens an info screen with its status, detection rate, defender count, and outcome breakdown pulled live from the server.
 
 ## Controls
 
@@ -55,13 +64,13 @@ Deploy up to five ships (left-click + drag in your deploy zone) to wipe out the 
 Behaviour is built from four block types:
 
 - **Config** — set a physical parameter (speed, turn rate, vision range, FOV, size).
-- **Condition** — start a rule (On start; Always; When I see anyone / nobody; When I touch or see a wall; When I see / don't see a species).
-- **Logic** — branch inside a rule (If I see ...; If target within / beyond a distance; Else).
+- **Condition** — start a rule (On start; Always; When I see anyone / nobody; When I touch or see a wall). The simulator adds *When I see / don't see a [species]*; the ship workspace instead adds *When I see an enemy / ally*.
+- **Logic** — branch inside a rule (If I see anyone / an enemy / an ally / an object / a wall / a [species]; If target within / beyond a distance; Else).
 - **Action** — run while the condition holds (move, stop, random walk, turn, face target, flee, throttle, and — in the ship workspace — fire).
 
 Actions placed before any condition run under `Always`. **Random walk** steers on a Lévy-flight pattern: mostly short hops with the occasional long straight run. For branching, place an **Else** block directly after its **If** at the same level — the `Else` runs when that `If`'s condition was false.
 
-The FARP ship workspace uses the same block set as the simulator (minus the variable blocks).
+The FARP ship workspace shares the simulator's block set (minus the variable blocks): it swaps the species conditions for **enemy/ally** detection, and hides the **Fire**, **Throttle**, and **Set size** blocks since FARP is detection-only. Sliders also accept keyboard arrow keys once focused.
 
 ## Default species
 
