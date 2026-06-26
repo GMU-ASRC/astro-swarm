@@ -15,10 +15,13 @@ const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
 
 const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
-	"condition": ["when_start", "when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
+	"condition": ["when_start", "when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall"],
 	"logic": ["if_see", "if_within", "if_beyond", "else"],
 	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_fire"],
 }
+
+const FARP_SCENE := "res://levels/modes/FARPScene.tscn"
+const FARP_DISABLED_BLOCKS := ["do_throttle", "do_fire", "set_size"]
 
 func _ready():
 	get_tree().paused = false
@@ -110,9 +113,20 @@ func _build_palette():
 	for child in palette_list.get_children():
 		child.queue_free()
 	for category in ["config", "condition", "logic", "action"]:
-		_build_palette_category(category, GAME_PALETTE.get(category, []))
+		_build_palette_category(category, _allowed_blocks(GAME_PALETTE.get(category, [])))
+
+func _allowed_blocks(ids: Array) -> Array:
+	if return_scene != FARP_SCENE:
+		return ids
+	var allowed: Array = []
+	for block_id in ids:
+		if not FARP_DISABLED_BLOCKS.has(block_id):
+			allowed.append(block_id)
+	return allowed
 
 func _build_palette_category(category: String, ids: Array):
+	if ids.is_empty():
+		return
 	var header := Label.new()
 	header.text = _category_label(category)
 	header.add_theme_font_size_override("font_size", 10)

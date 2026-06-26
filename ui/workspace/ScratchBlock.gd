@@ -181,6 +181,12 @@ func _add_slider(spec: Dictionary):
 	slider.min_value = spec.get("min", 0.0)
 	slider.max_value = spec.get("max", 100.0)
 	slider.step = step
+	slider.focus_mode = Control.FOCUS_ALL
+	slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	slider.gui_input.connect(func(event):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			slider.grab_focus()
+	)
 	var vlabel := Label.new()
 	vlabel.custom_minimum_size = Vector2(64, 0)
 	vlabel.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
