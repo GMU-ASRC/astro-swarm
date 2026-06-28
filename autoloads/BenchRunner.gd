@@ -22,6 +22,9 @@ const DEFAULT_MATCH_SECONDS := 4 * 60.0
 const SWEEP_RADIUS  := 300.0
 const RECORD_EVERY   := 1
 const REPLAY_TAIL    := 90
+const SWEEP_SEED_OFFSET := 100000
+const SWEEP_SEED_STRIDE := 1000000
+const SWEEP_MATCH_OFFSET := 500000
 
 enum Phase { PLACEMENT, SWEEP }
 
@@ -67,6 +70,14 @@ var _sweep_n: int = 1
 var _sweep_success: int = 0
 var _sweep_points: Array = []
 var _sweep_runs: Array = []
+var _sweep_detect_count: int = 0
+var _sweep_capture_count: int = 0
+var _sweep_first_outcome: String = "timeout"
+var _sweep_first_detect: float = -1.0
+var _sweep_first_capture: float = -1.0
+var _sweep_first_frames: Array = []
+var _sweep_seeds: Array = []
+var _recording: bool = true
 
 var _detect_frame: int = -1
 var _capture_frame: int = -1
@@ -83,6 +94,7 @@ func _ready():
 	if _n_count < 0:
 		_n_count = _sweep_max
 	_build_spawn_points()
+	_build_sweep_seeds()
 	if _enemy_start.x < 0.0 or _enemy_start.y < 0.0:
 		_enemy_start = _spawn_points[0]
 	_match_frames = int(_match_seconds * Engine.physics_ticks_per_second)
@@ -194,9 +206,19 @@ func _perimeter_point(d: float, min_x: float, min_y: float, max_x: float, max_y:
 	d -= w
 	return Vector2(min_x, max_y - d)
 
+func _build_sweep_seeds():
+	_sweep_seeds.clear()
+	for trial in _sweep_trials:
+		_sweep_seeds.append(_seed + SWEEP_SEED_OFFSET + trial * SWEEP_SEED_STRIDE)
+
+func _sweep_trial_seed(trial: int) -> int:
+	if _sweep_seeds.is_empty():
+		return _seed + SWEEP_SEED_OFFSET
+	return _sweep_seeds[trial % _sweep_seeds.size()]
+
 func _ring_placements(count: int) -> Array:
 	var out: Array = []
-	_orient_rng.seed = _seed + 100000 + count
+	_orient_rng.seed = _sweep_trial_seed(_current_trial) + count
 	for i in count:
 		var angle: float = TAU * float(i) / float(count)
 		out.append({
@@ -215,16 +237,19 @@ func _start_match():
 	var placements: Array
 	var spawn_pos: Vector2
 	if _phase == Phase.PLACEMENT:
+		_recording = true
 		placements = _placements
 		spawn_pos = _spawn_points[_current_trial % _spawn_points.size()]
 		seed(_seed + _current_trial)
 	else:
+		_recording = _current_trial == 0
 		placements = _ring_placements(_sweep_n)
 		spawn_pos = _enemy_start
-		seed(_seed + 1000000 + _sweep_n)
+		seed(_sweep_trial_seed(_current_trial) + SWEEP_MATCH_OFFSET + _sweep_n)
 	_spawn_defenders(placements)
 	_spawn_enemy(spawn_pos)
-	_replay_frames.append(_snapshot())
+	if _recording:
+		_replay_frames.append(_snapshot())
 
 func _spawn_defenders(placements: Array):
 	for placement in placements:
@@ -263,18 +288,16 @@ func _physics_process(_delta: float):
 	if not _running:
 		return
 	_frame += 1
-	if _frame % RECORD_EVERY == 0 and (_end_frame < 0 or _frame <= _end_frame):
+	if _recording and _frame % RECORD_EVERY == 0 and (_end_frame < 0 or _frame <= _end_frame):
 		_replay_frames.append(_snapshot())
 
-	if _detect_frame < 0 and _any_defender_sees_enemy():
-		_detect_frame = _frame
-		if _end_frame >= 0:
-			_end_frame = maxi(_end_frame, _detect_frame + REPLAY_TAIL)
-	if _capture_frame < 0 and is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0:
+	var enemy_in_zone: bool = is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0
+	if _capture_frame < 0 and enemy_in_zone:
 		_capture_frame = _frame
-		_end_frame = _frame + REPLAY_TAIL
-		if _detect_frame >= 0:
-			_end_frame = maxi(_end_frame, _detect_frame + REPLAY_TAIL)
+	if _detect_frame < 0 and _capture_frame < 0 and _any_defender_sees_enemy():
+		_detect_frame = _frame
+	if _capture_frame >= 0 and _end_frame < 0:
+		_end_frame = _capture_frame + REPLAY_TAIL
 
 	var finished: bool = (_end_frame >= 0 and _frame >= _end_frame) or _frame >= _match_frames
 	if finished:
@@ -313,14 +336,15 @@ func _finish_placement_match():
 
 func _finish_sweep_match():
 	var outcome: String = _classify()
-	_sweep_runs.append({
-		"n": _sweep_n,
-		"outcome": outcome,
-		"detection_time": _frame_to_time(_detect_frame),
-		"capture_time": _frame_to_time(_capture_frame),
-		"defenders": _sweep_n,
-		"frames": _replay_frames,
-	})
+	if _detect_frame >= 0:
+		_sweep_detect_count += 1
+	elif _capture_frame >= 0:
+		_sweep_capture_count += 1
+	if _current_trial == 0:
+		_sweep_first_outcome = outcome
+		_sweep_first_detect = _frame_to_time(_detect_frame)
+		_sweep_first_capture = _frame_to_time(_capture_frame)
+		_sweep_first_frames = _replay_frames
 	if outcome == "win":
 		_sweep_success += 1
 	_advance("sweep n=%d" % _sweep_n)
@@ -341,11 +365,26 @@ func _advance(label: String):
 	if _current_trial >= _sweep_trials:
 		var rate: float = 100.0 * float(_sweep_success) / float(maxi(1, _sweep_trials))
 		_sweep_points.append({"n": _sweep_n, "success_rate": snappedf(rate, 0.1)})
+		var detect_rate: float = 100.0 * float(_sweep_detect_count) / float(maxi(1, _sweep_trials))
+		var capture_rate: float = 100.0 * float(_sweep_capture_count) / float(maxi(1, _sweep_trials))
+		_sweep_runs.append({
+			"n": _sweep_n,
+			"outcome": _sweep_first_outcome,
+			"detection_time": _sweep_first_detect,
+			"capture_time": _sweep_first_capture,
+			"detection_rate": snappedf(detect_rate, 0.1),
+			"capture_rate": snappedf(capture_rate, 0.1),
+			"defenders": _sweep_n,
+			"frames": _sweep_first_frames,
+		})
 		_sweep_n += 1
 		if _sweep_n >= _n_start + _n_count:
 			_write_output()
 			return
 		_sweep_success = 0
+		_sweep_detect_count = 0
+		_sweep_capture_count = 0
+		_sweep_first_frames = []
 		_current_trial = 0
 	_start_match()
 
