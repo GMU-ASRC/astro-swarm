@@ -82,6 +82,8 @@ var _recording: bool = true
 var _detect_frame: int = -1
 var _capture_frame: int = -1
 var _end_frame: int = -1
+var _enemy_was_in_zone: bool = false
+var _capture_horizon: float = 0.0
 var _running: bool = false
 
 func _ready():
@@ -233,6 +235,7 @@ func _start_match():
 	_detect_frame = -1
 	_capture_frame = -1
 	_end_frame = -1
+	_enemy_was_in_zone = false
 	_replay_frames = []
 	var placements: Array
 	var spawn_pos: Vector2
@@ -248,6 +251,10 @@ func _start_match():
 		seed(_sweep_trial_seed(_current_trial) + SWEEP_MATCH_OFFSET + _sweep_n)
 	_spawn_defenders(placements)
 	_spawn_enemy(spawn_pos)
+	_capture_horizon = 0.0
+	for ship in _defenders:
+		if is_instance_valid(ship):
+			_capture_horizon = maxf(_capture_horizon, ship.global_position.distance_to(PLANET_CENTER) + ship.view_distance)
 	if _recording:
 		_replay_frames.append(_snapshot())
 
@@ -259,6 +266,7 @@ func _spawn_defenders(placements: Array):
 		ship.collisions_enabled = false
 		ship.arena_size = ARENA
 		ship.can_fire = false
+		ship.visible = false
 		_world.add_child(ship)
 		var cfg: Dictionary = SimulationManager.ship_config_from_scripts(_algorithm, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
 		ship.view_distance = cfg.view_distance
@@ -280,6 +288,7 @@ func _spawn_enemy(spawn_pos: Vector2):
 	_enemy.collisions_enabled = false
 	_enemy.arena_size = ARENA
 	_enemy.speed_mult = ENEMY_SPEED / 150.0
+	_enemy.visible = false
 	_world.add_child(_enemy)
 	_enemy.global_position = spawn_pos
 	_enemy.rotation = (PLANET_CENTER - spawn_pos).angle()
@@ -292,29 +301,51 @@ func _physics_process(_delta: float):
 		_replay_frames.append(_snapshot())
 
 	var enemy_in_zone: bool = is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0
-	if _capture_frame < 0 and enemy_in_zone:
-		_capture_frame = _frame
-	if _detect_frame < 0 and _capture_frame < 0 and _any_defender_sees_enemy():
-		_detect_frame = _frame
+	if enemy_in_zone:
+		_enemy_was_in_zone = true
+	var need_capture: bool = _enemy_was_in_zone and _capture_frame < 0
+	var need_detect: bool = not _enemy_was_in_zone and _detect_frame < 0
+	if (need_capture or need_detect) and _any_defender_sees_enemy():
+		if _enemy_was_in_zone:
+			_capture_frame = _frame
+		else:
+			_detect_frame = _frame
 	if _capture_frame >= 0 and _end_frame < 0:
 		_end_frame = _capture_frame + REPLAY_TAIL
 
-	var finished: bool = (_end_frame >= 0 and _frame >= _end_frame) or _frame >= _match_frames
+	var finished: bool
+	if _recording:
+		finished = (_end_frame >= 0 and _frame >= _end_frame) or _enemy_reached_far_edge() or _frame >= _match_frames
+	else:
+		finished = (_end_frame >= 0 and _frame >= _end_frame) or _no_more_events_possible() or _enemy_reached_far_edge() or _frame >= _match_frames
 	if finished:
 		if _phase == Phase.PLACEMENT:
 			_finish_placement_match()
 		else:
 			_finish_sweep_match()
 
+func _no_more_events_possible() -> bool:
+	if not _enemy_was_in_zone or not is_instance_valid(_enemy):
+		return false
+	return _enemy.global_position.distance_to(PLANET_CENTER) > _capture_horizon
+
 func _frame_to_time(frame: int) -> float:
 	if frame < 0:
 		return -1.0
 	return snappedf(float(frame) / float(Engine.physics_ticks_per_second), 0.01)
 
+func _enemy_reached_far_edge() -> bool:
+	if not is_instance_valid(_enemy):
+		return true
+	if _frame < 30:
+		return false
+	var p: Vector2 = _enemy.global_position
+	return p.x <= 16.0 or p.y <= 16.0 or p.x >= ARENA.x - 16.0 or p.y >= ARENA.y - 16.0
+
 func _classify() -> String:
-	if _detect_frame >= 0 and (_capture_frame < 0 or _detect_frame <= _capture_frame):
+	if _detect_frame >= 0:
 		return "win"
-	if _capture_frame >= 0:
+	if _enemy_was_in_zone:
 		return "lose"
 	return "timeout"
 
@@ -338,7 +369,7 @@ func _finish_sweep_match():
 	var outcome: String = _classify()
 	if _detect_frame >= 0:
 		_sweep_detect_count += 1
-	elif _capture_frame >= 0:
+	if _capture_frame >= 0:
 		_sweep_capture_count += 1
 	if _current_trial == 0:
 		_sweep_first_outcome = outcome
