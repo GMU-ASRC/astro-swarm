@@ -383,8 +383,14 @@ func _finish_sweep_match():
 func _advance(label: String):
 	_global_done += 1
 	_current_trial += 1
-	var phase_name: String = "placement" if _phase == Phase.PLACEMENT else "sweep"
-	print("PROGRESS %d/%d  phase=%s outcome=%s" % [_global_done, _global_total, phase_name, label])
+	var stage: String
+	if _phase == Phase.PLACEMENT:
+		var done_here: int = _current_trial - _trial_start
+		stage = "Placement: trial %d/%d (last %s)" % [done_here, _trial_count, label]
+	else:
+		var n_index: int = _sweep_n - _n_start + 1
+		stage = "Ring sweep: %d defenders (n %d/%d), trial %d/%d [detect %d, capture %d]" % [_sweep_n, n_index, _n_count, _current_trial, _sweep_trials, _sweep_detect_count, _sweep_capture_count]
+	print("PROGRESS %d/%d stage=%s" % [_global_done, _global_total, stage])
 
 	if _phase == Phase.PLACEMENT:
 		if _current_trial >= _trial_start + _trial_count:
