@@ -1,7 +1,8 @@
 extends Node2D
 
-const SHIP   := preload("res://entities/ship/Spaceship.tscn")
-const TERRAN := preload("res://entities/planet/PlanetTerran.tscn")
+const SHIP     := preload("res://entities/ship/Spaceship.tscn")
+const TERRAN   := preload("res://entities/planet/PlanetTerran.tscn")
+const FONT_REG := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 
 # ── Arena layout ─────────────────────────────────────────────────────────────
 const ARENA          := Vector2(2560, 1440)
@@ -113,6 +114,18 @@ var _wave_timer: float    = 0.0
 
 const MARKET_PANEL := preload("res://levels/components/MarketPanel.gd")
 
+# ── Role system ───────────────────────────────────────────────────────────────
+enum Role { ATTACKER, DEFENDER }
+var _role: Role = Role.ATTACKER
+var _role_btn: OptionButton
+
+# DEFENDER mode: player guards the right planet against left-side AI attackers
+const DEF_ZONE_R      := 300.0
+const DEF_WAVE_SPAWN_X := 150.0   # AI attackers spawn near left edge
+const CAM_DEF_POS      := Vector2(1800.0, 720.0)
+
+var _player_def_drones: Array = []  # player defenders around ENEMY_CENTER
+
 # ── Ready ────────────────────────────────────────────────────────────────────
 func _ready():
 	get_tree().paused = false
@@ -139,6 +152,22 @@ func _ready():
 	return_btn.pressed.connect(_leave)
 	market_btn.pressed.connect(_open_market)
 
+	# Role dropdown — added programmatically so no .tscn edits needed
+	_role_btn = OptionButton.new()
+	_role_btn.add_item("ATTACKER", Role.ATTACKER)
+	_role_btn.add_item("DEFENDER", Role.DEFENDER)
+	_role_btn.selected = Role.ATTACKER
+	_role_btn.add_theme_font_override("font", FONT_REG)
+	_role_btn.add_theme_font_size_override("font_size", 12)
+	_role_btn.focus_mode = Control.FOCUS_NONE
+	_role_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_role_btn.offset_left   = 16
+	_role_btn.offset_top    = 52
+	_role_btn.offset_right  = 180
+	_role_btn.offset_bottom = 80
+	_role_btn.item_selected.connect(_on_role_changed)
+	$HUD/Root.add_child(_role_btn)
+
 	hint_label.text      = "Blue circle: drop defenders · Red zone: attack the enemy planet · Enemy wave arrives after your first move"
 	result_panel.visible = false
 	alert_panel.visible  = false
@@ -157,6 +186,44 @@ func _make_bg_stars():
 			"sz":  rng.randf_range(1.0, 2.2),
 			"a":   rng.randf_range(0.12, 0.55),
 		})
+
+# ── Role switching ────────────────────────────────────────────────────────────
+func _on_role_changed(index: int):
+	if _active and not _game_over:
+		_role_btn.selected = _role  # revert if mid-game
+		return
+	_role = index as Role
+	# Full reset
+	_stage       = 0
+	_time        = 0.0
+	_total_coins = 0
+	_game_over   = false
+	result_panel.visible = false
+	alert_panel.visible  = false
+	_clear_all_drones()
+	if _role == Role.DEFENDER:
+		hint_label.text = "DEFENDER ROLE: drop your defenders in the blue zone around the right planet · Stop AI attackers from reaching it"
+		var tw := create_tween()
+		tw.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
+		tw.tween_property(_camera, "position", CAM_DEF_POS, 0.8)
+	else:
+		hint_label.text = "Blue circle: drop defenders · Red zone: attack the enemy planet · Enemy wave arrives after your first move"
+		var tw := create_tween()
+		tw.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
+		tw.tween_property(_camera, "position", CAM_POS, 0.8)
+	_begin_stage()
+
+func _clear_all_drones():
+	for arr in [_home_defenders, _attack_drones, _wave_drones, _mini_drones, _player_def_drones]:
+		for ship in arr:
+			if is_instance_valid(ship): ship.queue_free()
+	_home_defenders.clear()
+	_attack_drones.clear()
+	_wave_drones.clear()
+	_mini_drones.clear()
+	_player_def_drones.clear()
+	_placed_def = 0
+	_placed_atk = 0
 
 # ── Planets ───────────────────────────────────────────────────────────────────
 func _build_home_planet():
@@ -209,6 +276,20 @@ func _spawn_enemy_guards():
 		add_child(ship)
 		ship.destroyed.connect(_on_enemy_killed)
 
+func _add_player_right_defender(angle: float, radius: float):
+	var ship := SHIP.instantiate()
+	ship.setup_player_orbit(ENEMY_CENTER, radius, HOME_ORBIT_SPD, angle, _drone_hp())
+	ship.arena_size = ARENA
+	add_child(ship)
+	_player_def_drones.append(ship)
+	ship.destroyed.connect(_on_player_def_destroyed)
+
+func _on_player_def_destroyed(ship):
+	_player_def_drones.erase(ship)
+	queue_redraw()
+	if _player_def_drones.is_empty() and not _game_over and _role == Role.DEFENDER:
+		_trigger_game_over()
+
 func _place_attacker(pos: Vector2, rot: float):
 	var ship := SHIP.instantiate()
 	ship.setup_player(PlayerData.get_ship_algorithm(), _drone_hp())
@@ -223,9 +304,10 @@ func _place_attacker(pos: Vector2, rot: float):
 	ship.destroyed.connect(_on_attack_drone_destroyed)
 
 func _do_spawn_enemy_wave():
-	# Spawns in the neutral corridor (left of attack zone, right of defense zone)
-	# so wave drones are fully independent of the player's attack rectangle
 	var count: int = 2 + _stage + randi_range(0, _stage + 1)
+	if _role == Role.DEFENDER:
+		_enemy_total  = count
+		_enemy_killed = 0
 	for i in count:
 		var ship := SHIP.instantiate()
 		ship.setup_raider(ENEMY_ATTACK_PROG, DRONE_HP)
@@ -233,9 +315,16 @@ func _do_spawn_enemy_wave():
 		ship.arena_size = ARENA
 		add_child(ship)
 		var t := float(i) / float(max(count - 1, 1))
-		var sx := WAVE_SPAWN_X + randf_range(-WAVE_SPAWN_X_VAR, WAVE_SPAWN_X_VAR)
-		ship.global_position = Vector2(sx, lerp(200.0, ARENA.y - 200.0, t))
-		ship.rotation = PI   # face left — fly toward home planet
+		if _role == Role.DEFENDER:
+			# Attackers spawn near left edge and head RIGHT toward the right planet
+			ship.global_position = Vector2(DEF_WAVE_SPAWN_X + randf_range(-40.0, 40.0),
+				lerp(200.0, ARENA.y - 200.0, t))
+			ship.rotation = 0.0  # face right
+		else:
+			# Standard: spawn in neutral corridor, head left toward home planet
+			var sx := WAVE_SPAWN_X + randf_range(-WAVE_SPAWN_X_VAR, WAVE_SPAWN_X_VAR)
+			ship.global_position = Vector2(sx, lerp(200.0, ARENA.y - 200.0, t))
+			ship.rotation = PI
 		_wave_drones.append(ship)
 		ship.destroyed.connect(_on_wave_drone_destroyed)
 
@@ -258,14 +347,17 @@ func _begin_stage():
 	_wave_timer     = 0.0
 
 	_spawn_enemy_planet()
-	_spawn_enemy_guards()
+	if _role == Role.ATTACKER:
+		_spawn_enemy_guards()
+	# DEFENDER: player places their own defenders; no AI guards around right planet
 	_update_hud()
 	queue_redraw()
 
-	# Slide camera back to centered split view
+	# Slide camera to appropriate position
+	var target_cam := CAM_DEF_POS if _role == Role.DEFENDER else CAM_POS
 	var tw := create_tween()
 	tw.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
-	tw.tween_property(_camera, "position", CAM_POS, 1.0)
+	tw.tween_property(_camera, "position", target_cam, 1.0)
 
 func _on_home_defender_killed(ship):
 	_home_defenders.erase(ship)
@@ -284,12 +376,22 @@ func _on_attack_drone_destroyed(ship):
 
 func _on_wave_drone_destroyed(ship):
 	_wave_drones.erase(ship)
+	if _role == Role.DEFENDER and _active:
+		_enemy_killed += 1
+		_update_hud()
+		if _enemy_killed >= _enemy_total:
+			_on_enemy_killed(null)  # reuse stage-clear logic
 
 func _trigger_game_over():
 	_game_over           = true
 	_active              = false
-	result_title.text    = "GAME OVER"
-	result_detail.text   = "Your home planet fell!\n\nTotal Market Tokens earned: %d" % _total_coins
+	_role_btn.disabled   = false
+	if _role == Role.DEFENDER:
+		result_title.text  = "GAME OVER"
+		result_detail.text = "An attacker reached your planet!\n\nTotal Market Tokens earned: %d" % _total_coins
+	else:
+		result_title.text  = "GAME OVER"
+		result_detail.text = "Your home planet fell!\n\nTotal Market Tokens earned: %d" % _total_coins
 	result_panel.visible = true
 
 func _on_enemy_killed(_ship):
@@ -303,6 +405,7 @@ func _on_enemy_killed(_ship):
 		coins_label.text = "+%d Market Tokens  (Total: %d)" % [coins, _total_coins]
 		_transitioning      = true
 		_alert_timer        = ALERT_DUR
+		_role_btn.disabled  = false
 		if _stage == 0:
 			alert_msg.text = "PLANET DOMINATED!\n+%d Market Tokens\n\nPrepare for Stage 1!" % coins
 		else:
@@ -359,23 +462,42 @@ func _check_wave_drones():
 			_wave_drones.erase(ship)
 			continue
 		var pos: Vector2 = ship.global_position
-		if pos.x < HOME_CENTER.x:
-			if _stage > 0:
-				# Stage 1+: respawn from neutral corridor (continuous pressure)
-				var sx := WAVE_SPAWN_X + randf_range(-WAVE_SPAWN_X_VAR, WAVE_SPAWN_X_VAR)
-				ship.global_position = Vector2(sx, randf_range(200.0, ARENA.y - 200.0))
-				ship.rotation = PI
-			else:
-				# Stage 0: single-pass — remove when they pass the home planet
-				_wave_drones.erase(ship)
-				ship.queue_free()
+		if _role == Role.DEFENDER:
+			# Attacker reached the right planet → game over
+			if pos.distance_to(ENEMY_CENTER) <= ENEMY_DISP * 0.5 + 20.0:
+				_trigger_game_over()
+				return
+			# Overshot right edge → respawn from left for continuous pressure (stage 1+)
+			if pos.x > ARENA.x - 50.0:
+				if _stage > 0:
+					ship.global_position = Vector2(DEF_WAVE_SPAWN_X + randf_range(-40.0, 40.0),
+						randf_range(200.0, ARENA.y - 200.0))
+					ship.rotation = 0.0
+				else:
+					_wave_drones.erase(ship)
+					ship.queue_free()
+		else:
+			if pos.x < HOME_CENTER.x:
+				if _stage > 0:
+					# Stage 1+: respawn from neutral corridor (continuous pressure)
+					var sx := WAVE_SPAWN_X + randf_range(-WAVE_SPAWN_X_VAR, WAVE_SPAWN_X_VAR)
+					ship.global_position = Vector2(sx, randf_range(200.0, ARENA.y - 200.0))
+					ship.rotation = PI
+				else:
+					# Stage 0: single-pass — remove when they pass the home planet
+					_wave_drones.erase(ship)
+					ship.queue_free()
 
 func _update_hud():
 	var s := int(_time)
 	timer_label.text = "%d:%02d" % [s / 60, s % 60]
-	score_label.text = "Enemy Drones: %d / %d" % [_enemy_killed, _enemy_total]
-	ships_label.text = "Attack: %d/%d   Defense: %d/%d" % [_placed_atk, MAX_ATK, _home_defenders.size(), MAX_DEF + INIT_DEF]
 	stage_label.text = "Stage %d" % _stage
+	if _role == Role.DEFENDER:
+		score_label.text = "Attackers Down: %d / %d" % [_enemy_killed, _enemy_total]
+		ships_label.text = "Defense: %d/%d" % [_player_def_drones.size(), MAX_DEF + INIT_DEF]
+	else:
+		score_label.text = "Enemy Drones: %d / %d" % [_enemy_killed, _enemy_total]
+		ships_label.text = "Attack: %d/%d   Defense: %d/%d" % [_placed_atk, MAX_ATK, _home_defenders.size(), MAX_DEF + INIT_DEF]
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 func _unhandled_input(event):
@@ -398,11 +520,17 @@ func _unhandled_input(event):
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			var p: Vector2   = get_global_mouse_position()
-			var in_def: bool = p.distance_to(HOME_CENTER) <= HOME_ZONE_R and _placed_def < MAX_DEF
-			var in_atk: bool = ATK_RECT.has_point(p) \
-				and p.distance_to(HOME_CENTER) > ATK_HOLE_R \
-				and _placed_atk < MAX_ATK
+			var p: Vector2 = get_global_mouse_position()
+			var in_def: bool
+			var in_atk: bool
+			if _role == Role.DEFENDER:
+				in_def = p.distance_to(ENEMY_CENTER) <= DEF_ZONE_R and _placed_def < MAX_DEF
+				in_atk = false
+			else:
+				in_def = p.distance_to(HOME_CENTER) <= HOME_ZONE_R and _placed_def < MAX_DEF
+				in_atk = ATK_RECT.has_point(p) \
+					and p.distance_to(HOME_CENTER) > ATK_HOLE_R \
+					and _placed_atk < MAX_ATK
 			if in_def:
 				_dragging   = true
 				_drag_start = p
@@ -424,9 +552,14 @@ func _unhandled_input(event):
 
 func _on_drag_release(start: Vector2, end: Vector2, zone: String):
 	if zone == "defense":
-		var r: float = clampf(HOME_CENTER.distance_to(start), 80.0, HOME_ZONE_R - 20.0)
-		var a: float = HOME_CENTER.angle_to_point(start)
-		_add_home_defender(a, r)
+		if _role == Role.DEFENDER:
+			var r: float = clampf(ENEMY_CENTER.distance_to(start), 80.0, DEF_ZONE_R - 20.0)
+			var a: float = ENEMY_CENTER.angle_to_point(start)
+			_add_player_right_defender(a, r)
+		else:
+			var r: float = clampf(HOME_CENTER.distance_to(start), 80.0, HOME_ZONE_R - 20.0)
+			var a: float = HOME_CENTER.angle_to_point(start)
+			_add_home_defender(a, r)
 		_placed_def += 1
 	else:
 		var rot: float = start.angle_to_point(end) if start.distance_to(end) > 6.0 else 0.0
@@ -436,6 +569,7 @@ func _on_drag_release(start: Vector2, end: Vector2, zone: String):
 	if not _wave_triggered and (_placed_def + _placed_atk) == 1:
 		_wave_triggered = true
 		_wave_timer     = randf_range(2.0, 3.0)
+		_role_btn.disabled = true  # lock role once game starts
 
 	_update_hud()
 	queue_redraw()
@@ -456,19 +590,25 @@ func _draw():
 		draw_line(Vector2(mid_x, 0.0), Vector2(mid_x, ARENA.y),
 			Color(0.8, 0.8, 0.9, 0.10), 2.0, true)
 
-	# Defense zone — blue circle around home planet
-	draw_circle(HOME_CENTER, HOME_ZONE_R, ZONE_DEF_FILL)
-	draw_arc(HOME_CENTER, HOME_ZONE_R, 0.0, TAU, 64, ZONE_DEF_BDR, 2.0, true)
-	draw_string(font, HOME_CENTER + Vector2(-52.0, HOME_ZONE_R - 18.0),
-		"DEFENSE %d/%d" % [_home_defenders.size(), MAX_DEF + INIT_DEF],
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_DEF_BDR)
-
-	# Launch zone — player's left side, blue fill + single border
-	draw_rect(ATK_RECT, ZONE_ATK_FILL)
-	draw_rect(ATK_RECT, ZONE_ATK_BDR, false, 1.5)
-	draw_string(font, ATK_RECT.position + Vector2(8.0, 18.0),
-		"LAUNCH ZONE  %d/%d" % [_placed_atk, MAX_ATK],
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_ATK_BDR)
+	if _role == Role.DEFENDER:
+		# DEFENDER: blue zone around right planet (player defends it)
+		draw_circle(ENEMY_CENTER, DEF_ZONE_R, ZONE_DEF_FILL)
+		draw_arc(ENEMY_CENTER, DEF_ZONE_R, 0.0, TAU, 64, ZONE_DEF_BDR, 2.0, true)
+		draw_string(font, ENEMY_CENTER + Vector2(-52.0, DEF_ZONE_R - 18.0),
+			"DEFENSE %d/%d" % [_player_def_drones.size(), MAX_DEF + INIT_DEF],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_DEF_BDR)
+	else:
+		# ATTACKER: blue zone around home planet + launch zone on left
+		draw_circle(HOME_CENTER, HOME_ZONE_R, ZONE_DEF_FILL)
+		draw_arc(HOME_CENTER, HOME_ZONE_R, 0.0, TAU, 64, ZONE_DEF_BDR, 2.0, true)
+		draw_string(font, HOME_CENTER + Vector2(-52.0, HOME_ZONE_R - 18.0),
+			"DEFENSE %d/%d" % [_home_defenders.size(), MAX_DEF + INIT_DEF],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_DEF_BDR)
+		draw_rect(ATK_RECT, ZONE_ATK_FILL)
+		draw_rect(ATK_RECT, ZONE_ATK_BDR, false, 1.5)
+		draw_string(font, ATK_RECT.position + Vector2(8.0, 18.0),
+			"LAUNCH ZONE  %d/%d" % [_placed_atk, MAX_ATK],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, ZONE_ATK_BDR)
 
 # ── Upgrade helpers ───────────────────────────────────────────────────────────
 func _drone_speed_mult() -> float:

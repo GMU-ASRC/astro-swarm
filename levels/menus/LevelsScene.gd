@@ -11,16 +11,36 @@ const C_DIM     := Color(0.6,   0.62,  0.74,  1.0)
 const C_BLUE    := Color(0.451, 0.616, 1.0,   1.0)
 const C_LOCKED  := Color(0.35,  0.35,  0.45,  1.0)
 
-const TILE_SIZE := Vector2(220, 120)
+const FARP_GD := preload("res://levels/modes/FARPScene.gd")
+
+const TILE_SIZE    := Vector2(220, 140)
 const GRID_COLUMNS := 3
 
 const LEVELS := [
-	{"name": "FARP",       "scene": "res://levels/modes/FARPScene.tscn",       "locked": false},
-	{"name": "DOMINATION", "scene": "res://levels/modes/DominationScene.tscn", "locked": true},
-	{"name": "LOCKED",     "scene": "",                                        "locked": true},
-	{"name": "LOCKED",     "scene": "",                                        "locked": true},
-	{"name": "LOCKED",     "scene": "",                                        "locked": true},
-	{"name": "LOCKED",     "scene": "",                                        "locked": true},
+	{
+		"name":   "FARP  I\nDEFENSE · PLACE",
+		"desc":   "Place defenders yourself\nand program their detection",
+		"mode":   0,   # LevelMode.DEFEND_MANUAL
+		"scene":  "res://levels/modes/FARPScene.tscn",
+		"locked": false,
+	},
+	{
+		"name":   "FARP  II\nDEFENSE · RANDOM",
+		"desc":   "Defenders placed randomly\nAlgorithm quality is what counts",
+		"mode":   1,   # LevelMode.DEFEND_RANDOM
+		"scene":  "res://levels/modes/FARPScene.tscn",
+		"locked": false,
+	},
+	{
+		"name":   "FARP  III\nEVASION · ATTACK",
+		"desc":   "Program the evader drone\nSlip past AI defenders",
+		"mode":   2,   # LevelMode.ATTACK_ALGO
+		"scene":  "res://levels/modes/FARPScene.tscn",
+		"locked": false,
+	},
+	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
+	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
+	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
 ]
 
 func _ready():
@@ -69,34 +89,60 @@ func _build_ui():
 func _make_tile(number: int, level: Dictionary) -> Control:
 	var locked: bool = level["locked"]
 
-	var tile := Button.new()
+	var tile := PanelContainer.new()
 	tile.custom_minimum_size = TILE_SIZE
-	tile.focus_mode = Control.FOCUS_NONE
-	tile.disabled = locked
-	tile.text = ("LEVEL %d" % number) if locked else "LEVEL %d\n%s" % [number, level["name"]]
-	tile.add_theme_font_override("font", FONT_REG)
-	tile.add_theme_font_size_override("font_size", 20)
-
 	var style := StyleBoxFlat.new()
 	style.bg_color     = C_PANEL if not locked else Color(0.08, 0.075, 0.13, 1.0)
-	style.border_color = C_BLUE if not locked else C_LOCKED
+	style.border_color = C_BLUE  if not locked else C_LOCKED
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(0)
-	style.content_margin_left = 20
-	style.content_margin_right = 20
-	style.content_margin_top = 18
-	style.content_margin_bottom = 18
-	tile.add_theme_stylebox_override("normal", style)
-	tile.add_theme_stylebox_override("hover", style)
-	tile.add_theme_stylebox_override("pressed", style)
-	tile.add_theme_stylebox_override("disabled", style)
-	tile.add_theme_color_override("font_color", C_TEXT if not locked else C_LOCKED)
-	tile.add_theme_color_override("font_color_hover", C_BLUE)
-	tile.add_theme_color_override("font_color_disabled", C_LOCKED)
+	style.content_margin_left   = 16
+	style.content_margin_right  = 16
+	style.content_margin_top    = 14
+	style.content_margin_bottom = 14
+	tile.add_theme_stylebox_override("panel", style)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 6)
+	tile.add_child(vb)
+
+	var num_lbl := Label.new()
+	num_lbl.text = "LEVEL %d" % number
+	num_lbl.add_theme_font_override("font", FONT_REG)
+	num_lbl.add_theme_font_size_override("font_size", 11)
+	num_lbl.add_theme_color_override("font_color", C_BLUE if not locked else C_LOCKED)
+	vb.add_child(num_lbl)
+
+	var name_lbl := Label.new()
+	name_lbl.text = level["name"] if not locked else "LOCKED"
+	name_lbl.add_theme_font_override("font", FONT_REG)
+	name_lbl.add_theme_font_size_override("font_size", 16)
+	name_lbl.add_theme_color_override("font_color", C_TEXT if not locked else C_LOCKED)
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vb.add_child(name_lbl)
+
+	if level.has("desc") and not locked:
+		var sep := ColorRect.new()
+		sep.color = C_BORDER
+		sep.custom_minimum_size = Vector2(0, 1)
+		vb.add_child(sep)
+		var desc_lbl := Label.new()
+		desc_lbl.text = level["desc"]
+		desc_lbl.add_theme_font_override("font", FONT_REG)
+		desc_lbl.add_theme_font_size_override("font_size", 9)
+		desc_lbl.add_theme_color_override("font_color", C_DIM)
+		desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		vb.add_child(desc_lbl)
 
 	if not locked:
 		var scene_path: String = level["scene"]
-		tile.pressed.connect(func(): get_tree().change_scene_to_file(scene_path))
+		var mode: int = level.get("mode", 0)
+		tile.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				FARP_GD.level_mode = mode as FARP_GD.LevelMode
+				get_tree().change_scene_to_file(scene_path)
+		)
+		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 	return tile
 
