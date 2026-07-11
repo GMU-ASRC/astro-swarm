@@ -10,6 +10,7 @@ static var return_scene: String = "res://levels/menus/PlayerBaseScene.tscn"
 var _name_edit: LineEdit
 var _algo_option: OptionButton
 var _loading: bool = false
+var _warning_label: Label
 
 const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
 
@@ -17,19 +18,40 @@ const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
 	"condition": ["when_start", "when_always", "when_sees", "when_sees_enemy", "when_sees_ally", "when_alone", "when_near_wall", "when_sees_wall"],
 	"logic": ["if_see", "if_within", "if_beyond", "else"],
-	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_fire"],
+	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle"],
 }
 
 const FARP_SCENE := "res://levels/modes/FARPScene.tscn"
-const FARP_DISABLED_BLOCKS := ["do_throttle", "do_fire", "set_size"]
+const FARP_DISABLED_BLOCKS := ["do_throttle", "set_size"]
 
 func _ready():
 	get_tree().paused = false
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
 	_build_save_load_ui()
+	_build_warning_banner()
 	_build_palette()
 	_load_blocks()
+	_update_warning()
+
+func _build_warning_banner():
+	_warning_label = Label.new()
+	_warning_label.add_theme_color_override("font_color", Color(1.0, 0.42, 0.32, 1.0))
+	_warning_label.add_theme_font_size_override("font_size", 12)
+	_warning_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_warning_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_warning_label.offset_top = 44
+	_warning_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_warning_label.visible = false
+	add_child(_warning_label)
+
+func _update_warning():
+	if _warning_label == null:
+		return
+	var invalid: bool = SimulationManager.has_unnested_conditional(_current_scripts())
+	_warning_label.visible = invalid
+	if invalid:
+		_warning_label.text = "Warning: a condition block (IF) must be placed inside an event block (WHEN)."
 
 func _build_save_load_ui():
 	var spacer: Control = $TopBar/HBox/Spacer
@@ -175,6 +197,7 @@ func _populate_canvas(scripts: Array):
 			_spawn_block_widget(b, zone)
 	canvas.resolve_overlaps()
 	_loading = false
+	_update_warning()
 
 func _add_block(block_id: String):
 	var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
@@ -226,6 +249,7 @@ func _save_blocks():
 	if _loading:
 		return
 	PlayerData.set_ship_blocks(_current_scripts())
+	_update_warning()
 
 func _on_back():
 	_save_blocks()

@@ -85,7 +85,7 @@ const BLOCK_DEFS := {
 	"set_speed":     {"category": "config",    "label": "Set speed to",        "input": {"min": 0.5,  "max": 10.0, "default": 3.75, "step": 0.05, "suffix": " m/s"}},
 	"set_turn":      {"category": "config",    "label": "Set turn rate to",    "input": {"min": 15.0, "max": 360.0, "default": 120.0, "step": 5.0, "suffix": "°/s"}},
 	"set_view":      {"category": "config",    "label": "Set vision range to", "input": {"min": 0.5,  "max": 12.5, "default": 3.75, "step": 0.1,  "suffix": " m"}},
-	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 20.0, "max": 360.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
+	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 20.0, "max": 180.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
 	"set_size":      {"category": "config",    "label": "Set size to",         "input": {"min": 2.0,  "max": 16.0, "default": 6.0,  "step": 0.5,  "suffix": " px"}},
 
 	"when_start":           {"category": "condition", "label": "On start",             "input": null},
@@ -239,6 +239,28 @@ static func _split_into_stacks(nested: Array) -> Array:
 		result.append({"x": 40.0 + col * 400.0, "y": 30.0 + row * 280.0, "blocks": [ordered[i]]})
 	return result
 
+static func is_event_block(block_type: String) -> bool:
+	return block_type.begins_with("when_")
+
+static func is_conditional_block(block_type: String) -> bool:
+	return block_type.begins_with("if_") or block_type == "else"
+
+static func has_unnested_conditional(scripts: Array) -> bool:
+	for s in scripts:
+		if _blocks_have_unnested_conditional(s.get("blocks", []), false):
+			return true
+	return false
+
+static func _blocks_have_unnested_conditional(blocks: Array, has_event_ancestor: bool) -> bool:
+	for b in blocks:
+		var t: String = b.get("type", "")
+		if is_conditional_block(t) and not has_event_ancestor:
+			return true
+		var child_has_event: bool = has_event_ancestor or is_event_block(t)
+		if _blocks_have_unnested_conditional(b.get("children", []), child_has_event):
+			return true
+	return false
+
 func _normalize_all_behaviors():
 	for id in behaviors.keys():
 		behaviors[id] = {"scripts": normalize_to_scripts(behaviors[id])}
@@ -324,7 +346,7 @@ func _collect_config(blocks: Array, cfg: Dictionary):
 			"set_speed":  cfg.speed         = float(p.get("value", settings.speed)) * PX_PER_METER
 			"set_turn":   cfg.turn_speed    = deg_to_rad(float(p.get("value", 120.0)))
 			"set_view":   cfg.view_distance = float(p.get("value", settings.view_distance)) * PX_PER_METER
-			"set_fov":    cfg.fov_degrees   = float(p.get("value", settings.fov_degrees))
+			"set_fov":    cfg.fov_degrees   = minf(180.0, float(p.get("value", settings.fov_degrees)))
 			"set_size":   cfg.dot_radius    = float(p.get("value", 6.0))
 			"when_start":
 				_collect_config(b.get("children", []), cfg)

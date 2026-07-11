@@ -12,6 +12,7 @@ const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
 
 var _current_type_id: String = "hunter"
 var _tab_buttons: Dictionary = {}
+var _warning_label: Label
 
 func _ready():
 	get_tree().paused = false
@@ -25,9 +26,43 @@ func _ready():
 	SimulationManager.species_list_changed.connect(_on_species_list_changed)
 	SimulationManager.variables_changed.connect(_on_variables_changed)
 	_style_color_picker()
+	_build_warning_banner()
 	_build_tabs()
 	_build_palette()
 	_refresh()
+
+func _build_warning_banner():
+	_warning_label = Label.new()
+	_warning_label.add_theme_color_override("font_color", Color(0.851, 0.322, 0.271, 1.0))
+	_warning_label.add_theme_font_size_override("font_size", 12)
+	_warning_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_warning_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_warning_label.offset_top = 44
+	_warning_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_warning_label.visible = false
+	add_child(_warning_label)
+
+func _gather_scripts() -> Array:
+	var scripts: Array = []
+	for zone in canvas.get_children():
+		if not zone is VBoxContainer:
+			continue
+		var blocks: Array = []
+		for child in zone.get_children():
+			if child is PanelContainer and child.has_method("get_block_data"):
+				blocks.append(child.get_block_data())
+		if blocks.is_empty():
+			continue
+		scripts.append({"x": zone.position.x, "y": zone.position.y, "blocks": blocks})
+	return scripts
+
+func _update_warning():
+	if _warning_label == null:
+		return
+	var invalid: bool = SimulationManager.has_unnested_conditional(_gather_scripts())
+	_warning_label.visible = invalid
+	if invalid:
+		_warning_label.text = "Warning: a condition block (IF) must be placed inside an event block (WHEN)."
 
 func _on_variables_changed():
 	_build_palette()
@@ -294,6 +329,7 @@ func _refresh():
 		for b in s.get("blocks", []):
 			_spawn_block_widget(b, zone)
 	canvas.resolve_overlaps()
+	_update_warning()
 
 func _add_block(block_id: String):
 	var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
@@ -344,6 +380,7 @@ func _save_blocks():
 			continue
 		scripts.append({"x": zone.position.x, "y": zone.position.y, "blocks": blocks})
 	SimulationManager.set_scripts(_current_type_id, scripts)
+	_update_warning()
 
 func _on_back():
 	_commit_species_name()
