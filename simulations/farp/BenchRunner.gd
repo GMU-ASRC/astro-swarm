@@ -14,12 +14,28 @@ const ENEMY_PROGRAM := [
 	{"type": "do_forward", "params": {}},
 ]
 
+const DEFENDER_ALGORITHM := [
+	{"type": "when_start", "params": {}, "children": [
+		{"type": "set_speed", "params": {"value": 3.4}},
+		{"type": "set_fov",   "params": {"value": 50.0}},
+		{"type": "set_view",  "params": {"value": 4.5}},
+	]},
+	{"type": "when_always", "params": {}, "children": [
+		{"type": "do_forward",   "params": {}},
+		{"type": "do_turn_left", "params": {"value": 90.0}},
+	]},
+	{"type": "when_sees_ally", "params": {}, "children": [
+		{"type": "do_turn_right", "params": {"value": 90.0}},
+	]},
+]
+
 const DEFAULT_TRIALS := 100
 const DEFAULT_SWEEP_MAX    := 100
 const DEFAULT_SWEEP_TRIALS := 1
 const DEFAULT_SEED         := 987654321
 const DEFAULT_MATCH_SECONDS := 4 * 60.0
 const SWEEP_RADIUS  := 300.0
+const ENEMY_SPAWN_RADIUS := 1000.0
 const RECORD_EVERY   := 1
 const REPLAY_TAIL    := 90
 const SWEEP_SEED_OFFSET := 100000
@@ -79,8 +95,13 @@ var _sweep_first_frames: Array = []
 var _sweep_seeds: Array = []
 var _recording: bool = true
 
+var _is_attack: bool = false
+var _collisions: bool = false
+var _defender_algorithm: Array = []
+
 var _detect_frame: int = -1
 var _capture_frame: int = -1
+var _reached_frame: int = -1
 var _end_frame: int = -1
 var _enemy_was_in_zone: bool = false
 var _capture_horizon: float = 0.0
@@ -146,10 +167,23 @@ func _parse_args():
 			_enemy_start.x = float(arg.split("=", true, 1)[1])
 		elif arg.begins_with("--enemy-y="):
 			_enemy_start.y = float(arg.split("=", true, 1)[1])
+		elif arg.begins_with("--level-id="):
+			_is_attack = _level_is_attack(arg.split("=", true, 1)[1])
+		elif arg.begins_with("--collisions="):
+			_collisions = int(arg.split("=", true, 1)[1]) != 0
 	if _algorithm.is_empty():
 		_algorithm = SimulationManager.normalize_to_scripts(PlayerData.DEFAULT_SHIP_BLOCKS)
 	if _placements.size() > MAX_DEFENDERS:
 		_placements.resize(MAX_DEFENDERS)
+	_defender_algorithm = SimulationManager.normalize_to_scripts(DEFENDER_ALGORITHM)
+
+func _level_is_attack(level_id: String) -> bool:
+	var digits: String = ""
+	for ch in level_id:
+		if ch >= "0" and ch <= "9":
+			digits += ch
+	var num: int = int(digits) if digits != "" else 1
+	return num >= 3
 
 func _load_algorithm(path: String):
 	var data = _read_json(path)
@@ -183,18 +217,9 @@ func _read_json(path: String):
 func _build_spawn_points():
 	_spawn_rng.seed = _seed
 	var count: int = maxi(1, _trials)
-	var margin := 40.0
-	var min_x: float = margin
-	var min_y: float = margin
-	var max_x: float = ARENA.x - margin
-	var max_y: float = ARENA.y - margin
-	var w: float = max_x - min_x
-	var h: float = max_y - min_y
-	var perimeter: float = 2.0 * w + 2.0 * h
-	var slot: float = perimeter / float(count)
 	for i in count:
-		var d: float = (float(i) + 0.2 + _spawn_rng.randf() * 0.6) * slot
-		_spawn_points.append(_perimeter_point(d, min_x, min_y, max_x, max_y, w, h))
+		var angle: float = (float(i) + 0.2 + _spawn_rng.randf() * 0.6) / float(count) * TAU
+		_spawn_points.append(PLANET_CENTER + Vector2(ENEMY_SPAWN_RADIUS, 0.0).rotated(angle))
 
 func _perimeter_point(d: float, min_x: float, min_y: float, max_x: float, max_y: float, w: float, h: float) -> Vector2:
 	if d < w:
@@ -234,6 +259,7 @@ func _start_match():
 	_frame = 0
 	_detect_frame = -1
 	_capture_frame = -1
+	_reached_frame = -1
 	_end_frame = -1
 	_enemy_was_in_zone = false
 	_replay_frames = []
@@ -259,16 +285,19 @@ func _start_match():
 		_replay_frames.append(_snapshot())
 
 func _spawn_defenders(placements: Array):
+	var program: Array = _defender_algorithm if _is_attack else _algorithm
+	var planet_center: Vector2 = PLANET_CENTER if _collisions else Vector2.ZERO
+	var planet_r: float = PLANET_RADIUS if _collisions else 0.0
 	for placement in placements:
 		var ship := SHIP.instantiate()
-		ship.setup_player(_algorithm, DEFENDER_HP)
-		ship.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
-		ship.collisions_enabled = false
+		ship.setup_player(program, DEFENDER_HP)
+		ship.set_obstacles(Vector2.ZERO, 0.0, planet_center, planet_r)
+		ship.collisions_enabled = _collisions
 		ship.arena_size = ARENA
 		ship.can_fire = false
 		ship.visible = false
 		_world.add_child(ship)
-		var cfg: Dictionary = SimulationManager.ship_config_from_scripts(_algorithm, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
+		var cfg: Dictionary = SimulationManager.ship_config_from_scripts(program, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
 		ship.view_distance = cfg.view_distance
 		ship.fov_degrees = cfg.fov_degrees
 		ship.max_speed = cfg.speed
@@ -283,13 +312,25 @@ func _spawn_defenders(placements: Array):
 
 func _spawn_enemy(spawn_pos: Vector2):
 	_enemy = SHIP.instantiate()
-	_enemy.setup_raider(ENEMY_PROGRAM, ENEMY_HP)
+	if _is_attack:
+		_enemy.setup_raider(_algorithm, ENEMY_HP)
+	else:
+		_enemy.setup_raider(ENEMY_PROGRAM, ENEMY_HP)
+		_enemy.speed_mult = ENEMY_SPEED / 150.0
 	_enemy.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
 	_enemy.collisions_enabled = false
+	_enemy.is_evader = true
 	_enemy.arena_size = ARENA
-	_enemy.speed_mult = ENEMY_SPEED / 150.0
 	_enemy.visible = false
 	_world.add_child(_enemy)
+	if _is_attack:
+		var cfg: Dictionary = SimulationManager.ship_config_from_scripts(_algorithm, _enemy.view_distance, _enemy.fov_degrees, _enemy.max_speed, _enemy.turn_rate, _enemy.hull_radius)
+		_enemy.view_distance = cfg.view_distance
+		_enemy.fov_degrees = cfg.fov_degrees
+		_enemy.max_speed = cfg.speed
+		_enemy.turn_rate = cfg.turn_speed
+		_enemy.hull_radius = cfg.dot_radius
+		_enemy.refresh_cone()
 	_enemy.global_position = spawn_pos
 	_enemy.rotation = (PLANET_CENTER - spawn_pos).angle()
 
@@ -299,6 +340,10 @@ func _physics_process(_delta: float):
 	_frame += 1
 	if _recording and _frame % RECORD_EVERY == 0 and (_end_frame < 0 or _frame <= _end_frame):
 		_replay_frames.append(_snapshot())
+
+	if _is_attack:
+		_physics_attack()
+		return
 
 	var enemy_in_zone: bool = is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0
 	if enemy_in_zone:
@@ -324,6 +369,28 @@ func _physics_process(_delta: float):
 		else:
 			_finish_sweep_match()
 
+func _physics_attack():
+	if _detect_frame < 0 and _reached_frame < 0:
+		if _any_defender_sees_enemy():
+			_detect_frame = _frame
+			_end_frame = _frame + REPLAY_TAIL
+		elif is_instance_valid(_enemy) and _enemy.global_position.distance_to(PLANET_CENTER) <= PLANET_RADIUS + 16.0:
+			_reached_frame = _frame
+			_capture_frame = _frame
+			_end_frame = _frame + REPLAY_TAIL
+
+	var decided: bool = _detect_frame >= 0 or _reached_frame >= 0
+	var finished: bool
+	if decided:
+		finished = _end_frame >= 0 and _frame >= _end_frame
+	else:
+		finished = not is_instance_valid(_enemy) or _enemy_reached_far_edge() or _frame >= _match_frames
+	if finished:
+		if _phase == Phase.PLACEMENT:
+			_finish_placement_match()
+		else:
+			_finish_sweep_match()
+
 func _no_more_events_possible() -> bool:
 	if not _enemy_was_in_zone or not is_instance_valid(_enemy):
 		return false
@@ -343,6 +410,12 @@ func _enemy_reached_far_edge() -> bool:
 	return p.x <= 16.0 or p.y <= 16.0 or p.x >= ARENA.x - 16.0 or p.y >= ARENA.y - 16.0
 
 func _classify() -> String:
+	if _is_attack:
+		if _reached_frame >= 0:
+			return "win"
+		if _detect_frame >= 0:
+			return "lose"
+		return "timeout"
 	if _detect_frame >= 0:
 		return "win"
 	if _enemy_was_in_zone:

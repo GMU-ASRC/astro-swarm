@@ -21,6 +21,7 @@ const DEFENDER_HP   := 99.0
 
 const ENEMY_HP    := 3.0
 const ENEMY_SPEED := 105.0
+const ENEMY_SPAWN_RADIUS := 1000.0
 const ENEMY_PROGRAM := [
 	{"type": "when_always", "params": {}},
 	{"type": "do_forward", "params": {}},
@@ -50,12 +51,39 @@ const ATTACK_HINT := "WASD / Arrow keys to steer  ·  Slip past the defender vis
 const ATTACK_SPEED      := 120.0
 const ATTACK_TURN_SPEED := 2.8
 const AI_DEFENDER_COUNT := 4
+const RING_DEFENDER_COUNT := 5
+const RING_RADIUS       := 250.0
+
+const C_DEFENDER := Color(0.451, 0.616, 1.0, 1.0)
+
+const DEFENDER_ALGORITHM := [
+	{"type": "when_start", "params": {}, "children": [
+		{"type": "set_speed", "params": {"value": 3.4}},
+		{"type": "set_fov",   "params": {"value": 50.0}},
+		{"type": "set_view",  "params": {"value": 4.5}},
+	]},
+	{"type": "when_always", "params": {}, "children": [
+		{"type": "do_forward",   "params": {}},
+		{"type": "do_turn_left", "params": {"value": 90.0}},
+	]},
+	{"type": "when_sees_ally", "params": {}, "children": [
+		{"type": "do_turn_right", "params": {"value": 90.0}},
+	]},
+]
 
 enum Role     { DEFEND, ATTACK }
 enum Phase    { PLACE, ACTIVE, TEST, WIN, LOSE }
-enum LevelMode { DEFEND_MANUAL, DEFEND_RANDOM, ATTACK_ALGO }
+enum LevelMode { DEFEND_MANUAL, DEFEND_RANDOM, ATTACK_RING, ATTACK_RANDOM }
 
 static var level_mode: LevelMode = LevelMode.DEFEND_MANUAL
+
+var _collisions_on: bool = false
+
+func _is_attack_mode() -> bool:
+	return level_mode == LevelMode.ATTACK_RING or level_mode == LevelMode.ATTACK_RANDOM
+
+func _is_defend_mode() -> bool:
+	return level_mode == LevelMode.DEFEND_MANUAL or level_mode == LevelMode.DEFEND_RANDOM
 var _role: Role = Role.DEFEND
 var _phase: Phase = Phase.PLACE
 
@@ -65,6 +93,8 @@ var _role_btn: OptionButton
 var _attack_pos: Vector2 = Vector2.ZERO
 var _attack_rot: float   = 0.0
 var _attack_rng := RandomNumberGenerator.new()
+var _evader_spawn: Vector2 = Vector2.ZERO
+var _evader_placed: bool = false
 
 var _placements: Array = []
 var _defender_ships: Array = []
@@ -95,9 +125,12 @@ var _count_label: Label
 var _hint_label: Label
 var _launch_btn: Button
 var _clear_btn: Button
+var _reroll_btn: Button
 var _result_panel: Control
 var _result_title: Label
 var _result_detail: Label
+var _submit_btn: Button
+var _submitted: bool = false
 var _tutorial_panel: Control
 
 func _ready():
@@ -167,14 +200,22 @@ func _configure_for_level_mode():
 			pass  # default state
 		LevelMode.DEFEND_RANDOM:
 			_random_place_defenders()
+			_reroll_btn.visible = true
 			_phase_label.text = "DEFENDERS PLACED"
-			_hint_label.text  = "Defenders are randomly positioned. Open WORKSPACE to program their detection behavior, then LAUNCH the enemy."
-		LevelMode.ATTACK_ALGO:
-			_place_ai_protectors()
-			_phase_label.text = "PROGRAM YOUR ATTACKER"
-			_phase_label.add_theme_color_override("font_color", C_RED)
-			_launch_btn.text  = "LAUNCH ATTACKER →"
-			_hint_label.text  = "AI defenders orbit the planet. Open WORKSPACE to program your attacker drone, then LAUNCH it to attempt a breach."
+			_hint_label.text  = "Defenders are randomly positioned. Press REROLL to shuffle them. Open WORKSPACE to program their detection behavior, then LAUNCH the enemy."
+		LevelMode.ATTACK_RING:
+			_place_algo_defenders(false)
+			_init_evader_ring()
+			_configure_attack_labels("You are the evader. Drag the marker on the red ring to choose your start point, program your evader in WORKSPACE, then LAUNCH to slip past the defenders and reach the planet.")
+		LevelMode.ATTACK_RANDOM:
+			_place_algo_defenders(true)
+			_configure_attack_labels("You are the evader, dropped in at a random point facing the planet. Program your evader in WORKSPACE, then LAUNCH to slip past the defenders and reach the planet.")
+
+func _configure_attack_labels(hint: String):
+	_phase_label.text = "PROGRAM YOUR EVADER"
+	_phase_label.add_theme_color_override("font_color", C_RED)
+	_launch_btn.text  = "LAUNCH EVADER →"
+	_hint_label.text  = hint
 
 func _random_place_defenders():
 	for i in MAX_DEFENDERS:
@@ -186,33 +227,94 @@ func _random_place_defenders():
 		_spawn_defender(placement, false)
 	_update_count()
 
-func _place_ai_protectors():
-	for i in AI_DEFENDER_COUNT:
-		var angle: float = TAU * float(i) / float(AI_DEFENDER_COUNT) + _attack_rng.randf_range(-0.3, 0.3)
-		var r: float     = clampf(_attack_rng.randf_range(260.0, 430.0), PLACE_MIN, PLACE_MAX)
-		var ship         := SHIP.instantiate()
-		ship.setup_protector(PLANET_CENTER, r, 0.30 + _attack_rng.randf_range(-0.05, 0.10), angle, 99.0)
-		ship.arena_size = ARENA
-		add_child(ship)
-		_defender_ships.append(ship)
+func _place_algo_defenders(randomized: bool):
+	var count: int = AI_DEFENDER_COUNT if randomized else RING_DEFENDER_COUNT
+	for i in count:
+		var pos: Vector2
+		var rot: float
+		if randomized:
+			var angle: float = _attack_rng.randf_range(0.0, TAU)
+			var r: float     = _attack_rng.randf_range(PLACE_MIN + 20.0, PLACE_MAX - 20.0)
+			pos = PLANET_CENTER + Vector2(r, 0.0).rotated(angle)
+			rot = _attack_rng.randf_range(0.0, TAU)
+		else:
+			var angle: float = TAU * float(i) / float(count)
+			pos = PLANET_CENTER + Vector2(RING_RADIUS, 0.0).rotated(angle)
+			rot = angle + PI / 2.0
+		var placement := {"pos": pos, "rot": rot}
+		_placements.append(placement)
+		_spawn_algo_defender(placement)
+	_update_count()
+
+func _spawn_algo_defender(placement: Dictionary):
+	var ship := SHIP.instantiate()
+	ship.setup_raider(DEFENDER_ALGORITHM, DEFENDER_HP)
+	ship.ship_color = C_DEFENDER
+	ship.set_obstacles(Vector2.ZERO, 0.0, PLANET_CENTER, PLANET_RADIUS)
+	ship.collisions_enabled = _collisions_on
+	ship.arena_size = ARENA
+	ship.can_fire = false
+	ship.show_health = false
+	add_child(ship)
+	var cfg: Dictionary = SimulationManager.ship_config_from_scripts(DEFENDER_ALGORITHM, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
+	ship.view_distance = cfg.view_distance
+	ship.fov_degrees = cfg.fov_degrees
+	ship.max_speed = cfg.speed
+	ship.turn_rate = cfg.turn_speed
+	ship.hull_radius = cfg.dot_radius
+	ship.refresh_cone()
+	ship.global_position = placement.pos
+	ship.rotation = placement.rot
+	ship.set_meta("placement", placement)
+	ship.set_physics_process(false)
+	_defender_ships.append(ship)
+
+func _reroll_defenders():
+	if level_mode != LevelMode.DEFEND_RANDOM or _phase != Phase.PLACE:
+		return
+	for ship in _defender_ships:
+		if is_instance_valid(ship):
+			ship.queue_free()
+	_defender_ships.clear()
+	_placements.clear()
+	_attack_rng.randomize()
+	_random_place_defenders()
+	queue_redraw()
+
+func _init_evader_ring():
+	_evader_spawn = PLANET_CENTER + Vector2(ENEMY_SPAWN_RADIUS, 0.0).rotated(_attack_rng.randf_range(0.0, TAU))
+	_evader_placed = true
+
+func _handle_evader_placement(event):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_dragging = true
+			_set_evader_from_mouse()
+		else:
+			_dragging = false
+	elif event is InputEventMouseMotion and _dragging:
+		_set_evader_from_mouse()
+
+func _set_evader_from_mouse():
+	var angle: float = (get_global_mouse_position() - PLANET_CENTER).angle()
+	_evader_spawn = PLANET_CENTER + Vector2(ENEMY_SPAWN_RADIUS, 0.0).rotated(angle)
+	_evader_placed = true
+	queue_redraw()
 
 func _spawn_algo_attacker():
-	# Spawn at the arena boundary in a random direction
-	var angle: float  = _attack_rng.randf_range(0.0, TAU)
-	var half_w: float = ARENA.x * 0.5 - 80.0
-	var half_h: float = ARENA.y * 0.5 - 80.0
-	var ca := absf(cos(angle)); var sa := absf(sin(angle))
-	var dist: float
-	if   ca < 0.0001: dist = half_h
-	elif sa < 0.0001: dist = half_w
-	else:             dist = min(half_w / ca, half_h / sa)
-	var spawn_pos: Vector2 = PLANET_CENTER + Vector2(dist, 0.0).rotated(angle)
+	var spawn_pos: Vector2
+	if level_mode == LevelMode.ATTACK_RING and _evader_placed:
+		spawn_pos = _evader_spawn
+	else:
+		var angle: float = _attack_rng.randf_range(0.0, TAU)
+		spawn_pos = PLANET_CENTER + Vector2(ENEMY_SPAWN_RADIUS, 0.0).rotated(angle)
 
 	_enemy = SHIP.instantiate()
 	_enemy.setup_player(PlayerData.ship_blocks, ENEMY_HP)
-	_enemy.ship_color        = Color(1.0, 0.70, 0.20, 1.0)   # orange — attacker
+	_enemy.ship_color        = Color(1.0, 0.70, 0.20, 1.0)   # orange — evader
 	_enemy.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
 	_enemy.collisions_enabled = false
+	_enemy.is_evader          = true
 	_enemy.arena_size         = ARENA
 	_enemy.show_health        = false
 	add_child(_enemy)
@@ -264,8 +366,8 @@ func _process(delta: float):
 		_active_time += delta
 		_timer_label.text = "%.1fs" % _active_time
 
-		if level_mode == LevelMode.ATTACK_ALGO:
-			# Player's algorithm runs on the attacker; defenders try to spot it
+		if _is_attack_mode():
+			# Player's algorithm runs on the evader; defenders try to spot it
 			if not is_instance_valid(_enemy):
 				_trigger_lose()
 				return
@@ -352,6 +454,9 @@ func _unhandled_input(event):
 
 	if _phase != Phase.PLACE:
 		return
+	if level_mode == LevelMode.ATTACK_RING:
+		_handle_evader_placement(event)
+		return
 	if _role == Role.ATTACK or level_mode != LevelMode.DEFEND_MANUAL:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
@@ -392,8 +497,8 @@ func _place_defender(start: Vector2, end: Vector2):
 func _spawn_defender(placement: Dictionary, running: bool):
 	var ship := SHIP.instantiate()
 	ship.setup_player(PlayerData.ship_blocks, DEFENDER_HP)
-	ship.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
-	ship.collisions_enabled = false
+	ship.set_obstacles(Vector2.ZERO, 0.0, PLANET_CENTER, PLANET_RADIUS)
+	ship.collisions_enabled = _collisions_on
 	ship.arena_size = ARENA
 	ship.can_fire = false
 	ship.show_health = false
@@ -495,7 +600,7 @@ func _ai_place_defenders():
 	queue_redraw()
 
 func _launch():
-	if level_mode == LevelMode.ATTACK_ALGO:
+	if _is_attack_mode():
 		_role_btn.disabled = true
 		_phase = Phase.ACTIVE
 		_launch_btn.visible = false
@@ -505,7 +610,7 @@ func _launch():
 		_spawn_algo_attacker()
 		_phase_label.text = "BREACH ATTEMPT..."
 		_phase_label.add_theme_color_override("font_color", C_RED)
-		_hint_label.text = "Your drone is running its algorithm — can it evade every defender?"
+		_hint_label.text = "Your evader is running its algorithm — can it slip past every defender?"
 		queue_redraw()
 		return
 
@@ -538,34 +643,15 @@ func _launch():
 		_spawn_enemy()
 	queue_redraw()
 
-func _test_run():
-	if _placements.is_empty():
-		_hint_label.text = "Place at least one defender first!"
-		return
-	_phase = Phase.TEST
-	_launch_btn.visible = false
-	_clear_btn.disabled = true
-	_phase_label.text = "TESTING..."
-	_phase_label.add_theme_color_override("font_color", ACCENT)
-	_hint_label.text = TEST_HINT
-	for ship in _defender_ships:
-		if is_instance_valid(ship):
-			ship.set_physics_process(true)
-	queue_redraw()
-
 func _spawn_enemy():
-	var margin := 40.0
-	var spawn_pos: Vector2
-	match randi() % 4:
-		0: spawn_pos = Vector2(randf_range(margin, ARENA.x - margin), margin)
-		1: spawn_pos = Vector2(randf_range(margin, ARENA.x - margin), ARENA.y - margin)
-		2: spawn_pos = Vector2(margin, randf_range(margin, ARENA.y - margin))
-		_: spawn_pos = Vector2(ARENA.x - margin, randf_range(margin, ARENA.y - margin))
+	var angle: float = randf() * TAU
+	var spawn_pos: Vector2 = PLANET_CENTER + Vector2(ENEMY_SPAWN_RADIUS, 0.0).rotated(angle)
 
 	_enemy = SHIP.instantiate()
 	_enemy.setup_raider(ENEMY_PROGRAM, ENEMY_HP)
 	_enemy.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
 	_enemy.collisions_enabled = false
+	_enemy.is_evader = true
 	_enemy.arena_size = ARENA
 	_enemy.show_health = false
 	_enemy.speed_mult = ENEMY_SPEED / 150.0
@@ -586,44 +672,31 @@ func _trigger_win():
 		_enemy = null
 	_stop_all_ships()
 	match level_mode:
-		LevelMode.ATTACK_ALGO:
+		LevelMode.ATTACK_RING, LevelMode.ATTACK_RANDOM:
 			_phase_label.text = "PLANET BREACHED!"
 			_phase_label.add_theme_color_override("font_color", C_RED)
 			_show_result("BREACH SUCCESS",
-				"Your attacker reached the planet in %.1fs!\n\nRefine the algorithm or raise the difficulty." % _active_time)
+				"Your evader reached the planet in %.1fs!\n\nSubmit your algorithm to benchmark it." % _active_time, true)
 		_:
-			if _role == Role.DEFEND:
-				EvalUploader.submit(PlayerData.ship_blocks, _placements_payload(), "farp")
-				_phase_label.text = "INTERCEPTED!"
-				_phase_label.add_theme_color_override("font_color", C_GREEN)
-				_show_result("MISSION SUCCESS",
-					"Drone destroyed %.1fs into the wave.\n\nThe planet is safe." % _active_time)
-			else:
-				_phase_label.text = "PLANET REACHED!"
-				_phase_label.add_theme_color_override("font_color", C_RED)
-				_show_result("INFILTRATION SUCCESS",
-					"You breached the defenses in %.1fs!" % _active_time)
+			_phase_label.text = "INTERCEPTED!"
+			_phase_label.add_theme_color_override("font_color", C_GREEN)
+			_show_result("MISSION SUCCESS",
+				"Drone destroyed %.1fs into the wave.\n\nSubmit your algorithm to benchmark it." % _active_time, true)
 
 func _trigger_lose():
 	_phase = Phase.LOSE
 	_stop_all_ships()
 	match level_mode:
-		LevelMode.ATTACK_ALGO:
-			_phase_label.text = "DRONE CAUGHT!"
+		LevelMode.ATTACK_RING, LevelMode.ATTACK_RANDOM:
+			_phase_label.text = "EVADER CAUGHT!"
 			_phase_label.add_theme_color_override("font_color", C_RED)
 			_show_result("BREACH FAILED",
-				"A defender spotted your drone after %.1fs!\n\nAdjust your attack algorithm — try evasion patterns\nor approach from a different angle." % _active_time)
+				"A defender spotted your evader after %.1fs!\n\nAdjust your evasion algorithm and try again." % _active_time, false)
 		_:
-			if _role == Role.DEFEND:
-				_phase_label.text = "PLANET HIT"
-				_phase_label.add_theme_color_override("font_color", C_RED)
-				_show_result("MISSION FAILED",
-					"The drone reached your planet!\n\nReposition your defenders or edit\ntheir program in the workspace.")
-			else:
-				_phase_label.text = "CAUGHT!"
-				_phase_label.add_theme_color_override("font_color", C_RED)
-				_show_result("INFILTRATION FAILED",
-					"A defender spotted you after %.1fs!" % _active_time)
+			_phase_label.text = "PLANET HIT"
+			_phase_label.add_theme_color_override("font_color", C_RED)
+			_show_result("MISSION FAILED",
+				"The drone reached your planet!\n\nReposition your defenders or edit\ntheir program in the workspace.", false)
 
 func _stop_all_ships():
 	for ship in _defender_ships:
@@ -632,10 +705,39 @@ func _stop_all_ships():
 	if is_instance_valid(_enemy):
 		_enemy.set_physics_process(false)
 
-func _show_result(title: String, detail: String):
+func _show_result(title: String, detail: String, can_submit: bool = false):
 	_result_title.text = title
 	_result_detail.text = detail
+	_submit_btn.visible = can_submit and not _submitted
 	_result_panel.visible = true
+
+func _level_id() -> String:
+	match level_mode:
+		LevelMode.DEFEND_MANUAL: return "farp1"
+		LevelMode.DEFEND_RANDOM: return "farp2"
+		LevelMode.ATTACK_RING:   return "farp3"
+		LevelMode.ATTACK_RANDOM: return "farp4"
+	return "farp1"
+
+func _submit_entry():
+	if _submitted:
+		return
+	_submitted = true
+	_submit_btn.disabled = true
+	_submit_btn.text = "SUBMITTING..."
+	if not EvalUploader.submit_finished.is_connected(_on_submit_finished):
+		EvalUploader.submit_finished.connect(_on_submit_finished)
+	EvalUploader.submit(PlayerData.ship_blocks, _placements_payload(), _level_id(), _collisions_on)
+
+func _on_submit_finished(success: bool, code: int, _response):
+	if code == 409:
+		_submit_btn.text = "ALREADY SUBMITTED"
+	elif success:
+		_submit_btn.text = "SUBMITTED ✓"
+	else:
+		_submit_btn.text = "SUBMIT FAILED — RETRY"
+		_submit_btn.disabled = false
+		_submitted = false
 
 func _build_hud():
 	var hud := CanvasLayer.new()
@@ -665,10 +767,6 @@ func _build_hud():
 	workspace_btn.pressed.connect(_open_workspace)
 	top.add_child(workspace_btn)
 
-	var test_btn := _make_compact_btn("TEST")
-	test_btn.pressed.connect(_test_run)
-	top.add_child(test_btn)
-
 	var restart_btn := _make_compact_btn("RESTART")
 	restart_btn.pressed.connect(_restart)
 	top.add_child(restart_btn)
@@ -677,9 +775,23 @@ func _build_hud():
 	_clear_btn.pressed.connect(_clear_defenders)
 	top.add_child(_clear_btn)
 
+	_reroll_btn = _make_compact_btn("REROLL")
+	_reroll_btn.pressed.connect(_reroll_defenders)
+	_reroll_btn.visible = false
+	top.add_child(_reroll_btn)
+
 	var help_btn := _make_compact_btn("? HELP")
 	help_btn.pressed.connect(_show_tutorial)
 	top.add_child(help_btn)
+
+	var collisions_btn := CheckButton.new()
+	collisions_btn.text = "COLLISIONS"
+	collisions_btn.button_pressed = _collisions_on
+	collisions_btn.focus_mode = Control.FOCUS_NONE
+	collisions_btn.add_theme_font_override("font", FONT_REG)
+	collisions_btn.add_theme_font_size_override("font_size", 9)
+	collisions_btn.toggled.connect(_on_collisions_toggled)
+	top.add_child(collisions_btn)
 
 	# Role dropdown
 	_role_btn = OptionButton.new()
@@ -779,6 +891,11 @@ func _build_result_panel(root: Control):
 	sep.custom_minimum_size = Vector2(0, 1)
 	rvb.add_child(sep)
 
+	_submit_btn = _make_btn("SUBMIT ALGORITHM", 11)
+	_submit_btn.visible = false
+	_submit_btn.pressed.connect(_submit_entry)
+	rvb.add_child(_submit_btn)
+
 	var rbtnrow := HBoxContainer.new()
 	rbtnrow.add_theme_constant_override("separation", 14)
 	rbtnrow.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -825,7 +942,28 @@ func _build_tutorial_panel(root: Control):
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vb.add_child(title)
 
-	var subtitle := _lbl("Spot the incoming drone before it reaches your planet.", 11, ACCENT)
+	var subtitle_text: String
+	var steps: Array
+	if _is_attack_mode():
+		subtitle_text = "Program your evader to reach the planet without being seen."
+		steps = [
+			"1.  You control the evader. The defenders run a fixed patrol algorithm.",
+			"2.  Open WORKSPACE to program how your evader moves and evades.",
+			"3.  On level 3, drag the marker on the red ring to choose your start point.",
+			"4.  Press LAUNCH EVADER to run. Reach the planet without entering a vision cone to win.",
+			"Scroll to zoom  ·  Middle-drag to pan.",
+		]
+	else:
+		subtitle_text = "Spot the incoming drone before it reaches your planet."
+		steps = [
+			"1.  Drag inside the blue ring to place a defender and aim its vision cone.",
+			"2.  Right-click a defender to remove it. Place up to %d." % MAX_DEFENDERS,
+			"3.  Open WORKSPACE to program how your defenders move and scan.",
+			"4.  Press LAUNCH DRONE to start the wave. Catch the drone in any vision cone to win.",
+			"Scroll to zoom  ·  Middle-drag to pan.",
+		]
+
+	var subtitle := _lbl(subtitle_text, 11, ACCENT)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vb.add_child(subtitle)
@@ -834,15 +972,6 @@ func _build_tutorial_panel(root: Control):
 	sep.color = C_BORDER
 	sep.custom_minimum_size = Vector2(0, 1)
 	vb.add_child(sep)
-
-	var steps := [
-		"1.  Drag inside the blue ring to place a defender and aim its vision cone.",
-		"2.  Right-click a defender to remove it. Place up to %d." % MAX_DEFENDERS,
-		"3.  Open WORKSPACE to program how your defenders move and scan.",
-		"4.  Press LAUNCH DRONE to start the wave. Catch the drone in any vision cone to win.",
-		"5.  Use TEST to dry-run your defenders with no enemy.",
-		"Scroll to zoom  ·  Middle-drag to pan.",
-	]
 	for step_text in steps:
 		var l := _lbl(step_text, 11, C_DIM)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -864,6 +993,12 @@ func _show_tutorial():
 func _hide_tutorial():
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
+
+func _on_collisions_toggled(on: bool):
+	_collisions_on = on
+	for ship in _defender_ships:
+		if is_instance_valid(ship) and not ship.is_evader:
+			ship.collisions_enabled = on
 
 func _update_count():
 	_count_label.text = "DEFENDERS: %d / %d" % [_placements.size(), MAX_DEFENDERS]
@@ -892,37 +1027,32 @@ func _restart():
 	_role_btn.disabled    = false
 
 	match level_mode:
-		LevelMode.ATTACK_ALGO:
+		LevelMode.ATTACK_RING:
 			_attack_rng.randomize()
-			_place_ai_protectors()
-			_phase_label.text = "PROGRAM YOUR ATTACKER"
-			_phase_label.add_theme_color_override("font_color", C_RED)
-			_launch_btn.text  = "LAUNCH ATTACKER →"
-			_hint_label.text  = "AI defenders orbit the planet. Open WORKSPACE to program your attacker drone, then LAUNCH it to attempt a breach."
+			_place_algo_defenders(false)
+			_init_evader_ring()
+			_configure_attack_labels("You are the evader. Drag the marker on the red ring to choose your start point, program your evader in WORKSPACE, then LAUNCH to slip past the defenders and reach the planet.")
+		LevelMode.ATTACK_RANDOM:
+			_attack_rng.randomize()
+			_place_algo_defenders(true)
+			_configure_attack_labels("You are the evader, dropped in at a random point facing the planet. Program your evader in WORKSPACE, then LAUNCH to slip past the defenders and reach the planet.")
 		LevelMode.DEFEND_RANDOM:
 			_attack_rng.randomize()
 			_random_place_defenders()
+			_reroll_btn.visible = true
 			_phase_label.text = "DEFENDERS PLACED"
 			_phase_label.add_theme_color_override("font_color", ACCENT)
 			_launch_btn.text  = "LAUNCH DRONE →"
-			_hint_label.text  = "Defenders are randomly positioned. Open WORKSPACE to program their detection behavior, then LAUNCH the enemy."
+			_hint_label.text  = "Defenders are randomly positioned. Press REROLL to shuffle them. Open WORKSPACE to program their detection behavior, then LAUNCH the enemy."
 		_:
-			if _role == Role.ATTACK:
-				_attack_rng.randomize()
-				_ai_place_defenders()
-				_phase_label.text = "READY TO INFILTRATE"
-				_phase_label.add_theme_color_override("font_color", C_RED)
-				_launch_btn.text  = "BEGIN INFILTRATION →"
-				_hint_label.text  = ATTACK_HINT
-			else:
-				_phase_label.text = "PLACE DEFENDERS"
-				_phase_label.add_theme_color_override("font_color", ACCENT)
-				_launch_btn.text  = "LAUNCH DRONE →"
-				_hint_label.text  = PLACE_HINT
-				for placement in _persisted_placements:
-					var p: Dictionary = placement.duplicate(true)
-					_placements.append(p)
-					_spawn_defender(p, false)
+			_phase_label.text = "PLACE DEFENDERS"
+			_phase_label.add_theme_color_override("font_color", ACCENT)
+			_launch_btn.text  = "LAUNCH DRONE →"
+			_hint_label.text  = PLACE_HINT
+			for placement in _persisted_placements:
+				var p: Dictionary = placement.duplicate(true)
+				_placements.append(p)
+				_spawn_defender(p, false)
 	_update_count()
 	queue_redraw()
 
@@ -942,6 +1072,12 @@ func _draw():
 		draw_circle(PLANET_CENTER, PLACE_MAX, ZONE_FILL)
 		_draw_dashed_circle(PLANET_CENTER, PLACE_MAX, Color(0.451, 0.616, 1.0, 0.35), 1.5)
 		_draw_dashed_circle(PLANET_CENTER, PLACE_MIN, Color(0.6, 0.62, 0.74, 0.25), 1.0)
+
+	if _phase == Phase.PLACE and level_mode == LevelMode.ATTACK_RING:
+		_draw_dashed_circle(PLANET_CENTER, ENEMY_SPAWN_RADIUS, Color(C_RED.r, C_RED.g, C_RED.b, 0.6), 1.5)
+		if _evader_placed:
+			draw_line(_evader_spawn, PLANET_CENTER, Color(1.0, 0.70, 0.20, 0.15), 1.0, true)
+			draw_circle(_evader_spawn, 12.0, Color(1.0, 0.70, 0.20, 1.0))
 
 	# Player-controlled enemy drone in ATTACK mode
 	if _role == Role.ATTACK and _phase == Phase.ACTIVE:

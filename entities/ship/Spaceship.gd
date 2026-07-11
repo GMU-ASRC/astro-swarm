@@ -35,6 +35,7 @@ var star_radius: float = 0.0
 var planet_center: Vector2 = Vector2.ZERO
 var planet_radius: float = 0.0
 var collisions_enabled: bool = true
+var is_evader: bool = false
 
 var forward_input: float = 0.0
 var turn_input: float = 0.0
@@ -174,7 +175,7 @@ func _apply_movement(delta: float):
 	_resolve_obstacles()
 
 func _resolve_obstacles():
-	if not collisions_enabled:
+	if not collisions_enabled or is_evader:
 		return
 	if star_radius > 0.0 and global_position.distance_to(star_center) < star_radius + hull_radius:
 		take_damage(max_hp)
@@ -188,6 +189,17 @@ func _resolve_obstacles():
 				offset = Vector2.RIGHT
 				dist = 1.0
 			global_position = planet_center + offset / dist * min_dist
+	_resolve_ship_collisions()
+
+func _resolve_ship_collisions():
+	for other in get_tree().get_nodes_in_group("ships"):
+		if other == self or not is_instance_valid(other) or other.is_evader:
+			continue
+		var min_dist: float = hull_radius + other.hull_radius
+		var offset: Vector2 = global_position - other.global_position
+		var dist: float = offset.length()
+		if dist < min_dist and dist > 0.001:
+			global_position = other.global_position + offset / dist * min_dist
 
 func eval_condition(cond: String, params: Dictionary) -> bool:
 	match cond:

@@ -32,13 +32,19 @@ const LEVELS := [
 		"locked": false,
 	},
 	{
-		"name":   "FARP  III\nEVASION · ATTACK",
-		"desc":   "Program the evader drone\nSlip past AI defenders",
-		"mode":   2,   # LevelMode.ATTACK_ALGO
+		"name":   "FARP  III\nEVASION · RING",
+		"desc":   "Program the evader drone\nSlip past a ring of AI defenders",
+		"mode":   2,   # LevelMode.ATTACK_RING
 		"scene":  "res://levels/modes/FARPScene.tscn",
 		"locked": false,
 	},
-	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
+	{
+		"name":   "FARP  IV\nEVASION · RANDOM",
+		"desc":   "Program the evader drone\nSlip past scattered AI defenders",
+		"mode":   3,   # LevelMode.ATTACK_RANDOM
+		"scene":  "res://levels/modes/FARPScene.tscn",
+		"locked": false,
+	},
 	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
 	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
 ]
