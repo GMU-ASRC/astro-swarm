@@ -23,6 +23,9 @@ var _status_label: Label
 var _meta_label: Label
 var _stats_grid: GridContainer
 var _detail_status: Label
+var _algo_text: Label
+var _xp_label: Label
+var _claim_btn: Button
 
 func _ready():
 	theme = GAME_THEME
@@ -78,9 +81,43 @@ func _build_ui():
 	_detail_status = _lbl("Loading details...", 12, C_DIM)
 	vbox.add_child(_detail_status)
 
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(spacer)
+	var xp_row := HBoxContainer.new()
+	xp_row.add_theme_constant_override("separation", 12)
+	vbox.add_child(xp_row)
+
+	_claim_btn = _make_btn("CLAIM XP")
+	_claim_btn.visible = false
+	_claim_btn.pressed.connect(_on_claim_pressed)
+	xp_row.add_child(_claim_btn)
+
+	_xp_label = _lbl("", 14, C_GREEN)
+	_xp_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	xp_row.add_child(_xp_label)
+
+	var algo_title := _lbl("ALGORITHM USED", 12, C_BLUE)
+	vbox.add_child(algo_title)
+
+	var algo_scroll := ScrollContainer.new()
+	algo_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	algo_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(algo_scroll)
+
+	var algo_panel := PanelContainer.new()
+	algo_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var algo_style := StyleBoxFlat.new()
+	algo_style.bg_color = C_PANEL
+	algo_style.border_color = C_BORDER
+	algo_style.set_border_width_all(2)
+	algo_style.content_margin_left = 14
+	algo_style.content_margin_right = 14
+	algo_style.content_margin_top = 12
+	algo_style.content_margin_bottom = 12
+	algo_panel.add_theme_stylebox_override("panel", algo_style)
+	algo_scroll.add_child(algo_panel)
+
+	_algo_text = _lbl("", 13, C_TEXT)
+	_algo_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	algo_panel.add_child(_algo_text)
 
 	var back := _make_btn("← BACK TO ENTRIES")
 	back.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerEntriesScene.tscn"))
@@ -122,6 +159,9 @@ func _apply_detail(data: Dictionary):
 	var status: String = str(data.get("status", entry_summary.get("status", "")))
 	_status_label.text = status.to_upper()
 	_status_label.add_theme_color_override("font_color", _status_color(status))
+
+	_algo_text.text = _algorithm_to_text(data.get("algorithm", []))
+	_update_xp_ui(status, data.get("xp_awarded", null))
 
 	var level_id: String = str(data.get("level_id", "farp"))
 	var placements: Array = data.get("placements", [])
@@ -198,6 +238,81 @@ func _make_stat_card(label_text: String, value_text: String) -> Control:
 	var v := _lbl(value_text, 20, C_TEXT)
 	vb.add_child(v)
 	return panel
+
+func _update_xp_ui(status: String, xp_awarded):
+	if status != "done":
+		_claim_btn.visible = false
+		_xp_label.text = "XP can be claimed once the benchmark finishes." if status in ["queued", "running"] else ""
+		return
+	if xp_awarded == null:
+		_claim_btn.visible = true
+		_claim_btn.disabled = false
+		_claim_btn.text = "CLAIM XP"
+		_xp_label.text = ""
+	else:
+		_claim_btn.visible = false
+		_xp_label.text = "XP claimed: %d" % int(xp_awarded)
+
+func _on_claim_pressed():
+	_claim_btn.disabled = true
+	_claim_btn.text = "CLAIMING..."
+	var req := HTTPRequest.new()
+	req.timeout = 20.0
+	add_child(req)
+	req.request_completed.connect(_on_claim_response.bind(req))
+	var url: String = DETAIL_URL + entry_id + "/claim-xp"
+	var headers := ["X-API-Key: " + API_KEY, "Content-Type: application/json"]
+	if req.request(url, headers, HTTPClient.METHOD_POST, "{}") != OK:
+		req.queue_free()
+		_claim_btn.disabled = false
+		_claim_btn.text = "CLAIM XP — RETRY"
+
+func _on_claim_response(_result, code, _headers, body, req):
+	req.queue_free()
+	if code != 200:
+		_claim_btn.disabled = false
+		_claim_btn.text = "CLAIM XP — RETRY"
+		return
+	var data = JSON.parse_string(body.get_string_from_utf8())
+	var xp: int = 0
+	var already: bool = false
+	if typeof(data) == TYPE_DICTIONARY:
+		xp = int(data.get("xp", 0))
+		already = bool(data.get("already_claimed", false))
+	if not already:
+		PlayerData.add_xp(xp)
+	_claim_btn.visible = false
+	_xp_label.text = "XP awarded: %d" % xp
+
+func _algorithm_to_text(scripts) -> String:
+	if typeof(scripts) != TYPE_ARRAY or scripts.is_empty():
+		return "(no algorithm data)"
+	var lines: Array = []
+	for s in scripts:
+		if typeof(s) != TYPE_DICTIONARY:
+			continue
+		_blocks_to_lines(s.get("blocks", []), 0, lines)
+		lines.append("")
+	var text: String = "\n".join(lines).strip_edges()
+	return text if text != "" else "(no algorithm data)"
+
+func _blocks_to_lines(blocks, depth: int, lines: Array):
+	if typeof(blocks) != TYPE_ARRAY:
+		return
+	for b in blocks:
+		if typeof(b) != TYPE_DICTIONARY:
+			continue
+		lines.append("    ".repeat(depth) + _block_label(str(b.get("type", "")), b.get("params", {})))
+		_blocks_to_lines(b.get("children", []), depth + 1, lines)
+
+func _block_label(block_type: String, params) -> String:
+	var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_type, {})
+	var label: String = str(def.get("label", block_type))
+	if params is Dictionary:
+		for key in ["value", "min", "max", "target", "var", "op"]:
+			if params.has(key):
+				label += " " + str(params[key])
+	return label
 
 func _rate_text(rate) -> String:
 	if rate == null:

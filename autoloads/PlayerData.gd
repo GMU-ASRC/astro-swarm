@@ -7,7 +7,6 @@ const MOON_LEVEL_STEP := 2
 const DEFAULT_SHIP_BLOCKS := [
 	{"type": "when_sees_enemy", "params": {}},
 	{"type": "do_face", "params": {}},
-	{"type": "do_fire", "params": {}},
 	{"type": "when_always", "params": {}},
 	{"type": "do_forward", "params": {}},
 ]
@@ -29,7 +28,7 @@ var planet_type: String = "terran"
 var moon_seeds: Array = []
 var ship_blocks: Array = []
 var ship_algorithms: Dictionary = {}
-var game_mode: String = "timed_local"
+var game_mode: String = "levels"
 var farp_placements: Array = []
 
 var _rng := RandomNumberGenerator.new()
@@ -167,7 +166,7 @@ func reset_game():
 	moon_seeds = []
 	ship_blocks = []
 	ship_algorithms = {}
-	game_mode = "timed_local"
+	game_mode = "levels"
 	farp_placements = []
 	_ensure_planet()
 	_sync_moons()
@@ -222,5 +221,5 @@ func _load():
 	moon_seeds = cfg.get_value("moons", "seeds", [])
 	ship_blocks = SimulationManager.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
 	ship_algorithms = cfg.get_value("ship", "algorithms", {})
-	game_mode = cfg.get_value("match", "game_mode", "timed_local")
+	game_mode = cfg.get_value("match", "game_mode", "levels")
 	farp_placements = cfg.get_value("farp", "placements", [])

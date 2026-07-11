@@ -11,12 +11,13 @@ config_version=5
 [application]
 
 config/name="AstroSwarm"
+config/version="0.0.5"
 run/main_scene="res://levels/menus/HomeScene.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 boot_splash/bg_color=Color(0.09803922, 0.09019608, 0.14117648, 1)
 boot_splash/stretch_mode=4
-boot_splash/image="uid://dp7a4ykc8rh7q"
-config/icon="res://icon.svg"
+boot_splash/image="uid://c26um1diy7gik"
+config/icon="uid://cgiacfo88w4gf"
 boot_splash/minimum_display_time=2000
 
 [autoload]
