@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c683f2n1u2nd2"]
 
-[ext_resource type="Script" uid="uid://4oxynbpicour" path="res://levels/modes/GameArena.gd" id="1_arena"]
+[ext_resource type="Script" uid="uid://4oxynbpicour" path="res://unused/GameArena.gd" id="1_arena"]
 [ext_resource type="Theme" uid="uid://d05e8utjgnapr" path="res://ui/GameTheme.tres" id="2_theme"]
 [ext_resource type="PackedScene" uid="uid://c2v2xxxxxxxxx" path="res://levels/components/DragIndicator.tscn" id="3_drag"]
 

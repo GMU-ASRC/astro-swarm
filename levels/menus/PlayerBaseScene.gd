@@ -26,7 +26,6 @@ const ORBIT_MAX := 255.0
 @onready var confirm_btn: Button = $UsernameModal/Panel/Margin/VBox/Confirm
 
 const GAME_MODES := [
-	{"id": "timed_local", "label": "Timed Local", "scene": "res://levels/modes/GameArena.tscn"},
 	{"id": "levels",      "label": "Levels",       "scene": "res://levels/menus/LevelsScene.tscn"},
 ]
 
@@ -182,8 +181,8 @@ func _on_confirm_username():
 	_refresh_hud()
 
 func _init_game_mode():
-	# Migrate old "domination" save to "levels"
-	if PlayerData.game_mode == "domination":
+	# Migrate old "domination"/"timed_local" saves to "levels"
+	if PlayerData.game_mode == "domination" or PlayerData.game_mode == "timed_local":
 		PlayerData.set_game_mode("levels")
 	for i in GAME_MODES.size():
 		if GAME_MODES[i].id == PlayerData.game_mode:
