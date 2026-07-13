@@ -50,21 +50,31 @@ The **Levels** screen lists three FARP levels. All three defend (or attack) the 
 
 | Event | Definition |
 |---|---|
-| **Detection** | The first time any defender sees the evader inside its vision cone. |
-| **Capture** | The first time any defender physically touches (collides with) the evader. |
-| **T_goal** | The time the evader reaches the centre planet. |
+| **Detected** | The first time any defender sees the evader inside its vision cone. |
+| **Captured** | The first time any defender physically touches (collides with) the evader. |
+| **Goal time** | The time the evader reaches the centre planet. |
 
-Seeing the evader is not enough to stop it — a defender has to reach out and *touch* it. A run ends on capture (the defenders win) or at T_goal (the evader wins).
+Seeing the evader is not enough to stop it — a defender has to reach out and *touch* it. A run ends on capture (the defenders win) or when the evader reaches the planet (the evader wins).
 
 - **Level 1 — Defense · Place.** Drag inside the blue ring to place between one and six defenders, aiming each one's vision cone with the drag direction; right-click one to remove it. Program how they all move and scan in the **Workspace**, then press **Launch Evader**. Your layout is saved between sessions.
-- **Level 2 — Defense · Ring.** Five defenders are scattered at random positions and orientations inside the same ring, and you cannot move them — only the algorithm decides the outcome. **Reroll** scatters them again so you can check your algorithm isn't merely lucky.
-- **Level 3 — Evasion · Pilot.** You fly the evader yourself against the **best Level 2 algorithm submitted by another player**, standing exactly where that player placed their defenders; their name is shown in the top bar. Drag on the red ring to pick your start point, then drive with the movement keys from your **Settings** (WASD or the arrow keys by default). A **three-minute countdown** runs in the top right. Reach the planet and the run is worth a large XP payout.
+- **Level 2 — Defense · Ring.** Five defenders are scattered at random positions and orientations inside the ring, spaced apart so they never clump, and you cannot move them — only the algorithm decides the outcome. **Reroll** scatters them again. The layout on screen when you submit is the one the server benchmarks and the one Level 3 pilots will face, so it is saved between sessions and only **Reroll** changes it.
+- **Level 3 — Evasion · Pilot.** You fly the evader yourself against the **best Level 2 algorithm submitted by another player**, standing exactly where that player placed their defenders; their name is shown in the top bar. (With no entries on the server yet, you face a house algorithm on a fixed ring.) Drag on the red ring to pick your start point, then drive with the movement keys from your **Settings** (WASD or the arrow keys by default). A **three-minute countdown** runs in the top right. Reaching the planet wins; reaching it *without ever being seen* is a **clean run**. Either way the run can be submitted, and reaching the planet is worth a large XP payout.
 
-Each level has a **? Guide** button with a step-by-step walkthrough and a list of hints, and it opens automatically the first time you play that level.
+Each level has a **? Guide** button with a step-by-step walkthrough and a list of hints, and it opens automatically the first time you play that level. Ship-to-ship **collisions** are off by default and can be toggled from the top bar.
 
-Submitting a Level 1 or Level 2 entry uploads your algorithm and placements, and the dedicated server benchmarks them headlessly (placement trials plus a ring-sweep over defender counts). Submitting a Level 3 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
+### Level shortcuts
 
-**My Entries** lists every entry you've submitted across all three levels, each with a **Claim XP** button right in the list — it reads *Pending* until the server finishes processing the entry, and shows the amount once claimed. **View** opens an info screen pulled live from the server: capture and detection rates plus the outcome breakdown for a benchmarked level, or the result and the T_detect / T_capture / T_goal times for a piloted run. XP is awarded from your best result on a level, so re-claiming a worse entry pays nothing; reaching the planet in level 3 is worth far more than a benchmark run.
+| Key | Action |
+|---|---|
+| `S` | Start the run |
+| `P` | Replay — reset and try again |
+| `R` | Reroll the defender scatter (Level 2 only) |
+
+They are inert while a run is in progress, since Level 3 steers the evader with the same keys.
+
+Submitting a Level 1 or Level 2 entry uploads your algorithm and placements, and the dedicated server benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. Submitting a Level 3 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
+
+**My Entries** lists every entry you've submitted across all three levels, each with a **Claim XP** button right in the list — it reads *Pending* until the server finishes processing the entry, and shows the amount once claimed. **View** opens an info screen pulled live from the server: capture and detection rates plus the outcome breakdown for a benchmarked level, or the result and the detected / captured / reached-planet times for a piloted run. XP is awarded from your best result on a level, so re-claiming a worse entry pays nothing; reaching the planet in level 3 is worth far more than a benchmark run.
 
 ## Controls
 
@@ -123,7 +133,7 @@ Each level ships its own headless benchmarker under `simulations/farp/`, all sha
 | Benchmarker | Level | What it does |
 |---|---|---|
 | `Level1Bench.gd` | 1 | Simulates the submitted placements over many trials. |
-| `Level2Bench.gd` | 2 | Re-scatters the defenders inside the ring on every trial (seeded), so only the algorithm is under test. |
+| `Level2Bench.gd` | 2 | Simulates the scatter the player submitted, so the score and the layout describe the same thing. |
 | `Level3Bench.gd` | 3 | Runs no simulation — it renders the player's recorded flight into a replay. |
 
 The dedicated-server build is what the web worker downloads and runs; see `web/worker/README.md`.
