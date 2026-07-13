@@ -18,6 +18,7 @@ const C_RED    := Color(0.9, 0.45, 0.45, 1.0)
 
 var _list: VBoxContainer
 var _status_label: Label
+var _claim_buttons: Dictionary = {}
 
 func _ready():
 	theme = GAME_THEME
@@ -120,20 +121,84 @@ func _make_entry_row(entry: Dictionary) -> Control:
 	status_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	top.add_child(status_label)
 
+	var claim_btn := _make_btn("CLAIM XP")
+	claim_btn.pressed.connect(_on_claim_pressed.bind(entry, claim_btn))
+	top.add_child(claim_btn)
+	_style_claim_button(claim_btn, entry)
+
 	var view_btn := _make_btn("VIEW")
 	view_btn.pressed.connect(_open_entry.bind(entry))
 	top.add_child(view_btn)
 
-	var rate = entry.get("success_rate", null)
-	var rate_text: String = "%s%%" % str(rate) if rate != null else "-"
 	var level_id: String = str(entry.get("level_id", "farp"))
-	var meta := _lbl("%s  -  %s detection  -  %s" % [level_id.to_upper(), rate_text, _date(str(entry.get("created_at", "")))], 11, C_DIM)
+	var meta := _lbl("%s  -  %s  -  %s" % [_level_name(level_id), _result_text(entry), _date(str(entry.get("created_at", "")))], 11, C_DIM)
 	row.add_child(meta)
 
 	var id_label := _lbl(str(entry.get("id", "")), 10, Color(C_DIM.r, C_DIM.g, C_DIM.b, 0.7))
 	row.add_child(id_label)
 
 	return panel
+
+func _level_number(level_id: String) -> int:
+	var digits: String = ""
+	for ch in level_id:
+		if ch >= "0" and ch <= "9":
+			digits += ch
+	if digits == "":
+		return 1
+	return int(digits)
+
+func _level_name(level_id: String) -> String:
+	match _level_number(level_id):
+		2: return "LEVEL 2 - DEFENSE"
+		3: return "LEVEL 3 - PILOT"
+	return "LEVEL 1 - DEFENSE"
+
+func _result_text(entry: Dictionary) -> String:
+	var rate = entry.get("success_rate", null)
+	if rate == null:
+		return "pending"
+	if _level_number(str(entry.get("level_id", "farp"))) == 3:
+		return "planet reached" if float(rate) >= 100.0 else "no goal"
+	return "%s%% capture" % str(rate)
+
+func _style_claim_button(button: Button, entry: Dictionary):
+	var status: String = str(entry.get("status", ""))
+	var xp_awarded = entry.get("xp_awarded", null)
+	if status != "done":
+		button.disabled = true
+		button.text = "PENDING"
+	elif xp_awarded != null:
+		button.disabled = true
+		button.text = "XP: %d" % int(xp_awarded)
+	else:
+		button.disabled = false
+		button.text = "CLAIM XP"
+
+func _on_claim_pressed(entry: Dictionary, button: Button):
+	var claim_id: String = str(entry.get("id", ""))
+	if claim_id == "":
+		return
+	button.disabled = true
+	button.text = "CLAIMING..."
+	_claim_buttons[claim_id] = button
+	if not EvalUploader.xp_claimed.is_connected(_on_claim_finished):
+		EvalUploader.xp_claimed.connect(_on_claim_finished)
+	EvalUploader.claim_xp(claim_id)
+
+func _on_claim_finished(claimed_id: String, success: bool, xp: int, message: String):
+	var button: Button = _claim_buttons.get(claimed_id, null)
+	if button == null or not is_instance_valid(button):
+		return
+	_claim_buttons.erase(claimed_id)
+	if success:
+		button.disabled = true
+		button.text = "XP: %d" % xp
+		_status_label.text = "Claimed %d XP." % xp
+	else:
+		button.disabled = false
+		button.text = "CLAIM XP"
+		_status_label.text = message
 
 func _open_entry(entry: Dictionary):
 	ENTRY_SCENE.entry_id = str(entry.get("id", ""))
@@ -152,11 +217,11 @@ func _date(iso: String) -> String:
 		return iso.substr(0, 10)
 	return iso
 
-func _lbl(text: String, size: int, color: Color) -> Label:
+func _lbl(text: String, font_size: int, color: Color) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_override("font", FONT_REG)
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	return l
 

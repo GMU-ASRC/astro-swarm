@@ -1,5 +1,7 @@
 extends Node
 
+const SIM := preload("res://autoloads/SimulationManager.gd")
+
 const SAVE_PATH := "user://player.cfg"
 const MAX_MOONS := 5
 const MOON_LEVEL_STEP := 2
@@ -30,6 +32,7 @@ var ship_blocks: Array = []
 var ship_algorithms: Dictionary = {}
 var game_mode: String = "levels"
 var farp_placements: Array = []
+var farp_layouts: Dictionary = {}
 
 var _rng := RandomNumberGenerator.new()
 
@@ -51,7 +54,7 @@ func xp_needed() -> int:
 	return xp_for_level(level)
 
 func moons_for_level(lvl: int) -> int:
-	return clampi(lvl / MOON_LEVEL_STEP, 0, MAX_MOONS)
+	return clampi(floori(float(lvl) / float(MOON_LEVEL_STEP)), 0, MAX_MOONS)
 
 func set_username(value: String):
 	username = value.strip_edges()
@@ -100,7 +103,7 @@ func _ensure_planet():
 
 func _ensure_ship_program():
 	if ship_blocks.is_empty():
-		ship_blocks = SimulationManager.normalize_to_scripts(DEFAULT_SHIP_BLOCKS)
+		ship_blocks = SIM.normalize_to_scripts(DEFAULT_SHIP_BLOCKS)
 		_save()
 
 func _ensure_player_id():
@@ -120,10 +123,10 @@ func _generate_uuid() -> String:
 	return "%s-%s-%s-%s-%s" % [hex.substr(0, 8), hex.substr(8, 4), hex.substr(12, 4), hex.substr(16, 4), hex.substr(20, 12)]
 
 func get_ship_algorithm() -> Array:
-	return SimulationManager.normalize_to_scripts(ship_blocks)
+	return SIM.normalize_to_scripts(ship_blocks)
 
 func set_ship_blocks(blocks: Array):
-	ship_blocks = SimulationManager.normalize_to_scripts(blocks)
+	ship_blocks = SIM.normalize_to_scripts(blocks)
 	_save()
 	ship_program_changed.emit()
 
@@ -131,11 +134,11 @@ func save_algorithm(algo_name: String, scripts: Array):
 	var key: String = algo_name.strip_edges()
 	if key == "":
 		return
-	ship_algorithms[key] = SimulationManager.normalize_to_scripts(scripts)
+	ship_algorithms[key] = SIM.normalize_to_scripts(scripts)
 	_save()
 
 func get_algorithm(algo_name: String) -> Array:
-	return SimulationManager.normalize_to_scripts(ship_algorithms.get(algo_name, []))
+	return SIM.normalize_to_scripts(ship_algorithms.get(algo_name, []))
 
 func delete_algorithm(algo_name: String):
 	if ship_algorithms.erase(algo_name):
@@ -155,6 +158,13 @@ func set_farp_placements(placements: Array):
 func get_farp_placements() -> Array:
 	return farp_placements
 
+func set_level_placements(level_id: String, placements: Array):
+	farp_layouts[level_id] = placements
+	_save()
+
+func get_level_placements(level_id: String) -> Array:
+	return farp_layouts.get(level_id, [])
+
 func reset_game():
 	username = ""
 	player_id = ""
@@ -168,6 +178,7 @@ func reset_game():
 	ship_algorithms = {}
 	game_mode = "levels"
 	farp_placements = []
+	farp_layouts = {}
 	_ensure_planet()
 	_sync_moons()
 	_ensure_ship_program()
@@ -205,6 +216,7 @@ func _save():
 	cfg.set_value("ship", "algorithms", ship_algorithms)
 	cfg.set_value("match", "game_mode", game_mode)
 	cfg.set_value("farp", "placements", farp_placements)
+	cfg.set_value("farp", "layouts", farp_layouts)
 	cfg.save(SAVE_PATH)
 
 func _load():
@@ -219,7 +231,8 @@ func _load():
 	planet_seed = cfg.get_value("planet", "seed", 0)
 	planet_type = cfg.get_value("planet", "type", "terran")
 	moon_seeds = cfg.get_value("moons", "seeds", [])
-	ship_blocks = SimulationManager.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
+	ship_blocks = SIM.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
 	ship_algorithms = cfg.get_value("ship", "algorithms", {})
 	game_mode = cfg.get_value("match", "game_mode", "levels")
 	farp_placements = cfg.get_value("farp", "placements", [])
+	farp_layouts = cfg.get_value("farp", "layouts", {})

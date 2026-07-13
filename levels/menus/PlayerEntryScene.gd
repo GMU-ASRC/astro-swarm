@@ -26,6 +26,7 @@ var _detail_status: Label
 var _algo_text: Label
 var _xp_label: Label
 var _claim_btn: Button
+var _algo_title: Label
 
 func _ready():
 	theme = GAME_THEME
@@ -94,8 +95,8 @@ func _build_ui():
 	_xp_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	xp_row.add_child(_xp_label)
 
-	var algo_title := _lbl("ALGORITHM USED", 12, C_BLUE)
-	vbox.add_child(algo_title)
+	_algo_title = _lbl("ALGORITHM USED", 12, C_BLUE)
+	vbox.add_child(_algo_title)
 
 	var algo_scroll := ScrollContainer.new()
 	algo_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -129,11 +130,43 @@ func _fill_from_summary():
 	_status_label.text = status.to_upper()
 	_status_label.add_theme_color_override("font_color", _status_color(status))
 	var level_id: String = str(entry_summary.get("level_id", "farp"))
-	_meta_label.text = "%s  ·  %s" % [level_id.to_upper(), _date(str(entry_summary.get("created_at", "")))]
-	_set_stat_cards([
-		["DETECTION RATE", _rate_text(entry_summary.get("success_rate", null))],
-		["TRIALS", str(entry_summary.get("trials", "-"))],
-	])
+	_meta_label.text = "%s  ·  %s" % [_level_name(level_id), _date(str(entry_summary.get("created_at", "")))]
+	if _is_pilot(level_id):
+		_algo_title.text = "OPPONENT ALGORITHM"
+		_set_stat_cards([["RESULT", "-"]])
+	else:
+		_set_stat_cards([
+			["CAPTURE RATE", _rate_text(entry_summary.get("success_rate", null))],
+			["TRIALS", str(entry_summary.get("trials", "-"))],
+		])
+
+func _level_number(level_id: String) -> int:
+	var digits: String = ""
+	for ch in level_id:
+		if ch >= "0" and ch <= "9":
+			digits += ch
+	if digits == "":
+		return 1
+	return int(digits)
+
+func _is_pilot(level_id: String) -> bool:
+	return _level_number(level_id) == 3
+
+func _level_name(level_id: String) -> String:
+	match _level_number(level_id):
+		2: return "LEVEL 2 - DEFENSE"
+		3: return "LEVEL 3 - PILOT"
+	return "LEVEL 1 - DEFENSE"
+
+func _time_text(value) -> String:
+	if value == null or float(value) < 0.0:
+		return "never"
+	return "%.2fs" % float(value)
+
+func _first(values, fallback = null):
+	if typeof(values) == TYPE_ARRAY and not values.is_empty():
+		return values[0]
+	return fallback
 
 func _fetch_detail():
 	var req := HTTPRequest.new()
@@ -164,10 +197,15 @@ func _apply_detail(data: Dictionary):
 	_update_xp_ui(status, data.get("xp_awarded", null))
 
 	var level_id: String = str(data.get("level_id", "farp"))
+	var pilot: bool = _is_pilot(level_id)
 	var placements: Array = data.get("placements", [])
 	var trials = data.get("trials", entry_summary.get("trials", "-"))
 	var when: String = _date(str(data.get("completed_at", data.get("created_at", ""))))
-	_meta_label.text = "%s  ·  %d defenders  ·  %s trials  ·  %s" % [level_id.to_upper(), placements.size(), str(trials), when]
+	if pilot:
+		_algo_title.text = "OPPONENT ALGORITHM"
+		_meta_label.text = "%s  ·  %d defenders  ·  %s" % [_level_name(level_id), placements.size(), when]
+	else:
+		_meta_label.text = "%s  ·  %d defenders  ·  %s trials  ·  %s" % [_level_name(level_id), placements.size(), str(trials), when]
 
 	var results = data.get("results", {})
 	var outcomes: Array = []
@@ -175,6 +213,30 @@ func _apply_detail(data: Dictionary):
 	if typeof(results) == TYPE_DICTIONARY:
 		outcomes = results.get("outcomes", [])
 		rate = results.get("success_rate", rate)
+
+	if outcomes.is_empty():
+		if pilot:
+			_set_stat_cards([["RESULT", "-"], ["DEFENDERS", str(placements.size())]])
+			_detail_status.text = "Run is being rendered. Stats appear when it finishes." if status in ["queued", "running"] else "No run data for this entry yet."
+		else:
+			_set_stat_cards([
+				["CAPTURE RATE", _rate_text(rate)],
+				["TRIALS", str(trials)],
+				["DEFENDERS", str(placements.size())],
+			])
+			_detail_status.text = "Benchmark still running. Stats appear when it finishes." if status in ["queued", "running"] else "No benchmark data for this entry yet."
+		return
+
+	if pilot:
+		_set_stat_cards([
+			["RESULT", _pilot_result_text(_first(outcomes, "timeout"))],
+			["DETECTED", _time_text(_first(results.get("detection_times", [])))],
+			["CAPTURED", _time_text(_first(results.get("capture_times", [])))],
+			["REACHED PLANET", _time_text(_first(results.get("goal_times", [])))],
+			["DEFENDERS", str(placements.size())],
+		])
+		_detail_status.text = "Entry ID: %s" % entry_id
+		return
 
 	var wins := 0
 	var losses := 0
@@ -187,27 +249,22 @@ func _apply_detail(data: Dictionary):
 		else:
 			timeouts += 1
 
-	if outcomes.is_empty():
-		_set_stat_cards([
-			["DETECTION RATE", _rate_text(rate)],
-			["TRIALS", str(trials)],
-			["DEFENDERS", str(placements.size())],
-		])
-		if status == "queued" or status == "running":
-			_detail_status.text = "Benchmark still running. Stats appear when it finishes."
-		else:
-			_detail_status.text = "No benchmark data for this entry yet."
-		return
-
 	_set_stat_cards([
-		["DETECTION RATE", _rate_text(rate)],
-		["INTERCEPTS", str(wins)],
+		["CAPTURE RATE", _rate_text(rate)],
+		["DETECTION RATE", _rate_text(results.get("detection_rate", null))],
+		["CAPTURES", str(wins)],
 		["PLANET HITS", str(losses)],
 		["TIMEOUTS", str(timeouts)],
 		["DEFENDERS", str(placements.size())],
 		["TRIALS", str(trials)],
 	])
 	_detail_status.text = "Entry ID: %s" % entry_id
+
+func _pilot_result_text(outcome) -> String:
+	match str(outcome):
+		"win":  return "PLANET REACHED"
+		"lose": return "CAUGHT"
+	return "OUT OF TIME"
 
 func _set_stat_cards(cards: Array):
 	for child in _stats_grid.get_children():
@@ -242,7 +299,7 @@ func _make_stat_card(label_text: String, value_text: String) -> Control:
 func _update_xp_ui(status: String, xp_awarded):
 	if status != "done":
 		_claim_btn.visible = false
-		_xp_label.text = "XP can be claimed once the benchmark finishes." if status in ["queued", "running"] else ""
+		_xp_label.text = "XP can be claimed once the entry finishes processing." if status in ["queued", "running"] else ""
 		return
 	if xp_awarded == null:
 		_claim_btn.visible = true
@@ -256,32 +313,22 @@ func _update_xp_ui(status: String, xp_awarded):
 func _on_claim_pressed():
 	_claim_btn.disabled = true
 	_claim_btn.text = "CLAIMING..."
-	var req := HTTPRequest.new()
-	req.timeout = 20.0
-	add_child(req)
-	req.request_completed.connect(_on_claim_response.bind(req))
-	var url: String = DETAIL_URL + entry_id + "/claim-xp"
-	var headers := ["X-API-Key: " + API_KEY, "Content-Type: application/json"]
-	if req.request(url, headers, HTTPClient.METHOD_POST, "{}") != OK:
-		req.queue_free()
-		_claim_btn.disabled = false
-		_claim_btn.text = "CLAIM XP — RETRY"
+	_xp_label.text = ""
+	if not EvalUploader.xp_claimed.is_connected(_on_claim_finished):
+		EvalUploader.xp_claimed.connect(_on_claim_finished)
+	EvalUploader.claim_xp(entry_id)
 
-func _on_claim_response(_result, code, _headers, body, req):
-	req.queue_free()
-	if code != 200:
-		_claim_btn.disabled = false
-		_claim_btn.text = "CLAIM XP — RETRY"
+func _on_claim_finished(claimed_id: String, success: bool, xp: int, message: String):
+	if claimed_id != entry_id:
 		return
-	var data = JSON.parse_string(body.get_string_from_utf8())
-	var xp: int = 0
-	var already: bool = false
-	if typeof(data) == TYPE_DICTIONARY:
-		xp = int(data.get("xp", 0))
-		already = bool(data.get("already_claimed", false))
-	if not already:
-		PlayerData.add_xp(xp)
+	if not success:
+		_claim_btn.disabled = false
+		_claim_btn.text = "CLAIM XP - RETRY"
+		_xp_label.add_theme_color_override("font_color", C_RED)
+		_xp_label.text = message
+		return
 	_claim_btn.visible = false
+	_xp_label.add_theme_color_override("font_color", C_GREEN)
 	_xp_label.text = "XP awarded: %d" % xp
 
 func _algorithm_to_text(scripts) -> String:
@@ -331,11 +378,11 @@ func _date(iso: String) -> String:
 		return iso.substr(0, 10)
 	return iso
 
-func _lbl(text: String, size: int, color: Color) -> Label:
+func _lbl(text: String, font_size: int, color: Color) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_override("font", FONT_REG)
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	return l
 
