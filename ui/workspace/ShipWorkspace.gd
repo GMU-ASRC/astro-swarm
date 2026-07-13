@@ -13,6 +13,7 @@ var _loading: bool = false
 var _warning_label: Label
 
 const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
+const SIM := preload("res://autoloads/SimulationManager.gd")
 
 const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
@@ -21,11 +22,16 @@ const GAME_PALETTE := {
 	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle"],
 }
 
-const FARP_SCENE := "res://levels/modes/FARPScene.tscn"
+const FARP_SCENES := [
+	"res://levels/modes/Level1Scene.tscn",
+	"res://levels/modes/Level2Scene.tscn",
+	"res://levels/modes/Level3Scene.tscn",
+]
 const FARP_DISABLED_BLOCKS := ["do_throttle", "set_size"]
 
 func _ready():
 	get_tree().paused = false
+	back_btn.text = " ← Level " if FARP_SCENES.has(return_scene) else " ← Base "
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
 	_build_save_load_ui()
@@ -48,7 +54,7 @@ func _build_warning_banner():
 func _update_warning():
 	if _warning_label == null:
 		return
-	var invalid: bool = SimulationManager.has_unnested_conditional(_current_scripts())
+	var invalid: bool = SIM.has_unnested_conditional(_current_scripts())
 	_warning_label.visible = invalid
 	if invalid:
 		_warning_label.text = "Warning: a condition block (IF) must be placed inside an event block (WHEN)."
@@ -138,7 +144,7 @@ func _build_palette():
 		_build_palette_category(category, _allowed_blocks(GAME_PALETTE.get(category, [])))
 
 func _allowed_blocks(ids: Array) -> Array:
-	if return_scene != FARP_SCENE:
+	if not FARP_SCENES.has(return_scene):
 		return ids
 	var allowed: Array = []
 	for block_id in ids:
@@ -161,20 +167,20 @@ func _build_palette_category(category: String, ids: Array):
 	palette_list.add_child(spacer)
 
 func _make_palette_item(block_id: String):
-	var wrap := MarginContainer.new()
-	wrap.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
-	wrap.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var item := MarginContainer.new()
+	item.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	item.mouse_filter = Control.MOUSE_FILTER_STOP
+	item.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	var preview := SCRATCH_BLOCK.instantiate()
-	wrap.add_child(preview)
-	palette_list.add_child(wrap)
+	item.add_child(preview)
+	palette_list.add_child(item)
 	preview.setup_preview(block_id)
-	wrap.gui_input.connect(func(event):
+	item.gui_input.connect(func(event):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			_add_block(block_id)
 	)
-	wrap.mouse_entered.connect(func(): wrap.modulate = Color(1.12, 1.12, 1.12))
-	wrap.mouse_exited.connect(func(): wrap.modulate = Color(1, 1, 1))
+	item.mouse_entered.connect(func(): item.modulate = Color(1.12, 1.12, 1.12))
+	item.mouse_exited.connect(func(): item.modulate = Color(1, 1, 1))
 
 func _category_label(category: String) -> String:
 	match category:

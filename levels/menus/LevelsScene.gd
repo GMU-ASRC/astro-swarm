@@ -11,42 +11,28 @@ const C_DIM     := Color(0.6,   0.62,  0.74,  1.0)
 const C_BLUE    := Color(0.451, 0.616, 1.0,   1.0)
 const C_LOCKED  := Color(0.35,  0.35,  0.45,  1.0)
 
-const FARP_GD := preload("res://levels/modes/FARPScene.gd")
-
 const TILE_SIZE    := Vector2(220, 140)
 const GRID_COLUMNS := 3
 
 const LEVELS := [
 	{
 		"name":   "FARP  I\nDEFENSE · PLACE",
-		"desc":   "Place defenders yourself\nand program their detection",
-		"mode":   0,   # LevelMode.DEFEND_MANUAL
-		"scene":  "res://levels/modes/FARPScene.tscn",
+		"desc":   "Place your own defenders\nand program their detection",
+		"scene":  "res://levels/modes/Level1Scene.tscn",
 		"locked": false,
 	},
 	{
-		"name":   "FARP  II\nDEFENSE · RANDOM",
-		"desc":   "Defenders placed randomly\nAlgorithm quality is what counts",
-		"mode":   1,   # LevelMode.DEFEND_RANDOM
-		"scene":  "res://levels/modes/FARPScene.tscn",
+		"name":   "FARP  II\nDEFENSE · RING",
+		"desc":   "Defenders ring the planet\nYour algorithm is all that counts",
+		"scene":  "res://levels/modes/Level2Scene.tscn",
 		"locked": false,
 	},
 	{
-		"name":   "FARP  III\nEVASION · RING",
-		"desc":   "Program the evader drone\nSlip past a ring of AI defenders",
-		"mode":   2,   # LevelMode.ATTACK_RING
-		"scene":  "res://levels/modes/FARPScene.tscn",
+		"name":   "FARP  III\nEVASION · PILOT",
+		"desc":   "Fly the evader yourself against\nthe best Level 2 algorithm",
+		"scene":  "res://levels/modes/Level3Scene.tscn",
 		"locked": false,
 	},
-	{
-		"name":   "FARP  IV\nEVASION · RANDOM",
-		"desc":   "Program the evader drone\nSlip past scattered AI defenders",
-		"mode":   3,   # LevelMode.ATTACK_RANDOM
-		"scene":  "res://levels/modes/FARPScene.tscn",
-		"locked": false,
-	},
-	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
-	{"name": "LOCKED", "mode": -1, "scene": "", "locked": true},
 ]
 
 func _ready():
@@ -142,21 +128,19 @@ func _make_tile(number: int, level: Dictionary) -> Control:
 
 	if not locked:
 		var scene_path: String = level["scene"]
-		var mode: int = level.get("mode", 0)
 		tile.gui_input.connect(func(event: InputEvent):
 			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-				FARP_GD.level_mode = mode as FARP_GD.LevelMode
 				get_tree().change_scene_to_file(scene_path)
 		)
 		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 	return tile
 
-func _lbl(text: String, size: int, color: Color) -> Label:
+func _lbl(text: String, font_size: int, color: Color) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_override("font", FONT_REG)
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	return l
 
