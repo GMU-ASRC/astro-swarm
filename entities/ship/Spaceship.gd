@@ -43,6 +43,7 @@ var _turn_cmd: float = 0.0
 var can_fire: bool = true
 
 const BlockExecutor := preload("res://entities/BlockExecutor.gd")
+const SIM := preload("res://autoloads/SimulationManager.gd")
 const STEP_TIME := 0.4
 
 var _executor
@@ -133,7 +134,7 @@ func setup_player_orbit(center: Vector2, radius: float, ang_speed: float, start_
 
 func _set_program(blocks: Array):
 	_executor = BlockExecutor.new(self)
-	_executor.set_program(SimulationManager.normalize_to_scripts(blocks))
+	_executor.set_program(SIM.normalize_to_scripts(blocks))
 
 func _physics_process(delta: float):
 	if _fire_cooldown > 0.0:

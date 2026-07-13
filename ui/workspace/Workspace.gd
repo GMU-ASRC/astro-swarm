@@ -9,6 +9,7 @@ extends Control
 @onready var delete_species_btn: Button = $Body/Right/RightVBox/HeaderBar/Header/DeleteSpeciesBtn
 
 const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
+const SIM := preload("res://autoloads/SimulationManager.gd")
 
 var _current_type_id: String = "hunter"
 var _tab_buttons: Dictionary = {}
@@ -59,7 +60,7 @@ func _gather_scripts() -> Array:
 func _update_warning():
 	if _warning_label == null:
 		return
-	var invalid: bool = SimulationManager.has_unnested_conditional(_gather_scripts())
+	var invalid: bool = SIM.has_unnested_conditional(_gather_scripts())
 	_warning_label.visible = invalid
 	if invalid:
 		_warning_label.text = "Warning: a condition block (IF) must be placed inside an event block (WHEN)."

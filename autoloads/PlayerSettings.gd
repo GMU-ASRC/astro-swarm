@@ -128,9 +128,9 @@ func set_msaa(idx: int):
 	apply_msaa(idx)
 	_save()
 
-func set_device(name: String):
-	_cfg.set_value("sound", "device", name)
-	AudioServer.output_device = name
+func set_device(device_name: String):
+	_cfg.set_value("sound", "device", device_name)
+	AudioServer.output_device = device_name
 	_save()
 
 func set_bus_volume(bus_name: String, val: float):
@@ -144,7 +144,7 @@ func set_keybind(action: String, keycode: int):
 		InputMap.add_action(action)
 	InputMap.action_erase_events(action)
 	var ev := InputEventKey.new()
-	ev.physical_keycode = keycode
+	ev.physical_keycode = keycode as Key
 	InputMap.action_add_event(action, ev)
 	_save()
 
@@ -174,7 +174,8 @@ func apply_resolution(idx: int):
 	var screen: int = DisplayServer.window_get_current_screen()
 	var screen_size: Vector2i = DisplayServer.screen_get_size(screen)
 	var screen_pos: Vector2i = DisplayServer.screen_get_position(screen)
-	DisplayServer.window_set_position(screen_pos + (screen_size - size) / 2)
+	var centered: Vector2i = Vector2i((Vector2(screen_size) - Vector2(size)) * 0.5)
+	DisplayServer.window_set_position(screen_pos + centered)
 
 func apply_vsync(on: bool):
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if on else DisplayServer.VSYNC_DISABLED)
@@ -188,7 +189,7 @@ func apply_fps(idx: int):
 		_: Engine.max_fps = 0
 
 func apply_msaa(idx: int):
-	var mode: int = Viewport.MSAA_DISABLED
+	var mode: Viewport.MSAA = Viewport.MSAA_DISABLED
 	match idx:
 		1: mode = Viewport.MSAA_2X
 		2: mode = Viewport.MSAA_4X

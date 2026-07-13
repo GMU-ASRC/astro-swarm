@@ -418,7 +418,10 @@ func variable_type(var_name: String) -> String:
 func reset_variables():
 	var_values.clear()
 	for v in variables:
-		var_values[v.get("name", "")] = ("" if v.get("type", "int") == "string" else 0)
+		if v.get("type", "int") == "string":
+			var_values[v.get("name", "")] = ""
+		else:
+			var_values[v.get("name", "")] = 0
 
 func dropdown_options(provider: String) -> Array:
 	var options: Array = []
@@ -448,7 +451,9 @@ func dropdown_options(provider: String) -> Array:
 
 func get_var(var_name: String):
 	if not var_values.has(var_name):
-		return ("" if variable_type(var_name) == "string" else 0)
+		if variable_type(var_name) == "string":
+			return ""
+		return 0
 	return var_values[var_name]
 
 func set_var(var_name: String, value):
