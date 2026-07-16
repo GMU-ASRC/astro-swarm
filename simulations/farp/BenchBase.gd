@@ -18,7 +18,7 @@ const ENEMY_PROGRAM := [
 
 const DEFAULT_TRIALS := 100
 const DEFAULT_SWEEP_MAX    := 100
-const DEFAULT_SWEEP_TRIALS := 1
+const DEFAULT_SWEEP_TRIALS := 10
 const DEFAULT_SEED         := 987654321
 const DEFAULT_MATCH_SECONDS := 4 * 60.0
 const DEFAULT_GOAL_TAIL_SECONDS := 3.0
@@ -31,6 +31,8 @@ const SCATTER_ATTEMPTS := 40
 const RING_COUNT    := 5
 const ENEMY_SPAWN_RADIUS := 1000.0
 const RECORD_EVERY   := 1
+const REPLAY_SWEEP_N_MAX  := 50
+const REPLAY_SWEEP_TRIALS := 10
 const SWEEP_SEED_OFFSET := 100000
 const SWEEP_SEED_STRIDE := 1000000
 const SWEEP_MATCH_OFFSET := 500000
@@ -92,6 +94,7 @@ var _sweep_first_detect: float = -1.0
 var _sweep_first_capture: float = -1.0
 var _sweep_first_goal: float = -1.0
 var _sweep_first_frames: Array = []
+var _sweep_trial_runs: Array = []
 var _sweep_seeds: Array = []
 var _recording: bool = true
 
@@ -218,8 +221,9 @@ func _sweep_trial_seed(trial: int) -> int:
 func _ring_placements(count: int) -> Array:
 	var out: Array = []
 	_orient_rng.seed = _sweep_trial_seed(_current_trial) + count
+	var ring_offset: float = _orient_rng.randf() * TAU
 	for i in count:
-		var angle: float = TAU * float(i) / float(count)
+		var angle: float = ring_offset + TAU * float(i) / float(count)
 		out.append({
 			"pos": PLANET_CENTER + Vector2(SWEEP_RADIUS, 0.0).rotated(angle),
 			"rot": _orient_rng.randf() * TAU,
@@ -248,7 +252,7 @@ func _start_match():
 		spawn_pos = _spawn_points[_current_trial % _spawn_points.size()]
 		seed(_seed + _current_trial)
 	else:
-		_recording = _current_trial == 0
+		_recording = _current_trial == 0 or _is_replay_trial()
 		placements = _ring_placements(_sweep_n)
 		spawn_pos = _enemy_start
 		seed(_sweep_trial_seed(_current_trial) + SWEEP_MATCH_OFFSET + _sweep_n)
@@ -376,9 +380,35 @@ func _finish_sweep_match():
 		_sweep_first_capture = _frame_to_time(_capture_frame)
 		_sweep_first_goal = _frame_to_time(_goal_frame)
 		_sweep_first_frames = _replay_frames
+	if _is_replay_trial():
+		_sweep_trial_runs.append({
+			"trial": _current_trial,
+			"outcome": outcome,
+			"detection_time": _frame_to_time(_detect_frame),
+			"capture_time": _frame_to_time(_capture_frame),
+			"goal_time": _frame_to_time(_goal_frame),
+			"frames_packed": _pack_frames(_replay_frames),
+		})
 	if outcome == "win":
 		_sweep_success += 1
 	_advance("sweep n=%d" % _sweep_n)
+
+func _is_replay_trial() -> bool:
+	return _sweep_n < REPLAY_SWEEP_N_MAX and _current_trial < REPLAY_SWEEP_TRIALS
+
+func _pack_frames(frames: Array) -> String:
+	if frames.is_empty():
+		return ""
+	var deltas: Array = [frames[0]]
+	for i in range(1, frames.size()):
+		var previous: Array = frames[i - 1]
+		var current: Array = frames[i]
+		var delta: Array = []
+		for j in current.size():
+			delta.append(current[j] - previous[j])
+		deltas.append(delta)
+	var raw: PackedByteArray = JSON.stringify(deltas).to_utf8_buffer()
+	return Marshalls.raw_to_base64(raw.compress(FileAccess.COMPRESSION_DEFLATE))
 
 func _advance(label: String):
 	_global_done += 1
@@ -414,6 +444,7 @@ func _advance(label: String):
 			"capture_rate": snappedf(capture_rate, 0.1),
 			"defenders": _sweep_n,
 			"frames": _sweep_first_frames,
+			"trial_runs": _sweep_trial_runs,
 		})
 		_sweep_n += 1
 		if _sweep_n >= _n_start + _n_count:
@@ -423,6 +454,7 @@ func _advance(label: String):
 		_sweep_detect_count = 0
 		_sweep_capture_count = 0
 		_sweep_first_frames = []
+		_sweep_trial_runs = []
 		_current_trial = 0
 	_start_match()
 

@@ -2,6 +2,12 @@ extends Node
 
 const SETTINGS_PATH := "user://player_settings.cfg"
 
+const DEFAULT_BUS_VOLUMES := {
+	"Master": 100.0,
+	"Music": 50.0,
+	"SFX": 100.0,
+}
+
 const RESOLUTIONS := [
 	Vector2i(1280, 720),
 	Vector2i(1366, 768),
@@ -37,9 +43,8 @@ func _apply_all():
 	if device != "":
 		AudioServer.output_device = device
 
-	for bus_name in ["Master", "Music", "SFX"]:
-		var val: float = _cfg.get_value("sound", bus_name.to_lower() + "_vol", 100.0)
-		apply_bus_volume(bus_name, val)
+	for bus_name in DEFAULT_BUS_VOLUMES:
+		apply_bus_volume(bus_name, get_bus_volume(bus_name))
 
 	_apply_keybinds()
 
@@ -94,7 +99,7 @@ func get_device() -> String:
 	return _cfg.get_value("sound", "device", AudioServer.output_device)
 
 func get_bus_volume(bus_name: String) -> float:
-	return _cfg.get_value("sound", bus_name.to_lower() + "_vol", 100.0)
+	return _cfg.get_value("sound", bus_name.to_lower() + "_vol", DEFAULT_BUS_VOLUMES.get(bus_name, 100.0))
 
 func get_keybind(action: String) -> int:
 	var arr: Array = _cfg.get_value("keybinds", action, DEFAULT_KEYBINDS.get(action, []))
