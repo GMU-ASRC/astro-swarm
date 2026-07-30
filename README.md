@@ -44,6 +44,26 @@ Deploy up to five ships (left-click + drag in your deploy zone) to wipe out the 
 
 **Raiders.** A squad of enemy ships defends the protectors. Rather than orbiting, they run a block program of their own: wander the arena, turn away from the star/planet and the outer rim to stay in play, and face-and-fire on any of your ships they spot — so they roam in to intercept your attack.
 
+## Survive
+
+A local two-player mode, picked from the game-mode dropdown next to **Levels**. Two commanders, two home planets, and one three-minute match on a **split screen** — the left half follows player 1, the right half follows player 2.
+
+**Dr. Blob** opens every match with a click-through tutorial: he stands bottom-left with his line in a text box beside him, and an animated panel above it demonstrates each point with the real ship sprites. His script lives in `va/survive/voice.md`; drop `line_01.mp3`, `line_02.mp3`, … next to it and the tutorial plays them.
+
+**Ready up.** After the tutorial each player presses their drive key (or gamepad **A**) to ready. When both are ready a **5-second countdown** starts; either player pressing the key again unreadies and cancels it.
+
+- **The swarm.** 24 purple ships spawn across the map and Lévy-walk on their own. The moment one gets *any* other ship in its vision cone — a player, a blue ship, or another purple one — it turns blue. It reverts to purple after 5 seconds with nothing in sight. Nothing in the arena collides except the outer rim — ships pass straight through each other *and* through the planets — so herding is purely a matter of what they can see.
+- **Blue behaviour.** 3.4 m/s, 50° FOV, 4.5 m vision, always moving forward and turning left at 90°/s, turning right at 90°/s when it sees an ally — so a herd settles into a cluster and holds position. Park that cluster on your planet.
+- **The waves.** No evaders for the first minute. Red evaders then spawn every 5 seconds from t=60 to t=90, cool off, and spawn again from t=120 to t=150 — 14 in total, alternating targets so **each planet gets exactly 7**. They fly straight at their target and explode on contact; each one that lands is a point against that player.
+- **Defence.** A blue ship that sees an evader destroys it with a laser at 100% accuracy and self-destructs in the same instant. One blue for one red, which is why the swarm is stocked 10 ships deeper than the evader count.
+- **Stealing.** Nothing anchors a blue ship to the base it was herded to — fly into your rival's base and herd their defenders away.
+- **Freeze.** Two charges each for the whole match (`Q` for player 1, `/` for player 2, or the right shoulder button); a charge locks the rival's ship for 15 seconds. The remaining charges show as snowflake pips down the outer edge of each player's half, and a **FROZEN** countdown appears there while a freeze is running.
+- **Winning.** Fewest evaders on your planet when the clock runs out. Equal counts is a tie.
+
+**Controls.** Player 1 flies the gold ship on `WASD`, player 2 the green ship on the arrow keys. Controllers are never picked up automatically — press **A** on a pad and it attaches to the next free player slot, so only the pads you actually want are used no matter how many are plugged in. **B** detaches it again, and a pad that disconnects releases its slot. Each player's readout shows which device is driving them, `[ KEYBOARD ]` or `[ GAMEPAD ]` with the pad's name.
+
+**Research data.** Each player's APM (actions per minute) is sampled every 5 seconds across the match — this runs in the background and is never mentioned in the tutorial. The end-of-match screen announces the winner over a full stat table (evaders through, defenders left, ships herded, freezes used, actions, average and peak APM), and the same report is uploaded and published on the companion website under **Survive**.
+
 ## Levels
 
 The **Levels** screen lists three FARP levels. All three defend (or attack) the same central planet, and all three measure the same three events:
