@@ -77,7 +77,6 @@ var _rng := RandomNumberGenerator.new()
 var _world
 var _viewports: Array = []
 var _cameras: Array = []
-var _music: AudioStreamPlayer = null
 
 var _wild_ships: Array = []
 var _pilot_ships: Array = [null, null]
@@ -128,7 +127,6 @@ func _ready():
 	_build_split()
 	_build_planets()
 	randomize()
-	_start_music()
 	_build_hud()
 	_build_spawn_queue()
 	_spawn_pilots()
@@ -743,8 +741,6 @@ func _restart():
 	get_tree().reload_current_scene()
 
 func _leave():
-	if is_instance_valid(_music):
-		_music.stop()
 	get_tree().change_scene_to_file("res://levels/menus/PlayerBaseScene.tscn")
 
 func _make_bg_stars() -> Array:
@@ -777,16 +773,6 @@ func _disable_mouse(node: Node):
 	for child in node.get_children():
 		_disable_mouse(child)
 
-func _start_music():
-	var stream := load("res://assets/music/domination challenge music.mp3") as AudioStreamMP3
-	if stream == null:
-		return
-	stream.loop = true
-	_music = AudioStreamPlayer.new()
-	_music.stream = stream
-	_music.bus = "Music"
-	add_child(_music)
-	_music.play()
 
 func _build_hud():
 	var hud := CanvasLayer.new()
