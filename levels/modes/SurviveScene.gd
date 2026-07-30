@@ -38,7 +38,7 @@ const EVADER_MIN_DISTANCE := 700.0
 const SHIP_HULL           := 14.0
 
 const PILOT_SPEED     := 215.0
-const PILOT_TURN_RATE := 3.2
+const PILOT_TURN_RATE := 3.6
 const PILOT_VIEW      := 200.0
 const PILOT_FOV       := 90.0
 
@@ -46,7 +46,13 @@ const FREEZE_CHARGES := 2
 const FREEZE_SECONDS := 15.0
 
 const APM_BUCKET_SECONDS := 5.0
-const STICK_DEADZONE     := 0.35
+const STICK_DEADZONE     := 0.18
+const TRIGGER_DEADZONE   := 0.12
+const STICK_CURVE        := 0.45
+const THRUST_RESPONSE    := 5.0
+const TURN_RESPONSE      := 8.0
+const SETTLE_BOOST       := 2.0
+const REVERSE_FACTOR     := 0.6
 
 const BG_COLOR   := Color(0.04, 0.04, 0.07, 1.0)
 const C_TEXT     := Color(0.93, 0.94, 1.0, 1.0)
@@ -213,7 +219,7 @@ func _process(delta: float):
 			_poll_ready(delta)
 		Phase.ACTIVE:
 			_elapsed += delta
-			_poll_pilots()
+			_poll_pilots(delta)
 			_run_waves()
 			_resolve_lasers()
 			_resolve_planet_hits()
@@ -454,7 +460,7 @@ func _evader_spawn_point(slot: int) -> Vector2:
 	var fallback_y: float = 40.0 if _rng.randf() < 0.5 else ARENA.y - 40.0
 	return Vector2(outer_x, fallback_y)
 
-func _poll_pilots():
+func _poll_pilots(delta: float):
 	for slot in _player_count():
 		var ship = _pilot_ships[slot]
 		if not is_instance_valid(ship):
@@ -472,17 +478,56 @@ func _poll_pilots():
 			turn -= 1.0
 		var pad: int = _pad_for(slot)
 		if pad >= 0:
-			var stick_y: float = -Input.get_joy_axis(pad, JOY_AXIS_LEFT_Y)
-			var stick_x: float = Input.get_joy_axis(pad, JOY_AXIS_LEFT_X)
-			if absf(stick_y) > STICK_DEADZONE:
-				thrust = signf(stick_y)
-			if absf(stick_x) > STICK_DEADZONE:
-				turn = signf(stick_x)
-		ship.pilot_thrust = clampf(thrust, -1.0, 1.0)
-		ship.pilot_turn = clampf(turn, -1.0, 1.0)
+			var pad_thrust: float = _pad_thrust(pad)
+			var pad_turn: float = _pad_turn(pad)
+			if absf(pad_thrust) > 0.0:
+				thrust = pad_thrust
+			if absf(pad_turn) > 0.0:
+				turn = pad_turn
+		thrust = clampf(thrust, -1.0, 1.0)
+		turn = clampf(turn, -1.0, 1.0)
+		var drive: float = thrust
+		if drive < 0.0:
+			drive *= REVERSE_FACTOR
+		ship.pilot_thrust = _ease_input(ship.pilot_thrust, drive, THRUST_RESPONSE, delta)
+		ship.pilot_turn = _ease_input(ship.pilot_turn, turn, TURN_RESPONSE, delta)
 		_count_actions(slot, thrust, turn)
 		if _freeze_pressed(slot):
 			_use_freeze(slot)
+
+func _ease_input(current: float, target: float, rise_rate: float, delta: float) -> float:
+	var rate: float = rise_rate
+	if absf(target) < absf(current) or signf(target) != signf(current):
+		rate = rise_rate * SETTLE_BOOST
+	return move_toward(current, target, rate * delta)
+
+func _pad_thrust(pad: int) -> float:
+	var forward: float = _trigger_value(pad, JOY_AXIS_TRIGGER_RIGHT)
+	var reverse: float = _trigger_value(pad, JOY_AXIS_TRIGGER_LEFT)
+	if forward > 0.0 or reverse > 0.0:
+		return clampf(forward - reverse, -1.0, 1.0)
+	var left: float = _stick_value(-Input.get_joy_axis(pad, JOY_AXIS_LEFT_Y))
+	var right: float = _stick_value(-Input.get_joy_axis(pad, JOY_AXIS_RIGHT_Y))
+	return left if absf(left) >= absf(right) else right
+
+func _pad_turn(pad: int) -> float:
+	var left: float = _stick_value(Input.get_joy_axis(pad, JOY_AXIS_LEFT_X))
+	var right: float = _stick_value(Input.get_joy_axis(pad, JOY_AXIS_RIGHT_X))
+	return left if absf(left) >= absf(right) else right
+
+func _stick_value(raw: float) -> float:
+	var size: float = absf(raw)
+	if size <= STICK_DEADZONE:
+		return 0.0
+	var scaled: float = (size - STICK_DEADZONE) / (1.0 - STICK_DEADZONE)
+	var curved: float = lerpf(scaled, scaled * scaled * scaled, STICK_CURVE)
+	return signf(raw) * clampf(curved, 0.0, 1.0)
+
+func _trigger_value(pad: int, axis: int) -> float:
+	var raw: float = absf(Input.get_joy_axis(pad, axis))
+	if raw <= TRIGGER_DEADZONE:
+		return 0.0
+	return clampf((raw - TRIGGER_DEADZONE) / (1.0 - TRIGGER_DEADZONE), 0.0, 1.0)
 
 func _count_actions(slot: int, thrust: float, turn: float):
 	var bits: int = 0
@@ -949,7 +994,7 @@ func _refresh_hud():
 func _refresh_input_label(label: Label, slot: int):
 	var pad: int = _pad_for(slot)
 	if pad >= 0:
-		label.text = "[ GAMEPAD ]  %s  (B to detach)" % Input.get_joy_name(pad).to_upper().substr(0, 20)
+		label.text = "[ GAMEPAD ]  %s  -  stick or triggers to fly  (B to detach)" % Input.get_joy_name(pad).to_upper().substr(0, 16)
 		label.add_theme_color_override("font_color", C_GREENISH)
 		return
 	label.add_theme_color_override("font_color", C_DIM)
