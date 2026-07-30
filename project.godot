@@ -13,7 +13,7 @@ config_version=5
 config/name="AstroSwarm"
 config/version="0.0.5"
 run/main_scene="res://levels/menus/HomeScene.tscn"
-config/features=PackedStringArray("4.6", "Forward Plus")
+config/features=PackedStringArray("4.7", "Forward Plus")
 boot_splash/bg_color=Color(0.09803922, 0.09019608, 0.14117648, 1)
 boot_splash/stretch_mode=4
 boot_splash/image="uid://c26um1diy7gik"
@@ -31,6 +31,7 @@ RunUploader="*res://autoloads/RunUploader.gd"
 DominationData="*res://autoloads/DominationData.gd"
 BenchRunner="*res://simulations/farp/BenchRunner.gd"
 EvalUploader="*res://autoloads/EvalUploader.gd"
+SurviveUploader="*res://autoloads/SurviveUploader.gd"
 
 [display]
 

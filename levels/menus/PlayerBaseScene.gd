@@ -27,6 +27,7 @@ const ORBIT_MAX := 255.0
 
 const GAME_MODES := [
 	{"id": "levels",      "label": "Levels",       "scene": "res://levels/menus/LevelsScene.tscn"},
+	{"id": "survive",     "label": "Survive",      "scene": "res://levels/modes/SurviveScene.tscn"},
 ]
 
 const MARKET_PANEL := preload("res://levels/components/MarketPanel.gd")
