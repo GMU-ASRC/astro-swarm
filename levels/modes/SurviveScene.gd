@@ -69,6 +69,9 @@ const PILOT_KEYS := [
 	{"forward": KEY_W, "backward": KEY_S, "left": KEY_A, "right": KEY_D, "freeze": KEY_Q},
 	{"forward": KEY_UP, "backward": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "freeze": KEY_SLASH},
 ]
+const PANEL_WIDTH  := 288
+const PANEL_HEIGHT := 150
+
 const PILOT_KEY_HINTS  := ["WASD", "ARROW KEYS"]
 const FREEZE_KEY_HINTS := ["Q", "/"]
 const READY_KEY_HINTS  := ["W", "UP ARROW"]
@@ -872,8 +875,7 @@ func _build_hud():
 		_player_panels[slot] = _build_player_panel(root, slot)
 		_build_freeze_indicator(root, slot)
 
-	_hint_label = _lbl("", 12, C_TEXT)
-	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint_label = _panel_lbl("", 12, C_TEXT, HORIZONTAL_ALIGNMENT_CENTER)
 	_hint_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_hint_label.offset_left = -460
 	_hint_label.offset_right = 460
@@ -886,44 +888,53 @@ func _build_hud():
 	_refresh_hint()
 
 func _build_player_panel(root: Control, slot: int) -> Dictionary:
+	var frame := Control.new()
+	frame.clip_contents = true
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if slot == 0:
+		frame.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		frame.offset_left = 12
+		frame.offset_right = 12 + PANEL_WIDTH
+		frame.offset_top = 46
+		frame.offset_bottom = 46 + PANEL_HEIGHT
+	else:
+		frame.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		frame.offset_left = -(12 + PANEL_WIDTH)
+		frame.offset_right = -12
+		frame.offset_top = 12
+		frame.offset_bottom = 12 + PANEL_HEIGHT
+	root.add_child(frame)
+
 	var box := VBoxContainer.new()
+	box.set_anchors_preset(Control.PRESET_FULL_RECT)
 	box.add_theme_constant_override("separation", 2)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if slot == 0:
-		box.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		box.offset_left = 12
-		box.offset_top = 46
-		box.offset_right = 300
-	else:
-		box.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		box.offset_left = -300
-		box.offset_top = 12
-		box.offset_right = -12
-	root.add_child(box)
+	frame.add_child(box)
 
 	var align: int = HORIZONTAL_ALIGNMENT_LEFT if slot == 0 else HORIZONTAL_ALIGNMENT_RIGHT
 
-	var name_label := _lbl("P%d  %s" % [slot + 1, _player_name(slot)], 13, PLAYER_COLORS[slot])
-	name_label.horizontal_alignment = align
+	var name_label := _panel_lbl("P%d  %s" % [slot + 1, _player_name(slot)], 13, PLAYER_COLORS[slot], align)
 	box.add_child(name_label)
 
-	var through := _lbl("", 11, C_RED)
-	through.horizontal_alignment = align
+	var through := _panel_lbl("", 11, C_RED, align)
 	box.add_child(through)
 
-	var defenders := _lbl("", 11, C_ACCENT)
-	defenders.horizontal_alignment = align
+	var defenders := _panel_lbl("", 11, C_ACCENT, align)
 	box.add_child(defenders)
 
-	var apm := _lbl("", 11, C_DIM)
-	apm.horizontal_alignment = align
+	var apm := _panel_lbl("", 11, C_DIM, align)
 	box.add_child(apm)
 
-	var input := _lbl("", 10, C_DIM)
-	input.horizontal_alignment = align
+	var input := _panel_lbl("", 10, C_DIM, align)
 	box.add_child(input)
 
 	return {"through": through, "defenders": defenders, "apm": apm, "input": input}
+
+func _panel_lbl(text: String, size: int, color: Color, align: int) -> Label:
+	var label := _lbl(text, size, color)
+	label.horizontal_alignment = align
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	return label
 
 func _build_freeze_indicator(root: Control, slot: int):
 	var column := VBoxContainer.new()
@@ -942,12 +953,10 @@ func _build_freeze_indicator(root: Control, slot: int):
 	column.offset_bottom = 110
 	root.add_child(column)
 
-	var title := _lbl("FREEZE", 9, C_DIM)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var title := _panel_lbl("FREEZE", 9, C_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	column.add_child(title)
 
-	var key := _lbl(FREEZE_KEY_HINTS[slot], 13, PLAYER_COLORS[slot])
-	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var key := _panel_lbl(FREEZE_KEY_HINTS[slot], 13, PLAYER_COLORS[slot], HORIZONTAL_ALIGNMENT_CENTER)
 	column.add_child(key)
 	_freeze_keys[slot] = key
 
@@ -965,8 +974,7 @@ func _build_freeze_indicator(root: Control, slot: int):
 		pips.append(icon)
 	_freeze_pips[slot] = pips
 
-	var status := _lbl("", 10, C_ACCENT)
-	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var status := _panel_lbl("", 10, C_ACCENT, HORIZONTAL_ALIGNMENT_CENTER)
 	column.add_child(status)
 	_freeze_status[slot] = status
 
@@ -994,12 +1002,12 @@ func _refresh_hud():
 func _refresh_input_label(label: Label, slot: int):
 	var pad: int = _pad_for(slot)
 	if pad >= 0:
-		label.text = "[ GAMEPAD ]  %s  -  stick or triggers to fly  (B to detach)" % Input.get_joy_name(pad).to_upper().substr(0, 16)
+		label.text = "[ GAMEPAD ]  %s\nSTICKS OR TRIGGERS  -  B DETACHES" % Input.get_joy_name(pad).to_upper().substr(0, 16)
 		label.add_theme_color_override("font_color", C_GREENISH)
 		return
 	label.add_theme_color_override("font_color", C_DIM)
 	if _unclaimed_pads() > 0:
-		label.text = "[ KEYBOARD ]  %s  -  press A on a controller to attach it" % PILOT_KEY_HINTS[slot]
+		label.text = "[ KEYBOARD ]  %s\nPRESS A ON A CONTROLLER TO ATTACH" % PILOT_KEY_HINTS[slot]
 	else:
 		label.text = "[ KEYBOARD ]  %s" % PILOT_KEY_HINTS[slot]
 
