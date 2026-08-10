@@ -29,7 +29,6 @@ PlayerData="*res://autoloads/PlayerData.gd"
 Leaderboard="*res://autoloads/Leaderboard.gd"
 RunUploader="*res://autoloads/RunUploader.gd"
 DominationData="*res://autoloads/DominationData.gd"
-BenchRunner="*res://simulations/farp/BenchRunner.gd"
 EvalUploader="*res://autoloads/EvalUploader.gd"
 SurviveUploader="*res://autoloads/SurviveUploader.gd"
 

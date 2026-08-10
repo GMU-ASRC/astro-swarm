@@ -13,7 +13,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 
 - **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
 - **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Workspace Moon's block editor.
-- **Benchmarked levels.** Three FARP levels: program the defenders for levels 1 and 2 and have your algorithm graded headlessly on the dedicated server, or fly the evader yourself in level 3 against the best algorithm other players have submitted. Every entry is published to the companion website and browsable in-game from My Entries.
+- **Benchmarked levels.** Three FARP levels: program the defenders for levels 1 and 2 and have your algorithm graded headlessly by the evaluation service, or fly the evader yourself in level 3 against the best algorithm other players have submitted. Every entry is published to the companion website and browsable in-game from My Entries.
 - **Visual block editor.** Build per-species behaviour by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
@@ -92,7 +92,7 @@ Each level has a **? Guide** button with a step-by-step walkthrough and a list o
 
 They are inert while a run is in progress, since Level 3 steers the evader with the same keys.
 
-Submitting a Level 1 or Level 2 entry uploads your algorithm and placements, and the dedicated server benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. Submitting a Level 3 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
+Submitting a Level 1 or Level 2 entry uploads your algorithm and placements, and the evaluation service benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. Submitting a Level 3 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
 
 **My Entries** lists every entry you've submitted across all three levels, each with a **Claim XP** button right in the list — it reads *Pending* until the server finishes processing the entry, and shows the amount once claimed. **View** opens an info screen pulled live from the server: capture and detection rates plus the outcome breakdown for a benchmarked level, or the result and the detected / captured / reached-planet times for a piloted run. XP is awarded from your best result on a level, so re-claiming a worse entry pays nothing; reaching the planet in level 3 is worth far more than a benchmark run.
 
@@ -146,14 +146,6 @@ Display (window mode, resolution, with Apply buttons), graphics (V-Sync, FPS cap
 
 The project targets Godot 4.6. Clone the repository, open `project.godot`, and use **Project -> Export** to build for Linux, Windows, or macOS. See `bin/README.md` for bundling the ffmpeg binaries used by video export.
 
-## Benchmarkers
+## Benchmarking
 
-Each level ships its own headless benchmarker under `simulations/farp/`, all sharing `BenchBase.gd` (argument parsing, the match loop, event tracking, the ring sweep, and the JSON output). The `BenchRunner` autoload only dispatches: it reads `--level-id` off the command line and hands the job to the right one.
-
-| Benchmarker | Level | What it does |
-|---|---|---|
-| `Level1Bench.gd` | 1 | Simulates the submitted placements over many trials. |
-| `Level2Bench.gd` | 2 | Simulates the scatter the player submitted, so the score and the layout describe the same thing. |
-| `Level3Bench.gd` | 3 | Runs no simulation — it renders the player's recorded flight into a replay. |
-
-The dedicated-server build is what the web worker downloads and runs; see `web/worker/README.md`.
+Submitted entries are graded off-engine. The game client uploads the algorithm, the placements, and (for level 3) the recorded flight; the `astroworker` service in the companion web repository re-implements the match loop in Go and runs the trials itself. The game no longer ships a headless benchmarker and no dedicated-server build is needed.
