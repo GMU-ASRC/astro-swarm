@@ -12,10 +12,10 @@ var arena_camera: Camera2D
 
 const BG_COLOR   := Color(0.835, 0.835, 0.859, 1.0)
 const GRID_COLOR := Color(0.741, 0.741, 0.769, 1.0)
-const GRID_STEP  := 40.0
+const GRID_STEP  := 40.0 # pixels between grid lines, one meter
 const RULER_COLOR := Color(0.420, 0.420, 0.475, 1.0)
 const RULER_TEXT  := Color(0.320, 0.320, 0.400, 1.0)
-const PX_PER_M   := 40.0
+const PX_PER_M   := 40.0 # pixels per meter, the conversion used everywhere in the sim
 
 const WALL_FILL := Color(0.45, 0.45, 0.52, 1.0)
 const WALL_BORDER := Color(0.22, 0.22, 0.28, 1.0)

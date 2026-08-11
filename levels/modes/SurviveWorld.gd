@@ -1,13 +1,13 @@
 extends Node2D
 
-const EDGE_THICKNESS := 16.0
+const EDGE_THICKNESS := 16.0 # pixels, arena border texture width
 
-var arena: Vector2 = Vector2(2400.0, 1350.0)
+var arena: Vector2 = Vector2(2400.0, 1350.0) # pixels, arena width and height
 var background: Color = Color(0.04, 0.04, 0.07, 1.0)
 var stars: Array = []
-var planet_centers: Array = []
+var planet_centers: Array = []               # pixels
 var planet_colors: Array = []
-var base_radius: float = 300.0
+var base_radius: float = 300.0               # pixels, radius of the drawn base ring
 var edge_top: Texture2D
 var edge_bottom: Texture2D
 var edge_left: Texture2D

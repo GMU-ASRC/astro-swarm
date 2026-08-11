@@ -12,35 +12,37 @@ const GAME_THEME := preload("res://ui/GameTheme.tres")
 
 const FREEZE_ICON_PATH := "res://assets/sprites/effects/freeze.png"
 
-const ARENA          := Vector2(2400.0, 1350.0)
-const PLANET_PIXELS  := 80.0
-const PLANET_DISP    := 180.0
-const PLANET_RADIUS  := PLANET_DISP * 0.5
-const PLANET_CENTERS := [Vector2(520.0, 675.0), Vector2(1880.0, 675.0)]
-const BASE_RADIUS    := 300.0
+# Distances are pixels, durations are seconds and rotations are radians unless a
+# name says degrees. The block editor shows meters, at 40 pixels per meter.
+const ARENA          := Vector2(2400.0, 1350.0)                            # pixels, arena width and height
+const PLANET_PIXELS  := 80.0                                               # pixels, source sprite size
+const PLANET_DISP    := 180.0                                              # pixels, drawn planet diameter
+const PLANET_RADIUS  := PLANET_DISP * 0.5                                  # pixels
+const PLANET_CENTERS := [Vector2(520.0, 675.0), Vector2(1880.0, 675.0)]    # pixels
+const BASE_RADIUS    := 300.0                                              # pixels, radius of the zone a ship is herded into
 
-const VIEW_ZOOM   := 0.7
-const CAMERA_LERP := 7.0
+const VIEW_ZOOM   := 0.7 # camera zoom factor
+const CAMERA_LERP := 7.0 # camera follow rate, higher is snappier
 
-const MATCH_SECONDS   := 180.0
-const WILD_COUNT      := 24
-const EVADER_TOTAL    := 14
-const WAVE_ONE_START  := 60.0
-const WAVE_ONE_END    := 90.0
-const WAVE_TWO_START  := 120.0
-const WAVE_TWO_END    := 150.0
-const SPAWN_INTERVAL  := 5.0
-const READY_COUNTDOWN := 5.0
+const MATCH_SECONDS   := 180.0 # seconds in a round
+const WILD_COUNT      := 24    # count, wild ships present at the start
+const EVADER_TOTAL    := 14    # count, evaders spawned over the round
+const WAVE_ONE_START  := 60.0  # seconds into the round
+const WAVE_ONE_END    := 90.0  # seconds into the round
+const WAVE_TWO_START  := 120.0 # seconds into the round
+const WAVE_TWO_END    := 150.0 # seconds into the round
+const SPAWN_INTERVAL  := 5.0   # seconds between spawns inside a wave
+const READY_COUNTDOWN := 5.0   # seconds before the round starts
 
-const EVADER_SPEED        := 120.0
-const EVADER_MIN_X_GAP    := 400.0
-const EVADER_MIN_DISTANCE := 700.0
-const SHIP_HULL           := 14.0
+const EVADER_SPEED        := 120.0 # pixels/second (3.0 m/s)
+const EVADER_MIN_X_GAP    := 400.0 # pixels, minimum horizontal gap between evader spawns
+const EVADER_MIN_DISTANCE := 700.0 # pixels, minimum distance between evader spawns
+const SHIP_HULL           := 14.0  # pixels, collision radius
 
-const PILOT_SPEED     := 215.0
-const PILOT_TURN_RATE := 3.6
-const PILOT_VIEW      := 200.0
-const PILOT_FOV       := 90.0
+const PILOT_SPEED     := 215.0 # pixels/second (5.375 m/s)
+const PILOT_TURN_RATE := 3.6   # radians/second
+const PILOT_VIEW      := 200.0 # pixels (5.0 m)
+const PILOT_FOV       := 90.0  # degrees, full width of the vision cone
 
 const FREEZE_CHARGES := 2
 const FREEZE_SECONDS := 15.0
