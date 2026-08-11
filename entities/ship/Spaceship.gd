@@ -2,64 +2,70 @@ extends Node2D
 
 signal destroyed(ship)
 
-const TEAM_PLAYER := 0
-const TEAM_PROTECTOR := 1
+# Distances are pixels, durations are seconds and rotations are radians unless a
+# name says degrees. The block editor shows meters, at 40 pixels per meter.
+const TEAM_PLAYER := 0    # team id
+const TEAM_PROTECTOR := 1 # team id
 
-const HULL_BITS := {0: 16, 1: 32}
+const HULL_BITS := {0: 16, 1: 32} # collision layer bit per team
 
-const SPEED := 150.0
-const TURN_SPEED := 3.2
-const VIEW_DISTANCE := 300.0
-const FOV_DEGREES := 70.0
-const FIRE_INTERVAL := 0.55
-const PROJECTILE_SPEED := 460.0
-const DAMAGE := 1.0
-const HULL_RADIUS := 9.0
+const SPEED := 150.0            # pixels/second (3.75 m/s)
+const TURN_SPEED := 3.2         # radians/second
+const VIEW_DISTANCE := 300.0    # pixels (7.5 m)
+const FOV_DEGREES := 70.0       # degrees, full width of the vision cone
+const FIRE_INTERVAL := 0.55     # seconds between shots
+const PROJECTILE_SPEED := 460.0 # pixels/second
+const DAMAGE := 1.0             # hit points removed per hit
+const HULL_RADIUS := 9.0        # pixels, collision radius
+const SPRITE_PX := 30.0         # pixels, drawn sprite width at HULL_RADIUS
+
+const SHIP_SPRITE_PATH := "res://assets/sprites/spaceship/spaceship.svg"
 
 const PROJECTILE := preload("res://entities/ship/Projectile.tscn")
 
-var team: int = TEAM_PLAYER
-var hp: float = 3.0
-var max_hp: float = 3.0
+var team: int = TEAM_PLAYER                  # TEAM_PLAYER or TEAM_PROTECTOR
+var hp: float = 3.0                          # hit points
+var max_hp: float = 3.0                      # hit points
 var show_health: bool = true
-var arena_size: Vector2 = Vector2(1280, 720)
-var speed_mult: float = 1.0
-var view_distance: float = VIEW_DISTANCE
-var fov_degrees: float = FOV_DEGREES
-var max_speed: float = SPEED
-var turn_rate: float = TURN_SPEED
-var hull_radius: float = HULL_RADIUS
+var arena_size: Vector2 = Vector2(1280, 720) # pixels, arena width and height
+var speed_mult: float = 1.0                  # multiplier on max_speed
+var view_distance: float = VIEW_DISTANCE     # pixels
+var fov_degrees: float = FOV_DEGREES         # degrees, full width of the vision cone
+var max_speed: float = SPEED                 # pixels/second at full throttle
+var turn_rate: float = TURN_SPEED            # radians/second
+var hull_radius: float = HULL_RADIUS         # pixels, collision radius
 
-var star_center: Vector2 = Vector2.ZERO
-var star_radius: float = 0.0
-var planet_center: Vector2 = Vector2.ZERO
-var planet_radius: float = 0.0
+var star_center: Vector2 = Vector2.ZERO   # pixels
+var star_radius: float = 0.0              # pixels, 0 means there is no star
+var planet_center: Vector2 = Vector2.ZERO # pixels
+var planet_radius: float = 0.0            # pixels, 0 means there is no planet
 var collisions_enabled: bool = true
 var is_evader: bool = false
 
-var forward_input: float = 0.0
-var turn_input: float = 0.0
-var _turn_cmd: float = 0.0
+var forward_input: float = 0.0 # throttle in -1..1, negative drives backward
+var turn_input: float = 0.0    # turn in -1..1, scaled by turn_rate
+var _turn_cmd: float = 0.0     # radians/second added on top of turn_input
 var can_fire: bool = true
 
 const BlockExecutor := preload("res://entities/BlockExecutor.gd")
 const SIM := preload("res://autoloads/SimulationManager.gd")
-const STEP_TIME := 0.4
+const STEP_TIME := 0.4 # seconds a movement action runs before it reports done
 
 var _executor
 var _visible: Array = []
-var _fire_cooldown: float = 0.0
-var _throttle_mult: float = 1.0
+var _fire_cooldown: float = 0.0 # seconds left before the ship can fire again
+var _throttle_mult: float = 1.0 # multiplier applied to forward_input
 var _enemies_cache: Array = []
 
 var _orbit: bool = false
-var _orbit_center: Vector2 = Vector2.ZERO
-var _orbit_radius: float = 0.0
-var _orbit_speed: float = 0.0
-var _orbit_angle: float = 0.0
-var ship_color: Color = Color(1.0, 0.42, 0.32, 1.0)
+var _orbit_center: Vector2 = Vector2.ZERO # pixels
+var _orbit_radius: float = 0.0            # pixels
+var _orbit_speed: float = 0.0             # radians/second
+var _orbit_angle: float = 0.0             # radians
+var ship_color: Color = Color(1.0, 0.42, 0.32, 1.0) : set = set_ship_color
 
 var _cone_polygon: PackedVector2Array = PackedVector2Array()
+var _hull_sprite: Sprite2D
 
 @onready var _hull: Area2D = $Hull
 @onready var _vision: Area2D = $Vision
@@ -67,6 +73,7 @@ var _cone_polygon: PackedVector2Array = PackedVector2Array()
 func _ready():
 	z_index = 5
 	_setup_collision()
+	_build_hull_sprite()
 	_generate_cone()
 	_hull.add_to_group("ship_hull")
 	add_to_group("ships")
@@ -457,7 +464,30 @@ func _on_vision_exited(area: Area2D):
 
 func refresh_cone():
 	_generate_cone()
+	_scale_hull_sprite()
 	queue_redraw()
+
+func set_ship_color(color: Color):
+	ship_color = color
+	if _hull_sprite != null:
+		_hull_sprite.modulate = color
+	queue_redraw()
+
+func _build_hull_sprite():
+	_hull_sprite = Sprite2D.new()
+	_hull_sprite.rotation = PI / 2.0
+	_hull_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_hull_sprite.texture = load(SHIP_SPRITE_PATH)
+	_hull_sprite.modulate = ship_color
+	add_child(_hull_sprite)
+	_scale_hull_sprite()
+
+func _scale_hull_sprite():
+	if _hull_sprite == null or _hull_sprite.texture == null:
+		return
+	var width: float = SPRITE_PX * hull_radius / HULL_RADIUS
+	var factor: float = width / maxf(1.0, float(_hull_sprite.texture.get_width()))
+	_hull_sprite.scale = Vector2(factor, factor)
 
 func _generate_cone():
 	var polygon := PackedVector2Array()
@@ -479,12 +509,6 @@ func _draw():
 	if _cone_polygon.size() >= 3:
 		var fill := Color(col.r, col.g, col.b, 0.05)
 		draw_polygon(_cone_polygon, PackedColorArray([fill]))
-	var ss: float = hull_radius / HULL_RADIUS
-	var tip := Vector2(13.0, 0.0) * ss
-	var back_a := Vector2(-9.0, -7.0) * ss
-	var back_b := Vector2(-9.0, 7.0) * ss
-	draw_colored_polygon(PackedVector2Array([tip, back_a, back_b]), col)
-	draw_polyline(PackedVector2Array([tip, back_a, back_b, tip]), Color(0.05, 0.05, 0.1, 1.0), 1.5, true)
 	if show_health and hp < max_hp:
 		_draw_hp_bar()
 

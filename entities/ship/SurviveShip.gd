@@ -2,19 +2,19 @@ extends "res://entities/ship/Spaceship.gd"
 
 enum Role { WILD, HERDED, PILOT, EVADER }
 
-const SPRITE_PATHS := {
-	Role.WILD:  "res://assets/sprites/spaceship/spaceship_purple.png",
-	Role.HERDED: "res://assets/sprites/spaceship/spaceship_blue.png",
-	Role.EVADER: "res://assets/sprites/spaceship/spaceship_red.png",
+const ROLE_COLORS := {
+	Role.WILD:   Color(0.65, 0.45, 0.95, 1.0),
+	Role.HERDED: Color(0.45, 0.62, 1.0, 1.0),
+	Role.EVADER: Color(1.0, 0.42, 0.32, 1.0),
 }
-const PILOT_SPRITE_PATHS := [
-	"res://assets/sprites/spaceship/spaceship_gold.png",
-	"res://assets/sprites/spaceship/spaceship_green.png",
+const PILOT_COLORS := [
+	Color(1.0, 0.80, 0.25, 1.0),
+	Color(0.40, 0.85, 0.45, 1.0),
 ]
 const FREEZE_PATH := "res://assets/sprites/effects/freeze.png"
 
-const SPRITE_WIDTH := 46.0
-const HERD_MEMORY_SECONDS := 5.0
+const SPRITE_WIDTH := 46.0        # pixels, width the freeze effect is sized against
+const HERD_MEMORY_SECONDS := 5.0  # seconds a ship keeps following its herder after losing sight
 
 const WILD_PROGRAM := [
 	{"type": "when_start", "params": {}, "children": [
@@ -48,16 +48,15 @@ signal herded(ship, slot)
 var role: int = Role.WILD
 var pilot_slot: int = -1
 var herder_slot: int = -1
-var target_planet: Vector2 = Vector2.ZERO
-var target_radius: float = 0.0
-var pilot_thrust: float = 0.0
-var pilot_turn: float = 0.0
-var pilot_speed: float = 200.0
-var pilot_turn_rate: float = 3.0
-var freeze_remaining: float = 0.0
+var target_planet: Vector2 = Vector2.ZERO # pixels
+var target_radius: float = 0.0            # pixels
+var pilot_thrust: float = 0.0             # throttle in -1..1
+var pilot_turn: float = 0.0               # turn in -1..1, scaled by pilot_turn_rate
+var pilot_speed: float = 200.0            # pixels/second (5.0 m/s)
+var pilot_turn_rate: float = 3.0          # radians/second
+var freeze_remaining: float = 0.0         # seconds left frozen
 
-var _sight_timer: float = 0.0
-var _sprite: Sprite2D
+var _sight_timer: float = 0.0             # seconds of herd memory left before the ship goes wild again
 var _freeze_sprite: Sprite2D
 var _spent: bool = false
 
@@ -66,10 +65,6 @@ func _ready():
 	z_index = 6
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	add_to_group("survive_ships")
-	_sprite = Sprite2D.new()
-	_sprite.rotation = PI / 2.0
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	add_child(_sprite)
 	_freeze_sprite = Sprite2D.new()
 	_freeze_sprite.visible = false
 	_freeze_sprite.z_index = 2
@@ -121,16 +116,12 @@ func _apply_program(blocks: Array):
 	refresh_cone()
 
 func _refresh_sprite():
-	if _sprite == null:
-		return
-	var path: String
+	ship_color = _role_color()
+
+func _role_color() -> Color:
 	if role == Role.PILOT:
-		path = PILOT_SPRITE_PATHS[clampi(pilot_slot, 0, 1)]
-	else:
-		path = SPRITE_PATHS[role]
-	_sprite.texture = load(path)
-	_scale_sprite(_sprite, SPRITE_WIDTH)
-	queue_redraw()
+		return PILOT_COLORS[clampi(pilot_slot, 0, 1)]
+	return ROLE_COLORS[role]
 
 func _scale_sprite(node: Sprite2D, width: float):
 	if node.texture == null:

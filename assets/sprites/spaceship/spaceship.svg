@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 1000 1000">
+  <defs>
+    <clipPath id="hull">
+      <path d="M500 88 L870 706 L750 912 L250 912 L130 706 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#hull)">
+    <rect x="0" y="0" width="1000" height="1000" fill="#b8b8b8"/>
+    <rect x="0" y="0" width="440" height="1000" fill="#616161"/>
+    <rect x="440" y="0" width="120" height="1000" fill="#ffffff"/>
+    <g fill="#242424">
+      <rect x="0" y="292" width="1000" height="20"/>
+      <rect x="0" y="424" width="1000" height="20"/>
+      <rect x="0" y="548" width="1000" height="20"/>
+      <rect x="0" y="671" width="1000" height="20"/>
+    </g>
+    <rect x="0" y="838" width="1000" height="74" fill="#1a1a1a"/>
+    <g fill="#c9c9c9">
+      <rect x="350" y="850" width="70" height="10"/>
+      <rect x="580" y="850" width="70" height="10"/>
+    </g>
+    <g fill="#000000">
+      <rect x="292" y="866" width="46" height="40"/>
+      <rect x="350" y="866" width="70" height="40"/>
+      <rect x="580" y="866" width="70" height="40"/>
+      <rect x="662" y="866" width="46" height="40"/>
+    </g>
+    <path d="M500 88 L870 706 L750 912 L250 912 L130 706 Z" fill="none" stroke="#242424" stroke-width="52"/>
+    <path d="M505 120 L838 678" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>

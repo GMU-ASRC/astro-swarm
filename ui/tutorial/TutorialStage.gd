@@ -2,14 +2,19 @@ extends Control
 
 const FONT_REG := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 
-const SPRITE_PATHS := {
-	"purple":    "res://assets/sprites/spaceship/spaceship_purple.png",
-	"blue":      "res://assets/sprites/spaceship/spaceship_blue.png",
-	"gold":      "res://assets/sprites/spaceship/spaceship_gold.png",
-	"green":     "res://assets/sprites/spaceship/spaceship_green.png",
-	"red":       "res://assets/sprites/spaceship/spaceship_red.png",
+const SHIP_PATH := "res://assets/sprites/spaceship/spaceship.svg"
+
+const EFFECT_PATHS := {
 	"explosion": "res://assets/sprites/effects/explosion.png",
 	"freeze":    "res://assets/sprites/effects/freeze.png",
+}
+
+const SHIP_COLORS := {
+	"purple": Color(0.65, 0.45, 0.95, 1.0),
+	"blue":   Color(0.45, 0.62, 1.0, 1.0),
+	"gold":   Color(1.0, 0.80, 0.25, 1.0),
+	"green":  Color(0.40, 0.85, 0.45, 1.0),
+	"red":    Color(1.0, 0.42, 0.32, 1.0),
 }
 
 const SHIP_PX  := 34.0
@@ -26,6 +31,7 @@ const C_BLUE   := Color(0.45, 0.62, 1.0, 1.0)
 var visual: String = "swarm"
 
 var _time: float = 0.0
+var _ship_texture: Texture2D
 var _textures: Dictionary = {}
 var _herd_last_cycle: float = 0.0
 var _herd_second_seen: bool = false
@@ -34,8 +40,9 @@ func _ready():
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	clip_contents = true
-	for key in SPRITE_PATHS:
-		_textures[key] = load(SPRITE_PATHS[key])
+	_ship_texture = load(SHIP_PATH)
+	for key in EFFECT_PATHS:
+		_textures[key] = load(EFFECT_PATHS[key])
 
 func show_visual(id: String):
 	visual = id
@@ -205,14 +212,17 @@ func _draw_score():
 	_caption("FEWEST EVADERS ON YOUR PLANET WINS")
 
 func _ship(key: String, at: Vector2, angle: float, px: float, alpha: float = 1.0):
-	_effect(key, at, px, alpha, angle + PI * 0.5)
+	var color: Color = SHIP_COLORS.get(key, Color(1, 1, 1, 1))
+	_sprite(_ship_texture, at, px, Color(color.r, color.g, color.b, clampf(alpha, 0.0, 1.0)), angle + PI * 0.5)
 
 func _effect(key: String, at: Vector2, px: float, alpha: float, angle: float):
-	var tex: Texture2D = _textures.get(key)
-	if tex == null:
+	_sprite(_textures.get(key), at, px, Color(1, 1, 1, clampf(alpha, 0.0, 1.0)), angle)
+
+func _sprite(texture: Texture2D, at: Vector2, px: float, color: Color, angle: float):
+	if texture == null:
 		return
 	draw_set_transform(at, angle, Vector2.ONE)
-	draw_texture_rect(tex, Rect2(-px * 0.5, -px * 0.5, px, px), false, Color(1, 1, 1, clampf(alpha, 0.0, 1.0)))
+	draw_texture_rect(texture, Rect2(-px * 0.5, -px * 0.5, px, px), false, color)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _cone(at: Vector2, angle: float, radius: float, fov_degrees: float, color: Color):
