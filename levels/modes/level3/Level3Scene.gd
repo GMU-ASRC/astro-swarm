@@ -10,7 +10,6 @@ const EVADER_TURN_RATE    := 2.8
 
 const TIME_LIMIT_SECONDS := 180.0
 const RECORD_FPS         := 30.0
-const WARNING_SECONDS    := 30.0
 
 var _frames: Array = []
 var _record_accum: float = 0.0
@@ -45,8 +44,7 @@ func _time_limit() -> float:
 	return TIME_LIMIT_SECONDS
 
 func _timer_text() -> String:
-	var remaining: float = maxf(0.0, TIME_LIMIT_SECONDS - _elapsed)
-	return "%d:%02d" % [floori(remaining / 60.0), int(remaining) % 60]
+	return _countdown_text()
 
 func _walkthrough_lines() -> Array:
 	return [
@@ -80,7 +78,7 @@ func _setup_level():
 	_launch_btn.text = "LAUNCH EVADER (S) >"
 	_opponent_label = _lbl("OPPONENT: loading...", 11, C_AMBER)
 	_top_bar.add_child(_opponent_label)
-	_evader_spawn = PLANET_CENTER + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(_rng.randf() * TAU)
+	_evader_spawn = _planet + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(_rng.randf() * TAU)
 	_place_defenders()
 	if not EvalUploader.best_fetched.is_connected(_on_best_fetched):
 		EvalUploader.best_fetched.connect(_on_best_fetched)
@@ -129,32 +127,17 @@ func _spawn_player_evader():
 	_evader.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
 	_evader.collisions_enabled = false
 	_evader.is_evader = true
-	_evader.arena_size = ARENA
+	_evader.arena_size = _arena
 	_evader.show_health = false
 	add_child(_evader)
 	_evader.global_position = _evader_spawn
-	_evader.rotation = (PLANET_CENTER - _evader_spawn).angle()
+	_evader.rotation = (_planet - _evader_spawn).angle()
 	_evader.set_physics_process(false)
 
 func _update_level(delta: float):
 	if not is_instance_valid(_evader):
 		return
-	var turn: float = 0.0
-	var thrust: float = 0.0
-	if _pressed("robot_turn_right", KEY_D) or Input.is_action_pressed("ui_right"):
-		turn += 1.0
-	if _pressed("robot_turn_left", KEY_A) or Input.is_action_pressed("ui_left"):
-		turn -= 1.0
-	if _pressed("robot_forward", KEY_W) or Input.is_action_pressed("ui_up"):
-		thrust += 1.0
-	if _pressed("robot_backward", KEY_S) or Input.is_action_pressed("ui_down"):
-		thrust -= 1.0
-	_evader.rotation += turn * EVADER_TURN_RATE * delta
-	var step: Vector2 = Vector2.RIGHT.rotated(_evader.rotation) * EVADER_PLAYER_SPEED * thrust * delta
-	_evader.global_position += step
-	_evader.global_position.x = clampf(_evader.global_position.x, 20.0, ARENA.x - 20.0)
-	_evader.global_position.y = clampf(_evader.global_position.y, 20.0, ARENA.y - 20.0)
-	_evader.queue_redraw()
+	_drive_with_keys(_evader, delta, EVADER_PLAYER_SPEED, EVADER_TURN_RATE)
 	_record(delta)
 	_update_countdown_color()
 
@@ -185,10 +168,6 @@ func _snapshot() -> Array:
 		frame.append(-1)
 		frame.append(0)
 	return frame
-
-func _update_countdown_color():
-	var remaining: float = TIME_LIMIT_SECONDS - _elapsed
-	_timer_label.add_theme_color_override("font_color", C_RED if remaining <= WARNING_SECONDS else C_TEXT)
 
 func _finish(reason: String):
 	if is_instance_valid(_evader):
@@ -255,17 +234,12 @@ func _submit_entry():
 		"defenders": _placements.size(),
 		"view": int(_view_distance()),
 		"fov": int(_fov_degrees()),
-		"planet": [int(PLANET_CENTER.x), int(PLANET_CENTER.y), int(PLANET_RADIUS)],
-		"arena": [int(ARENA.x), int(ARENA.y)],
+		"planet": [int(_planet.x), int(_planet.y), int(PLANET_RADIUS)],
+		"arena": [int(_arena.x), int(_arena.y)],
 		"frames": _frames,
 		"opponent": _opponent_name,
 	}
 	EvalUploader.submit_run(_level_id(), _opponent_algorithm, _placements_payload(), run)
-
-func _pressed(action: String, fallback: Key) -> bool:
-	if InputMap.has_action(action):
-		return Input.is_action_pressed(action)
-	return Input.is_key_pressed(fallback)
 
 func _level_input(event: InputEvent):
 	if _phase != Phase.SETUP:
@@ -278,13 +252,13 @@ func _level_input(event: InputEvent):
 		_set_spawn_from_mouse()
 
 func _set_spawn_from_mouse():
-	var angle: float = (get_global_mouse_position() - PLANET_CENTER).angle()
-	_evader_spawn = PLANET_CENTER + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(angle)
+	var angle: float = (get_global_mouse_position() - _planet).angle()
+	_evader_spawn = _planet + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(angle)
 	queue_redraw()
 
 func _draw_level():
 	if _phase != Phase.SETUP:
 		return
-	_draw_dashed_circle(PLANET_CENTER, EVADER_SPAWN_RADIUS, Color(C_RED.r, C_RED.g, C_RED.b, 0.6), 1.5)
-	draw_line(_evader_spawn, PLANET_CENTER, Color(1.0, 0.70, 0.20, 0.15), 1.0, true)
+	_draw_dashed_circle(_planet, EVADER_SPAWN_RADIUS, Color(C_RED.r, C_RED.g, C_RED.b, 0.6), 1.5)
+	draw_line(_evader_spawn, _planet, Color(1.0, 0.70, 0.20, 0.15), 1.0, true)
 	draw_circle(_evader_spawn, 12.0, C_AMBER)

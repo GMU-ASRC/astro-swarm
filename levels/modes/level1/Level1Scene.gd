@@ -99,7 +99,7 @@ func _launch():
 		return
 	_start_active()
 	var angle: float = _spawn_rng.randf() * TAU
-	_spawn_scripted_evader(PLANET_CENTER + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(angle))
+	_spawn_scripted_evader(_planet + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(angle))
 	_phase_label.text = "EVADER INBOUND"
 	_hint_label.text = "Your defenders run their workspace program. Touch the evader to capture it before it reaches the planet."
 
@@ -128,7 +128,7 @@ func _level_input(event: InputEvent):
 		_drag_indicator.update_drag(true, "arrow", _drag_start, get_global_mouse_position(), ACCENT)
 
 func _can_place(p: Vector2) -> bool:
-	var dist: float = p.distance_to(PLANET_CENTER)
+	var dist: float = p.distance_to(_planet)
 	return dist >= PLACE_MIN and dist <= PLACE_MAX
 
 func _place_defender(start: Vector2, end: Vector2):
@@ -174,6 +174,6 @@ func _update_count():
 func _draw_level():
 	if _phase != Phase.SETUP:
 		return
-	draw_circle(PLANET_CENTER, PLACE_MAX, ZONE_FILL)
-	_draw_dashed_circle(PLANET_CENTER, PLACE_MAX, Color(0.451, 0.616, 1.0, 0.35), 1.5)
-	_draw_dashed_circle(PLANET_CENTER, PLACE_MIN, Color(0.6, 0.62, 0.74, 0.25), 1.0)
+	draw_circle(_planet, PLACE_MAX, ZONE_FILL)
+	_draw_dashed_circle(_planet, PLACE_MAX, Color(0.451, 0.616, 1.0, 0.35), 1.5)
+	_draw_dashed_circle(_planet, PLACE_MIN, Color(0.6, 0.62, 0.74, 0.25), 1.0)

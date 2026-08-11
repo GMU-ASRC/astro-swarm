@@ -86,13 +86,13 @@ func _reroll_level():
 func _launch():
 	_start_active()
 	var angle: float = _rng.randf() * TAU
-	_spawn_scripted_evader(PLANET_CENTER + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(angle))
+	_spawn_scripted_evader(_planet + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(angle))
 	_phase_label.text = "EVADER INBOUND"
 	_hint_label.text = "Your algorithm is driving every defender. Touch the evader to capture it before it reaches the planet."
 
 func _draw_level():
 	if _phase != Phase.SETUP:
 		return
-	draw_circle(PLANET_CENTER, SCATTER_MAX, ZONE_FILL)
-	_draw_dashed_circle(PLANET_CENTER, SCATTER_MAX, Color(0.451, 0.616, 1.0, 0.35), 1.5)
-	_draw_dashed_circle(PLANET_CENTER, PLACE_MIN, Color(0.6, 0.62, 0.74, 0.25), 1.0)
+	draw_circle(_planet, SCATTER_MAX, ZONE_FILL)
+	_draw_dashed_circle(_planet, SCATTER_MAX, Color(0.451, 0.616, 1.0, 0.35), 1.5)
+	_draw_dashed_circle(_planet, PLACE_MIN, Color(0.6, 0.62, 0.74, 0.25), 1.0)
