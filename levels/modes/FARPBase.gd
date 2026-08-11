@@ -5,42 +5,47 @@ const TERRAN         := preload("res://entities/planet/PlanetTerran.tscn")
 const DRAG_INDICATOR := preload("res://levels/components/DragIndicator.tscn")
 const RADIAL_MENU    := preload("res://ui/hud/RadialMenu.tscn")
 const SHIP_WORKSPACE := preload("res://ui/workspace/ShipWorkspace.gd")
+const TUTORIAL       := preload("res://ui/tutorial/BlobTutorial.gd")
+const TUTORIAL_LINES := preload("res://ui/tutorial/LevelTutorialLines.gd")
 const FONT_REG       := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const GAME_THEME     := preload("res://ui/GameTheme.tres")
 
-const ARENA         := Vector2(3840.0, 2160.0)
-const PLANET_CENTER := Vector2(1920.0, 1080.0)
-const PLANET_PIXELS := 80.0
-const PLANET_DISP   := 240.0
-const PLANET_RADIUS := PLANET_DISP * 0.5
-const GOAL_MARGIN   := 16.0
+# Distances are pixels, durations are seconds and rotations are radians. The
+# block editor shows meters, at 40 pixels per meter.
+const ARENA         := Vector2(3840.0, 2160.0) # pixels, arena width and height
+const PLANET_CENTER := Vector2(1920.0, 1080.0) # pixels
+const PLANET_PIXELS := 80.0                    # pixels, source sprite size
+const PLANET_DISP   := 240.0                   # pixels, drawn planet diameter
+const PLANET_RADIUS := PLANET_DISP * 0.5       # pixels
+const GOAL_MARGIN   := 16.0                    # pixels past PLANET_RADIUS that still counts as reaching the planet
 
-const MAX_DEFENDERS := 6
-const MIN_DEFENDERS := 1
-const DEFENDER_HP   := 99.0
+const MAX_DEFENDERS := 6     # count
+const MIN_DEFENDERS := 1     # count
+const DEFENDER_HP   := 99.0  # hit points
 
-const EVADER_HP            := 3.0
-const EVADER_SPEED         := 105.0
-const EVADER_SPAWN_RADIUS  := 1000.0
+const EVADER_HP            := 3.0    # hit points
+const EVADER_SPEED         := 105.0  # pixels/second (2.625 m/s)
+const EVADER_SPAWN_RADIUS  := 1000.0 # pixels, radius of the ring the evader spawns on
 const EVADER_PROGRAM := [
 	{"type": "when_always", "params": {}},
 	{"type": "do_forward", "params": {}},
 ]
 
-const RING_RADIUS  := 200.0
-const RING_COUNT   := 5
+const RING_RADIUS  := 200.0 # pixels, radius of the defender ring around the planet
+const RING_COUNT   := 5     # count, defenders in the ring layout
 
-const PLACE_MIN := PLANET_RADIUS + 50.0
-const PLACE_MAX := 465.0
-const SCATTER_MAX := 250.0
-const SCATTER_SPACING := 110.0
-const SCATTER_ATTEMPTS := 40
+const PLACE_MIN := PLANET_RADIUS + 50.0 # pixels, closest a defender may be placed to the planet center
+const PLACE_MAX := 465.0                # pixels, farthest a defender may be placed from the planet center
+const SCATTER_MAX := 250.0              # pixels, farthest a scattered defender may spawn from the planet center
+const SCATTER_SPACING := 110.0          # pixels, minimum gap between two scattered defenders
+const SCATTER_ATTEMPTS := 40            # count, retries before a scattered position is accepted anyway
 
-const MATCH_CAP_SECONDS := 240.0
+const MATCH_CAP_SECONDS := 240.0 # seconds before a match times out
+const WARNING_SECONDS   := 30.0  # seconds left on the clock when the timer turns red
 
-const EDGE_THICKNESS := 16.0
-const ZOOM_MIN := 0.4
-const ZOOM_MAX := 2.5
+const EDGE_THICKNESS := 16.0 # pixels, arena border texture width
+const ZOOM_MIN := 0.4        # camera zoom factor
+const ZOOM_MAX := 2.5        # camera zoom factor
 
 const BG_COLOR    := Color(0.04, 0.04, 0.07, 1.0)
 const ZONE_FILL   := Color(0.451, 0.616, 1.0, 0.05)
@@ -72,6 +77,9 @@ const HOUSE_DEFENDER_ALGORITHM := [
 
 enum Phase { SETUP, ACTIVE, DONE }
 
+var _arena: Vector2 = ARENA
+var _planet: Vector2 = PLANET_CENTER
+
 var _phase: int = Phase.SETUP
 var _elapsed: float = 0.0
 var _end_reason: String = ""
@@ -98,6 +106,8 @@ var _edge_tex_bottom: Texture2D
 var _edge_tex_left: Texture2D
 var _edge_tex_right: Texture2D
 
+var _tutorial: CanvasLayer
+var _hud_root: Control
 var _top_bar: HBoxContainer
 var _phase_label: Label
 var _timer_label: Label
@@ -116,6 +126,8 @@ var _guide_tab_walkthrough: Button
 
 func _ready():
 	get_tree().paused = false
+	_arena = _arena_size()
+	_planet = _planet_center()
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_edge_tex_top = load("res://assets/space_edge_top.png")
@@ -125,7 +137,7 @@ func _ready():
 
 	_camera = Camera2D.new()
 	add_child(_camera)
-	_camera.position = PLANET_CENTER
+	_camera.position = _planet
 	_camera.zoom = Vector2(0.5, 0.5)
 	_camera.make_current()
 	_clamp_camera()
@@ -146,10 +158,16 @@ func _ready():
 
 	if not PlayerSettings.get_flag(_seen_flag()):
 		PlayerSettings.set_flag(_seen_flag(), true)
-		_show_guide()
+		_show_tutorial()
 
 func _setup_level():
 	pass
+
+func _arena_size() -> Vector2:
+	return ARENA
+
+func _planet_center() -> Vector2:
+	return PLANET_CENTER
 
 func _level_id() -> String:
 	return "farp1"
@@ -172,6 +190,9 @@ func _submits_algorithm() -> bool:
 func _uses_workspace() -> bool:
 	return true
 
+func _uses_collisions_toggle() -> bool:
+	return true
+
 func _submit_button_text() -> String:
 	return "SUBMIT ALGORITHM"
 
@@ -180,6 +201,36 @@ func _time_limit() -> float:
 
 func _timer_text() -> String:
 	return "%.1fs" % _elapsed
+
+func _countdown_text() -> String:
+	var remaining: float = maxf(0.0, _time_limit() - _elapsed)
+	return "%d:%02d" % [floori(remaining / 60.0), int(remaining) % 60]
+
+func _update_countdown_color():
+	var remaining: float = _time_limit() - _elapsed
+	_timer_label.add_theme_color_override("font_color", C_RED if remaining <= WARNING_SECONDS else C_TEXT)
+
+func _pressed(action: String, fallback: Key) -> bool:
+	if InputMap.has_action(action):
+		return Input.is_action_pressed(action)
+	return Input.is_key_pressed(fallback)
+
+func _drive_with_keys(ship: Node2D, delta: float, speed: float, turn_rate: float):
+	var turn: float = 0.0
+	var thrust: float = 0.0
+	if _pressed("robot_turn_right", KEY_D) or Input.is_action_pressed("ui_right"):
+		turn += 1.0
+	if _pressed("robot_turn_left", KEY_A) or Input.is_action_pressed("ui_left"):
+		turn -= 1.0
+	if _pressed("robot_forward", KEY_W) or Input.is_action_pressed("ui_up"):
+		thrust += 1.0
+	if _pressed("robot_backward", KEY_S) or Input.is_action_pressed("ui_down"):
+		thrust -= 1.0
+	ship.rotation += turn * turn_rate * delta
+	ship.global_position += Vector2.RIGHT.rotated(ship.rotation) * speed * thrust * delta
+	ship.global_position.x = clampf(ship.global_position.x, 20.0, _arena.x - 20.0)
+	ship.global_position.y = clampf(ship.global_position.y, 20.0, _arena.y - 20.0)
+	ship.queue_redraw()
 
 func _update_level(_delta: float):
 	pass
@@ -194,7 +245,28 @@ func _restart_level():
 	pass
 
 func _seen_flag() -> String:
-	return "guide_seen_" + _level_id()
+	return "tutorial_seen_" + _level_id()
+
+func _voice_dir() -> String:
+	return "res://va/levels/" + _level_id()
+
+func _tutorial_lines() -> Array:
+	return TUTORIAL_LINES.for_level(_level_id())
+
+func _show_tutorial():
+	if is_instance_valid(_tutorial):
+		return
+	var lines: Array = _tutorial_lines()
+	if lines.is_empty():
+		_show_guide()
+		return
+	var tutorial := TUTORIAL.new()
+	_tutorial = tutorial
+	tutorial.lines = lines
+	tutorial.voice_dir = _voice_dir()
+	tutorial.show_visuals = false
+	tutorial.final_hint = "CLICK TO CLOSE"
+	add_child(tutorial)
 
 func _process(delta: float):
 	if _phase == Phase.ACTIVE:
@@ -249,15 +321,22 @@ func _defender_touches_evader() -> bool:
 	return false
 
 func _evader_at_goal() -> bool:
-	return _evader_position().distance_to(PLANET_CENTER) <= PLANET_RADIUS + GOAL_MARGIN
+	return _evader_position().distance_to(_planet) <= PLANET_RADIUS + GOAL_MARGIN
 
 func _spawn_defender(placement: Dictionary, program: Array):
+	var ship := _make_ship(program, DEFENDER_HP, C_DEFENDER)
+	ship.global_position = placement.pos
+	ship.rotation = placement.rot
+	ship.set_meta("placement", placement)
+	_defender_ships.append(ship)
+
+func _make_ship(program: Array, hp_value: float, color: Color) -> Node2D:
 	var ship := SHIP.instantiate()
-	ship.setup_player(program, DEFENDER_HP)
-	ship.ship_color = C_DEFENDER
-	ship.set_obstacles(Vector2.ZERO, 0.0, PLANET_CENTER, PLANET_RADIUS)
+	ship.setup_player(program, hp_value)
+	ship.ship_color = color
+	ship.set_obstacles(Vector2.ZERO, 0.0, _planet, PLANET_RADIUS)
 	ship.collisions_enabled = _collisions_on
-	ship.arena_size = ARENA
+	ship.arena_size = _arena
 	ship.can_fire = false
 	ship.show_health = false
 	add_child(ship)
@@ -268,11 +347,8 @@ func _spawn_defender(placement: Dictionary, program: Array):
 	ship.turn_rate = cfg.turn_speed
 	ship.hull_radius = cfg.dot_radius
 	ship.refresh_cone()
-	ship.global_position = placement.pos
-	ship.rotation = placement.rot
-	ship.set_meta("placement", placement)
 	ship.set_physics_process(false)
-	_defender_ships.append(ship)
+	return ship
 
 func _spawn_scripted_evader(spawn_pos: Vector2):
 	_evader = SHIP.instantiate()
@@ -281,12 +357,12 @@ func _spawn_scripted_evader(spawn_pos: Vector2):
 	_evader.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
 	_evader.collisions_enabled = false
 	_evader.is_evader = true
-	_evader.arena_size = ARENA
+	_evader.arena_size = _arena
 	_evader.show_health = false
 	_evader.speed_mult = EVADER_SPEED / 150.0
 	add_child(_evader)
 	_evader.global_position = spawn_pos
-	_evader.rotation = (PLANET_CENTER - spawn_pos).angle()
+	_evader.rotation = (_planet - spawn_pos).angle()
 
 func _random_ring_placements(count: int, rng: RandomNumberGenerator) -> Array:
 	var out: Array = []
@@ -302,7 +378,7 @@ func _random_ring_placements(count: int, rng: RandomNumberGenerator) -> Array:
 func _scatter_point(rng: RandomNumberGenerator) -> Vector2:
 	var angle: float = rng.randf() * TAU
 	var radius: float = rng.randf_range(PLACE_MIN, SCATTER_MAX)
-	return PLANET_CENTER + Vector2(radius, 0.0).rotated(angle)
+	return _planet + Vector2(radius, 0.0).rotated(angle)
 
 func _is_clear_of(pos: Vector2, placements: Array) -> bool:
 	for placement in placements:
@@ -326,7 +402,7 @@ func _house_ring_placements(count: int) -> Array:
 	for i in count:
 		var angle: float = TAU * float(i) / float(count)
 		out.append({
-			"pos": PLANET_CENTER + Vector2(RING_RADIUS, 0.0).rotated(angle),
+			"pos": _planet + Vector2(RING_RADIUS, 0.0).rotated(angle),
 			"rot": angle - PI / 2.0,
 		})
 	return out
@@ -516,14 +592,14 @@ func _zoom_by(factor: float):
 
 func _clamp_camera():
 	var half: Vector2 = get_viewport_rect().size * 0.5 / _camera.zoom
-	if half.x * 2.0 >= ARENA.x:
-		_camera.position.x = ARENA.x * 0.5
+	if half.x * 2.0 >= _arena.x:
+		_camera.position.x = _arena.x * 0.5
 	else:
-		_camera.position.x = clampf(_camera.position.x, half.x, ARENA.x - half.x)
-	if half.y * 2.0 >= ARENA.y:
-		_camera.position.y = ARENA.y * 0.5
+		_camera.position.x = clampf(_camera.position.x, half.x, _arena.x - half.x)
+	if half.y * 2.0 >= _arena.y:
+		_camera.position.y = _arena.y * 0.5
 	else:
-		_camera.position.y = clampf(_camera.position.y, half.y, ARENA.y - half.y)
+		_camera.position.y = clampf(_camera.position.y, half.y, _arena.y - half.y)
 
 func _start_music():
 	var stream := load("res://assets/music/domination challenge music.mp3") as AudioStreamMP3
@@ -541,7 +617,7 @@ func _make_bg_stars():
 	rng.seed = 77421
 	for _i in 500:
 		_bg_stars.append({
-			"pos": Vector2(rng.randf_range(0.0, ARENA.x), rng.randf_range(0.0, ARENA.y)),
+			"pos": Vector2(rng.randf_range(0.0, _arena.x), rng.randf_range(0.0, _arena.y)),
 			"sz":  rng.randf_range(1.0, 2.2),
 			"a":   rng.randf_range(0.12, 0.55),
 		})
@@ -553,11 +629,11 @@ func _build_planet():
 	planet.z_index = 2
 	var sc: float = PLANET_DISP / PLANET_PIXELS
 	planet.scale = Vector2(sc, sc)
-	planet.position = PLANET_CENTER - Vector2(PLANET_DISP * 0.5, PLANET_DISP * 0.5)
+	planet.position = _planet - Vector2(PLANET_DISP * 0.5, PLANET_DISP * 0.5)
 	_disable_mouse(planet)
 
 func _draw():
-	draw_rect(Rect2(Vector2.ZERO, ARENA), BG_COLOR)
+	draw_rect(Rect2(Vector2.ZERO, _arena), BG_COLOR)
 	for s in _bg_stars:
 		draw_rect(Rect2(s["pos"], Vector2(s["sz"], s["sz"])), Color(1, 1, 1, s["a"]))
 	_draw_level()
@@ -567,10 +643,10 @@ func _draw_edges():
 	if _edge_tex_top == null or _edge_tex_bottom == null or _edge_tex_left == null or _edge_tex_right == null:
 		return
 	var t: float = EDGE_THICKNESS
-	draw_texture_rect(_edge_tex_top, Rect2(0.0, 0.0, ARENA.x, t), true)
-	draw_texture_rect(_edge_tex_bottom, Rect2(0.0, ARENA.y - t, ARENA.x, t), true)
-	draw_texture_rect(_edge_tex_left, Rect2(0.0, 0.0, t, ARENA.y), true)
-	draw_texture_rect(_edge_tex_right, Rect2(ARENA.x - t, 0.0, t, ARENA.y), true)
+	draw_texture_rect(_edge_tex_top, Rect2(0.0, 0.0, _arena.x, t), true)
+	draw_texture_rect(_edge_tex_bottom, Rect2(0.0, _arena.y - t, _arena.x, t), true)
+	draw_texture_rect(_edge_tex_left, Rect2(0.0, 0.0, t, _arena.y), true)
+	draw_texture_rect(_edge_tex_right, Rect2(_arena.x - t, 0.0, t, _arena.y), true)
 
 func _draw_dashed_circle(center: Vector2, radius: float, color: Color, width: float):
 	var segs := 60
@@ -598,6 +674,7 @@ func _build_hud():
 	root.theme = GAME_THEME
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(root)
+	_hud_root = root
 
 	_top_bar = HBoxContainer.new()
 	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -612,16 +689,18 @@ func _build_hud():
 	if _uses_workspace():
 		_add_top_button("WORKSPACE", _open_workspace)
 	_add_top_button("RESTART (P)", _restart)
+	_add_top_button("TUTORIAL", _show_tutorial)
 	_add_top_button("? GUIDE", _show_guide)
 
-	var collisions_btn := CheckButton.new()
-	collisions_btn.text = "COLLISIONS"
-	collisions_btn.button_pressed = _collisions_on
-	collisions_btn.focus_mode = Control.FOCUS_NONE
-	collisions_btn.add_theme_font_override("font", FONT_REG)
-	collisions_btn.add_theme_font_size_override("font_size", 9)
-	collisions_btn.toggled.connect(_on_collisions_toggled)
-	_top_bar.add_child(collisions_btn)
+	if _uses_collisions_toggle():
+		var collisions_btn := CheckButton.new()
+		collisions_btn.text = "COLLISIONS"
+		collisions_btn.button_pressed = _collisions_on
+		collisions_btn.focus_mode = Control.FOCUS_NONE
+		collisions_btn.add_theme_font_override("font", FONT_REG)
+		collisions_btn.add_theme_font_size_override("font_size", 9)
+		collisions_btn.toggled.connect(_on_collisions_toggled)
+		_top_bar.add_child(collisions_btn)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL

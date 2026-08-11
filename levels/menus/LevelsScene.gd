@@ -18,19 +18,25 @@ const LEVELS := [
 	{
 		"name":   "FARP  I\nDEFENSE · PLACE",
 		"desc":   "Place your own defenders\nand program their detection",
-		"scene":  "res://levels/modes/Level1Scene.tscn",
+		"scene":  "res://levels/modes/level1/Level1Scene.tscn",
 		"locked": false,
 	},
 	{
 		"name":   "FARP  II\nDEFENSE · RING",
 		"desc":   "Defenders ring the planet\nYour algorithm is all that counts",
-		"scene":  "res://levels/modes/Level2Scene.tscn",
+		"scene":  "res://levels/modes/level2/Level2Scene.tscn",
 		"locked": false,
 	},
 	{
 		"name":   "FARP  III\nEVASION · PILOT",
 		"desc":   "Fly the evader yourself against\nthe best Level 2 algorithm",
-		"scene":  "res://levels/modes/Level3Scene.tscn",
+		"scene":  "res://levels/modes/level3/Level3Scene.tscn",
+		"locked": false,
+	},
+	{
+		"name":   "FARP  IV\nSWARM · MERGE",
+		"desc":   "Lead two milling swarms into one\nand walk them onto the planet",
+		"scene":  "res://levels/modes/level4/Level4Scene.tscn",
 		"locked": false,
 	},
 ]
