@@ -5,7 +5,6 @@ signal finished
 const FONT_REG := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const STAGE := preload("res://ui/tutorial/TutorialStage.gd")
 const BLOB_PATH := "res://assets/sprites/dr_blob/dr_blob.png"
-const VOICE_DIR := "res://va/survive"
 
 const BLOB_SIZE := 260.0
 const BOX_MARGIN := 24.0
@@ -17,6 +16,9 @@ const C_HINT := Color(0.35, 0.35, 0.42, 1.0)
 const C_STAGE_BG := Color(0.05, 0.05, 0.09, 0.94)
 
 var lines: Array = []
+var voice_dir: String = "res://va/survive"
+var show_visuals: bool = true
+var final_hint: String = "CLICK TO READY UP"
 
 var _index: int = -1
 var _root: Control
@@ -60,26 +62,14 @@ func _build():
 	holder.alignment = BoxContainer.ALIGNMENT_END
 	holder.offset_left = BOX_MARGIN * 2.0 + BLOB_SIZE
 	holder.offset_right = -BOX_MARGIN
-	holder.offset_top = -(STAGE_HEIGHT + 380.0)
+	holder.offset_top = -(STAGE_HEIGHT + 380.0) if show_visuals else -380.0
 	holder.offset_bottom = -BOX_MARGIN
 	holder.add_theme_constant_override("separation", 12)
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(holder)
 
-	var stage_frame := PanelContainer.new()
-	var stage_style := StyleBoxFlat.new()
-	stage_style.bg_color = C_STAGE_BG
-	stage_style.border_color = C_BOX_BORDER
-	stage_style.set_border_width_all(4)
-	stage_style.set_corner_radius_all(0)
-	stage_frame.add_theme_stylebox_override("panel", stage_style)
-	stage_frame.size_flags_vertical = Control.SIZE_SHRINK_END
-	stage_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(stage_frame)
-
-	_stage = STAGE.new()
-	_stage.custom_minimum_size = Vector2(0, STAGE_HEIGHT)
-	stage_frame.add_child(_stage)
+	if show_visuals:
+		_build_stage(holder)
 
 	var box := PanelContainer.new()
 	var style := StyleBoxFlat.new()
@@ -130,6 +120,22 @@ func _build():
 	_voice.bus = "SFX"
 	add_child(_voice)
 
+func _build_stage(holder: VBoxContainer):
+	var stage_frame := PanelContainer.new()
+	var stage_style := StyleBoxFlat.new()
+	stage_style.bg_color = C_STAGE_BG
+	stage_style.border_color = C_BOX_BORDER
+	stage_style.set_border_width_all(4)
+	stage_style.set_corner_radius_all(0)
+	stage_frame.add_theme_stylebox_override("panel", stage_style)
+	stage_frame.size_flags_vertical = Control.SIZE_SHRINK_END
+	stage_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(stage_frame)
+
+	_stage = STAGE.new()
+	_stage.custom_minimum_size = Vector2(0, STAGE_HEIGHT)
+	stage_frame.add_child(_stage)
+
 func _on_dim_input(event: InputEvent):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_advance()
@@ -149,8 +155,9 @@ func _advance():
 		return
 	var entry: Dictionary = lines[_index]
 	_text_label.text = str(entry.get("text", ""))
-	_hint_label.text = "CLICK TO READY UP" if _index == lines.size() - 1 else "CLICK TO CONTINUE  (%d / %d)" % [_index + 1, lines.size()]
-	_stage.show_visual(str(entry.get("visual", "swarm")))
+	_hint_label.text = final_hint if _index == lines.size() - 1 else "CLICK TO CONTINUE  (%d / %d)" % [_index + 1, lines.size()]
+	if _stage != null:
+		_stage.show_visual(str(entry.get("visual", "swarm")))
 	_play_voice(int(entry.get("id", _index + 1)))
 
 func _play_voice(line_id: int):
@@ -163,7 +170,7 @@ func _play_voice(line_id: int):
 
 func _load_voice(line_id: int) -> AudioStream:
 	for extension in [".mp3", ".wav", ".ogg"]:
-		var path: String = "%s/line_%02d%s" % [VOICE_DIR, line_id, extension]
+		var path: String = "%s/line_%02d%s" % [voice_dir, line_id, extension]
 		if ResourceLoader.exists(path):
 			return load(path) as AudioStream
 	return null
