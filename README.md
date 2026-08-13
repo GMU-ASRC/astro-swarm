@@ -5,7 +5,7 @@
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macOS-lightgrey)](#building-from-source)
 [![Video Export](https://img.shields.io/badge/video%20export-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
-[![Version](https://img.shields.io/badge/version-v0.0.5--alpha-blue)](#)
+[![Version](https://img.shields.io/badge/version-v0.0.7--alpha-blue)](#)
 
 AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. It also includes a full **swarm-behaviour simulator** sandbox: design species, program their behaviour with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
 
@@ -13,7 +13,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 
 - **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
 - **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Workspace Moon's block editor.
-- **Benchmarked levels.** Three FARP levels: program the defenders for levels 1 and 2 and have your algorithm graded headlessly by the evaluation service, or fly the evader yourself in level 3 against the best algorithm other players have submitted. Every entry is published to the companion website and browsable in-game from My Entries.
+- **Benchmarked levels.** Six FARP levels: program the defenders for levels 1 to 4 and have your algorithm graded headlessly by the evaluation service, or fly the evader yourself in level 5 against the best algorithm other players have submitted. Every entry is published to the companion website and browsable in-game from My Entries.
 - **Visual block editor.** Build per-species behaviour by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
@@ -66,7 +66,7 @@ A local two-player mode, picked from the game-mode dropdown next to **Levels**. 
 
 ## Levels
 
-The **Levels** screen lists three FARP levels. All three defend (or attack) the same central planet, and all three measure the same three events:
+The **Levels** screen lists six FARP levels. All of them defend (or attack) the same central planet, and all of them measure the same three events:
 
 | Event | Definition |
 |---|---|
@@ -77,10 +77,13 @@ The **Levels** screen lists three FARP levels. All three defend (or attack) the 
 Seeing the evader is not enough to stop it — a defender has to reach out and *touch* it. A run ends on capture (the defenders win) or when the evader reaches the planet (the evader wins).
 
 - **Level 1 — Defense · Place.** Drag inside the blue ring to place between one and six defenders, aiming each one's vision cone with the drag direction; right-click one to remove it. Program how they all move and scan in the **Workspace**, then press **Launch Evader**. Your layout is saved between sessions.
-- **Level 2 — Defense · Ring.** Five defenders are scattered at random positions and orientations inside the ring, spaced apart so they never clump, and you cannot move them — only the algorithm decides the outcome. **Reroll** scatters them again. The layout on screen when you submit is the one the server benchmarks and the one Level 3 pilots will face, so it is saved between sessions and only **Reroll** changes it.
-- **Level 3 — Evasion · Pilot.** You fly the evader yourself against the **best Level 2 algorithm submitted by another player**, standing exactly where that player placed their defenders; their name is shown in the top bar. (With no entries on the server yet, you face a house algorithm on a fixed ring.) Drag on the red ring to pick your start point, then drive with the movement keys from your **Settings** (WASD or the arrow keys by default). A **three-minute countdown** runs in the top right. Reaching the planet wins; reaching it *without ever being seen* is a **clean run**. Either way the run can be submitted, and reaching the planet is worth a large XP payout.
+- **Level 2 — Defense · Ring.** Five defenders are scattered at random positions and orientations inside the ring, spaced apart so they never clump, and you cannot move them — only the algorithm decides the outcome. **Reroll** scatters them again. The layout on screen when you launch is the one the server benchmarks and the one Level 5 pilots will face, so it is saved between sessions and only **Reroll** changes it.
+- **Level 3 — Defense · Waves.** Three evaders come in off the red ring instead of one. The defenders are scattered as in Level 2 and **Reroll** works the same way. A defender that touches an evader destroys it and carries straight on to the next. The **Wave** button (or `W`) switches between *sequential*, where the next evader launches only once the last is gone, and *simultaneous*, where all three arrive together. A run is a win only if every evader is destroyed; one reaching the planet is a breach whatever else you stopped.
+- **Level 4 — Defense · Trade.** The same wave, with one rule changed: a capture destroys the defender as well as the evader. Five defenders against three evaders leaves no room for two of them to pile onto the same target, and every kill thins the line that has to cover the rest of the sky. Running out of defenders ends the run just as a breach does.
+- **Level 5 — Evasion · Pilot.** You fly the evader yourself against the **best Level 2 algorithm submitted by another player**, standing exactly where that player placed their defenders; their name is shown in the top bar. (With no entries on the server yet, you face a house algorithm on a fixed ring.) Drag on the red ring to pick your start point, then drive with the movement keys from your **Settings** (WASD or the arrow keys by default). A **three-minute countdown** runs in the top right. Reaching the planet wins; reaching it *without ever being seen* is a **clean run**, and reaching the planet is worth a large XP payout.
+- **Level 6 — Swarm · Merge.** Two milling swarms and one player-flown leader. Merge the groups, walk the merged mill onto the planet, then leave and let it hold together without you.
 
-Each level has a **? Guide** button with a step-by-step walkthrough and a list of hints, and it opens automatically the first time you play that level. Ship-to-ship **collisions** are off by default and can be toggled from the top bar.
+Each level has a **? Guide** button with a step-by-step walkthrough and a list of hints, and it opens automatically the first time you play that level.
 
 ### Level shortcuts
 
@@ -88,13 +91,18 @@ Each level has a **? Guide** button with a step-by-step walkthrough and a list o
 |---|---|
 | `S` | Start the run |
 | `P` | Replay — reset and try again |
-| `R` | Reroll the defender scatter (Level 2 only) |
+| `R` | Reroll the defender scatter (Levels 2, 3 and 4) |
+| `W` | Switch the wave between sequential and simultaneous (Levels 3 and 4) |
 
-They are inert while a run is in progress, since Level 3 steers the evader with the same keys.
+They are inert while a run is in progress, since Level 5 steers the evader with the same keys.
 
-Submitting a Level 1 or Level 2 entry uploads your algorithm and placements, and the evaluation service benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. Submitting a Level 3 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
+**Every run submits itself.** The moment a run ends the entry is uploaded on its own; there is no submit button to remember, and the result panel reports the upload instead of asking for it.
 
-**My Entries** lists every entry you've submitted across all three levels, each with a **Claim XP** button right in the list — it reads *Pending* until the server finishes processing the entry, and shows the amount once claimed. **View** opens an info screen pulled live from the server: capture and detection rates plus the outcome breakdown for a benchmarked level, or the result and the detected / captured / reached-planet times for a piloted run. XP is awarded from your best result on a level, so re-claiming a worse entry pays nothing; reaching the planet in level 3 is worth far more than a benchmark run.
+A Level 1 or Level 2 entry uploads your algorithm and placements, and the evaluation service benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. A Level 3 or Level 4 entry is benchmarked as waves instead: 100 sequential trials and 100 simultaneous trials, each with its own defender scatter, spawn angles and evader count, followed by a sweep that grows the defender count until the algorithm holds cleanly. A Level 5 or Level 6 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
+
+Only the current game version may submit. The server rejects an older build with a clear message rather than filing its entry, because level ids have moved between releases and an old client would file its run under the wrong level.
+
+**My Entries** lists every entry you've submitted across all six levels, each with a **Claim XP** button right in the list — it reads *Pending* until the server finishes processing the entry, and shows the amount once claimed. **View** opens an info screen pulled live from the server: capture and detection rates plus the outcome breakdown for a benchmarked level, or the result and the detected / captured / reached-planet times for a piloted run. XP is awarded from your best result on a level, so re-claiming a worse entry pays nothing; reaching the planet in level 5 is worth far more than a benchmark run.
 
 ## Controls
 
@@ -148,4 +156,4 @@ The project targets Godot 4.6. Clone the repository, open `project.godot`, and u
 
 ## Benchmarking
 
-Submitted entries are graded off-engine. The game client uploads the algorithm, the placements, and (for level 3) the recorded flight; the `astroworker` service in the companion web repository re-implements the match loop in Go and runs the trials itself. The game no longer ships a headless benchmarker and no dedicated-server build is needed.
+Submitted entries are graded off-engine. The game client uploads the algorithm, the placements, and (for levels 5 and 6) the recorded flight; the `astroworker` service in the companion web repository re-implements the match loop in Go and runs the trials itself. The game no longer ships a headless benchmarker and no dedicated-server build is needed.

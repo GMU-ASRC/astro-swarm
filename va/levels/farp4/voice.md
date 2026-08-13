@@ -6,25 +6,25 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Something different today, Commander. No evaders, no defence. Two swarms are out there milling in circles, minding their own business.
+Same three evaders, Commander, same scattered line. One rule changes, and it changes everything.
 
 [Line:2]
-Every one of those agents follows a single rule. It turns one way when it can see another ship, and the other way when it sees nothing at all. That rule on its own is what makes them mill.
+Here a capture takes both ships. The evader dies and so does the defender that caught it. You are trading bodies now.
 
 [Line:3]
-You fly the gold leader. They cannot tell you apart from one of their own, so wherever you go, you bend their turning. That is your only tool here.
+Five defenders, three evaders. The arithmetic works, but only if every trade is a clean one. Two defenders piling onto the same evader is a body wasted.
 
 [Line:4]
-First job is the merge. The two groups count as one swarm when every agent is linked to the rest through its neighbours. Watch the two center markers become one gold marker.
+So keep them apart. When sees ally with a turn is worth far more here than it ever was on the earlier levels.
 
 [Line:5]
-Second job is delivery. Walk that merged mill across the arena until its gold marker sits inside the white ring around the planet.
+Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Expect it to get harder as the wave goes on.
 
 [Line:6]
-Third job is the hard one. Leave. Get well clear and stay clear for a few seconds while the swarm holds together and keeps milling without you.
+Run out of defenders with evaders still inbound and it is over, same as letting one reach the planet.
 
 [Line:7]
-The panel on the right keeps score. The loss is how far the swarm center sits from the planet plus how far the mill is from a clean circle. Lower is better, and I keep the lowest you reach.
+Simultaneous is brutal on this one. Three trades at once can strip most of your line in a heartbeat, so learn it on sequential first.
 
 [Line:8]
-Five minutes on the clock. Be patient with them, Commander. Pull too hard and the ring comes apart in your hands.
+Every run is submitted for you. Spend them wisely, Commander.

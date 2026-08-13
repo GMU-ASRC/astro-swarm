@@ -6,25 +6,22 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Change of seat, Commander. Today you are the evader, and the planet is the thing you are trying to reach.
+Back on defence, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring.
 
 [Line:2]
-The defenders in your way run the best level two algorithm anyone has submitted, standing exactly where that entry placed them. Their commander's name is up in the top bar.
+Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here.
 
 [Line:3]
-Drag anywhere on the red ring to choose where you start. Pick your approach before you launch, because you only get the one.
+The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender carries straight on to the next one.
 
 [Line:4]
-Then you fly it yourself. Forward and back drive, left and right turn, and you can remap all of that in settings.
+The bad news is that one evader touching the planet ends it. Destroying two out of three is still a breach, so there is no partial credit.
 
 [Line:5]
-Being seen is survivable. The first defender that gets you in its cone logs a detection and costs you the clean run, but the run carries on.
+The WAVE button decides how they arrive. Sequential sends the next only after the last is gone, which gives your line time to reset. Simultaneous sends all three together and punishes any arc you left uncovered.
 
 [Line:6]
-Being touched is not survivable. Any defender that reaches you ends the run then and there.
+Chase harder than you did in level two. A defender that sits still might stop the first evader and never see the second.
 
 [Line:7]
-You have three minutes on the clock in the top right. Reach the planet and you win, and reaching it having never been seen is the run worth flying for.
-
-[Line:8]
-Every attempt is recorded and rendered on the website with your times, detected or not. Submit it either way. Good luck, Commander.
+Every launch goes up to the server on its own now, and my machines run the whole thing again over a hundred waves. Watch the ring, Commander.
