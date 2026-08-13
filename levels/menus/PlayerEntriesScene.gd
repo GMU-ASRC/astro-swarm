@@ -139,28 +139,15 @@ func _make_entry_row(entry: Dictionary) -> Control:
 
 	return panel
 
-func _level_number(level_id: String) -> int:
-	var digits: String = ""
-	for ch in level_id:
-		if ch >= "0" and ch <= "9":
-			digits += ch
-	if digits == "":
-		return 1
-	return int(digits)
 
 func _level_name(level_id: String) -> String:
-	match _level_number(level_id):
-		2: return "LEVEL 2 - DEFENSE"
-		3: return "LEVEL 3 - PILOT"
-	return "LEVEL 1 - DEFENSE"
+	return LevelInfo.display_name(level_id)
 
 func _result_text(entry: Dictionary) -> String:
 	var rate = entry.get("success_rate", null)
 	if rate == null:
 		return "pending"
-	if _level_number(str(entry.get("level_id", "farp"))) == 3:
-		return "planet reached" if float(rate) >= 100.0 else "no goal"
-	return "%s%% capture" % str(rate)
+	return LevelInfo.result_text(str(entry.get("level_id", "farp")), float(rate))
 
 func _style_claim_button(button: Button, entry: Dictionary):
 	var status: String = str(entry.get("status", ""))

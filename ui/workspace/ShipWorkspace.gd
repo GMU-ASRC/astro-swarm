@@ -25,7 +25,7 @@ const GAME_PALETTE := {
 const FARP_SCENES := [
 	"res://levels/modes/level1/Level1Scene.tscn",
 	"res://levels/modes/level2/Level2Scene.tscn",
-	"res://levels/modes/level3/Level3Scene.tscn",
+	"res://levels/modes/level5/Level5Scene.tscn",
 ]
 const FARP_DISABLED_BLOCKS := ["do_throttle", "set_size"]
 

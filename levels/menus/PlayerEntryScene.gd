@@ -140,23 +140,12 @@ func _fill_from_summary():
 			["TRIALS", str(entry_summary.get("trials", "-"))],
 		])
 
-func _level_number(level_id: String) -> int:
-	var digits: String = ""
-	for ch in level_id:
-		if ch >= "0" and ch <= "9":
-			digits += ch
-	if digits == "":
-		return 1
-	return int(digits)
 
 func _is_pilot(level_id: String) -> bool:
-	return _level_number(level_id) == 3
+	return LevelInfo.is_pilot(level_id)
 
 func _level_name(level_id: String) -> String:
-	match _level_number(level_id):
-		2: return "LEVEL 2 - DEFENSE"
-		3: return "LEVEL 3 - PILOT"
-	return "LEVEL 1 - DEFENSE"
+	return LevelInfo.display_name(level_id)
 
 func _time_text(value) -> String:
 	if value == null or float(value) < 0.0:
