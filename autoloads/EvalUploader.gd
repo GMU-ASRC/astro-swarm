@@ -10,7 +10,7 @@ signal best_fetched(success: bool, response)
 signal xp_claimed(entry_id: String, success: bool, xp: int, message: String)
 
 func game_version() -> String:
-	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.5"))
+	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.7"))
 
 func submit(algorithm: Array, placements: Array, level_id: String, collisions: bool = false):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":

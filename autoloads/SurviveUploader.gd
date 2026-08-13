@@ -6,7 +6,7 @@ const API_KEY := "world-unfair-file"
 signal submit_finished(success: bool, code: int, response)
 
 func game_version() -> String:
-	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.5"))
+	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.7"))
 
 func submit(match_data: Dictionary):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
