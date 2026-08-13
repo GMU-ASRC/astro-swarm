@@ -11,7 +11,10 @@ var _rng := RandomNumberGenerator.new()
 var _evaders: Array = []
 var _spawn_angles: Array = []
 var _launched: int = 0
+var _wave_size: int = 0
 var _captured: int = 0
+var _breached: int = 0
+var _resolved: int = 0
 var _capture_times: Array = []
 var _simultaneous: bool = false
 var _wave_btn: Button
@@ -42,6 +45,7 @@ func _toggle_wave_style():
 	_hint_label.text = _level_subtitle()
 
 func _restart_level():
+	_wave_size = 0
 	_place_saved_layout()
 	_phase_label.text = _level_title()
 	_hint_label.text = _level_subtitle()
@@ -83,6 +87,8 @@ func _reroll_level():
 	queue_redraw()
 
 func _evader_total() -> int:
+	if _wave_size > 0:
+		return _wave_size
 	return mini(EVADER_COUNT, maxi(1, _defender_ships.size()))
 
 func _launch():
@@ -90,7 +96,10 @@ func _launch():
 	_evaders.clear()
 	_capture_times.clear()
 	_captured = 0
+	_breached = 0
+	_resolved = 0
 	_launched = 0
+	_wave_size = mini(EVADER_COUNT, maxi(1, _defender_ships.size()))
 	_spawn_angles.clear()
 	var base_angle: float = _rng.randf() * TAU
 	for index in _evader_total():
@@ -144,25 +153,32 @@ func _track_events():
 		if _detect_time < 0.0 and _any_defender_sees(evader):
 			_detect_time = _elapsed
 		if _evader_reached_goal(evader):
-			_goal_time = _elapsed
-			_finish("goal")
-			return
+			if _goal_time < 0.0:
+				_goal_time = _elapsed
+			_breach_evader(evader)
+			continue
 		var catcher: Node2D = _defender_touching(evader)
 		if catcher != null:
 			_destroy_evader(evader, catcher)
 			continue
 		live.append(evader)
 	_evaders = live
-	if _captured >= _evader_total():
-		_finish("capture")
+	if _resolved >= _evader_total():
+		_finish("capture" if _breached == 0 else "goal")
 		return
 	if not _simultaneous and _evaders.is_empty() and _launched < _evader_total():
 		_launch_next_evader()
-	if _defender_ships.is_empty():
-		_finish("wiped")
+
+func _breach_evader(evader: Node2D):
+	_breached += 1
+	_resolved += 1
+	_blast(evader.global_position, EVADER_BLAST_SIZE)
+	evader.queue_free()
+	_update_count()
 
 func _destroy_evader(evader: Node2D, catcher: Node2D):
 	_captured += 1
+	_resolved += 1
 	_capture_times.append(_elapsed)
 	if _capture_time < 0.0:
 		_capture_time = _elapsed
@@ -207,13 +223,13 @@ func _update_count():
 		_count_label.text = "DEFENDERS %d   EVADERS DOWN %d / %d" % [_defender_ships.size(), _captured, _evader_total()]
 
 func _event_summary() -> String:
-	return "First detection: %s\nEvaders destroyed: %d of %d\nPlanet reached: %s" % [
-		_time_text(_detect_time), _captured, _evader_total(), _time_text(_goal_time)
+	return "First detection: %s\nEvaders destroyed: %d of %d\nEvaders through: %d\nFirst planet hit: %s" % [
+		_time_text(_detect_time), _captured, _evader_total(), _breached, _time_text(_goal_time)
 	]
 
 func _update_event_label():
-	_event_label.text = "DETECTED %s   DOWN %d/%d   REACHED PLANET %s" % [
-		_time_text(_detect_time), _captured, _evader_total(), _time_text(_goal_time)
+	_event_label.text = "DETECTED %s   DOWN %d/%d   BREACHED %d   REACHED PLANET %s" % [
+		_time_text(_detect_time), _captured, _evader_total(), _breached, _time_text(_goal_time)
 	]
 
 func _show_outcome(reason: String):
@@ -225,10 +241,7 @@ func _show_outcome(reason: String):
 			headline = "Every evader was destroyed before it reached the planet."
 		"goal":
 			title = "PLANET BREACHED"
-			headline = "An evader reached the planet with %d of %d still alive." % [_evader_total() - _captured, _evader_total()]
-		"wiped":
-			title = "DEFENDERS LOST"
-			headline = "Every defender was spent and %d evaders are still inbound." % (_evader_total() - _captured)
+			headline = "%d of %d evaders reached the planet." % [_breached, _evader_total()]
 		_:
 			title = "OUT OF TIME"
 			headline = "The clock ran out with %d of %d evaders destroyed." % [_captured, _evader_total()]
