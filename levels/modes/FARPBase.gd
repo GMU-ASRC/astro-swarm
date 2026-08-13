@@ -191,7 +191,7 @@ func _uses_workspace() -> bool:
 	return true
 
 func _uses_collisions_toggle() -> bool:
-	return true
+	return false
 
 func _submit_button_text() -> String:
 	return "SUBMIT ALGORITHM"
@@ -351,18 +351,22 @@ func _make_ship(program: Array, hp_value: float, color: Color) -> Node2D:
 	return ship
 
 func _spawn_scripted_evader(spawn_pos: Vector2):
-	_evader = SHIP.instantiate()
-	_evader.setup_raider(EVADER_PROGRAM, EVADER_HP)
-	_evader.ship_color = C_EVADER
-	_evader.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
-	_evader.collisions_enabled = false
-	_evader.is_evader = true
-	_evader.arena_size = _arena
-	_evader.show_health = false
-	_evader.speed_mult = EVADER_SPEED / 150.0
-	add_child(_evader)
-	_evader.global_position = spawn_pos
-	_evader.rotation = (_planet - spawn_pos).angle()
+	_evader = _make_scripted_evader(spawn_pos)
+
+func _make_scripted_evader(spawn_pos: Vector2) -> Node2D:
+	var evader := SHIP.instantiate()
+	evader.setup_raider(EVADER_PROGRAM, EVADER_HP)
+	evader.ship_color = C_EVADER
+	evader.set_obstacles(Vector2.ZERO, 0.0, Vector2.ZERO, 0.0)
+	evader.collisions_enabled = false
+	evader.is_evader = true
+	evader.arena_size = _arena
+	evader.show_health = false
+	evader.speed_mult = EVADER_SPEED / 150.0
+	add_child(evader)
+	evader.global_position = spawn_pos
+	evader.rotation = (_planet - spawn_pos).angle()
+	return evader
 
 func _random_ring_placements(count: int, rng: RandomNumberGenerator) -> Array:
 	var out: Array = []
@@ -437,6 +441,12 @@ func _finish(reason: String):
 		_evader.set_physics_process(false)
 	_update_event_label()
 	_show_outcome(reason)
+	_auto_submit()
+
+func _auto_submit():
+	if _submitted or not _submits_algorithm():
+		return
+	_submit_entry()
 
 func _show_outcome(reason: String):
 	var defender_won: bool = reason == "capture"
@@ -456,7 +466,7 @@ func _show_outcome(reason: String):
 			headline = "The evader was neither captured nor reached the planet."
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if (defender_won != _is_evader_role()) else C_RED)
-	_show_result(title, "%s\n\n%s" % [headline, _event_summary()], _submits_algorithm() and not _submitted)
+	_show_result(title, "%s\n\n%s\n\nThe entry is submitted automatically." % [headline, _event_summary()], _submits_algorithm() and not _submitted)
 
 func _is_evader_role() -> bool:
 	return false
@@ -491,6 +501,9 @@ func _submit_entry():
 func _on_submit_finished(success: bool, code: int, _response):
 	if code == 409:
 		_submit_btn.text = "ALREADY SUBMITTED"
+	elif code == 426:
+		_submit_btn.text = "GAME OUT OF DATE"
+		_submit_btn.disabled = true
 	elif success:
 		_submit_btn.text = "SUBMITTED"
 	else:
