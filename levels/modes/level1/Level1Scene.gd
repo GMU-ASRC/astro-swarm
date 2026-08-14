@@ -27,7 +27,7 @@ func _walkthrough_lines() -> Array:
 		"5.  DETECTION is logged the first time any defender sees the evader in its vision cone.",
 		"6.  CAPTURE is the first time a defender physically touches the evader. Capture ends the run and you win.",
 		"7.  The GOAL TIME is when the evader reaches the planet. If that happens first, the planet is breached.",
-		"8.  Every run is submitted automatically and benchmarked over many trials on the server.",
+		"8.  Your algorithm is benchmarked over many trials on the server.",
 		"Scroll to zoom, middle-drag to pan.",
 	]
 

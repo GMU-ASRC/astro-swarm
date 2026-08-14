@@ -34,9 +34,6 @@ func _level_subtitle() -> String:
 func _is_evader_role() -> bool:
 	return true
 
-func _submit_button_text() -> String:
-	return "SUBMIT RUN"
-
 func _uses_workspace() -> bool:
 	return false
 
@@ -56,7 +53,7 @@ func _walkthrough_lines() -> Array:
 		"4.  DETECTION is logged the first time a defender sees you in its vision cone. Being seen does not end the run, but it costs you the clean run.",
 		"5.  CAPTURE is a defender physically touching you. That ends the run and you lose.",
 		"6.  The GOAL TIME is when you reach the planet. Reach it and you win, and the run pays out a large XP bonus.",
-		"Every run is submitted automatically, detected or not, and rendered on the website with your times.",
+		"Every run is rendered on the website with your times, detected or not.",
 		"7.  Your run is recorded and rendered on the website, with your detected, captured and goal times.",
 		"Scroll to zoom, middle-drag to pan.",
 	]
@@ -197,7 +194,7 @@ func _show_outcome(reason: String):
 			headline = "The clock ran out before you reached the planet."
 			_phase_label.text = title
 			_phase_label.add_theme_color_override("font_color", C_RED)
-	_show_result(title, "%s\n\n%s\n\nThe run is submitted automatically and rendered on the website with your times." % [headline, _event_summary()], not _submitted)
+	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
 
 func _outcome() -> String:
 	match _end_reason:
@@ -221,8 +218,6 @@ func _submit_entry():
 	if _submitted:
 		return
 	_submitted = true
-	_submit_btn.disabled = true
-	_submit_btn.text = "SUBMITTING..."
 	if not EvalUploader.submit_finished.is_connected(_on_submit_finished):
 		EvalUploader.submit_finished.connect(_on_submit_finished)
 	var run := {

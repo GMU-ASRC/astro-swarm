@@ -27,4 +27,4 @@ Run out of defenders with evaders still inbound and it is over, same as letting 
 Simultaneous is brutal on this one. Three trades at once can strip most of your line in a heartbeat, so learn it on sequential first.
 
 [Line:8]
-Every run is submitted for you. Spend them wisely, Commander.
+Spend them wisely, Commander.

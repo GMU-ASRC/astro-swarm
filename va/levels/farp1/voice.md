@@ -24,4 +24,4 @@ Detection is the first moment any defender gets the evader inside its vision con
 Capture is a defender actually touching the evader, and that is what ends the run in your favour. So give them a reason to charge once they see something.
 
 [Line:7]
-When the layout looks right, press launch and watch it play out. Then submit the algorithm and my machines will run it a hundred times over on the server. Good luck, Commander.
+When the layout looks right, press launch and watch it play out. My machines then run it a hundred times over on the server. Good luck, Commander.

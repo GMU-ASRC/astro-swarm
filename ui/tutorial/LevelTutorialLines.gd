@@ -24,14 +24,14 @@ static func _level_one() -> Array:
 		{"id": 4, "text": "Every defender runs the same program, and you write it in the workspace. Blocks decide how they move, how far they see and how wide they look. Wide eyes find the evader sooner, long eyes find it further out, and you cannot have both."},
 		{"id": 5, "text": "Detection is the first moment any defender gets the evader inside its vision cone. That is a sighting and nothing more. It does not stop anything."},
 		{"id": 6, "text": "Capture is a defender actually touching the evader, and that is what ends the run in your favour. So give them a reason to charge once they see something."},
-		{"id": 7, "text": "When the layout looks right, press launch and watch it play out. Every launch is sent up automatically and my machines run it a hundred times over on the server. Good luck, Commander."},
+		{"id": 7, "text": "When the layout looks right, press launch and watch it play out. My machines then run it a hundred times over on the server. Good luck, Commander."},
 	]
 
 static func _level_two() -> Array:
 	return [
 		{"id": 1, "text": "Same planet, Commander, but this time you do not get to place anything. I have scattered the defenders for you."},
 		{"id": 2, "text": "Five of them, dropped at random inside the blue ring and facing whichever way they landed. Press reroll for a different scatter as often as you like."},
-		{"id": 3, "text": "Whatever is on screen when you submit is the layout the server benchmarks, so pick a scatter you are willing to be graded on."},
+		{"id": 3, "text": "Whatever is on screen when you launch is the layout the server benchmarks, so pick a scatter you are willing to be graded on."},
 		{"id": 4, "text": "That leaves the algorithm, and only the algorithm. Open the workspace and make them sweep. Turning while moving forward covers far more sky than driving in a straight line."},
 		{"id": 5, "text": "Seeing the evader still does not stop it. Add a rule that turns a sighting into a chase, or you will watch it sail past a defender that spotted it."},
 		{"id": 6, "text": "An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit."},
@@ -43,10 +43,10 @@ static func _level_three() -> Array:
 		{"id": 1, "text": "Back on defence, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring."},
 		{"id": 2, "text": "Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here."},
 		{"id": 3, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender carries straight on to the next one."},
-		{"id": 4, "text": "The bad news is that one evader touching the planet ends it. Destroying two out of three is still a breach, so there is no partial credit."},
+		{"id": 4, "text": "The bad news is that one evader touching the planet loses it. The wave still plays out in full, but destroying two out of three is a loss all the same. There is no partial credit here."},
 		{"id": 5, "text": "The WAVE button decides how they arrive. Sequential sends the next only after the last is gone, which gives your line time to reset. Simultaneous sends all three together and punishes any arc you left uncovered."},
 		{"id": 6, "text": "Chase harder than you did in level two. A defender that sits still might stop the first evader and never see the second."},
-		{"id": 7, "text": "Every launch goes up to the server on its own now, and my machines run the whole thing again over a hundred waves. Watch the ring, Commander."},
+		{"id": 7, "text": "My machines run the whole thing again over a hundred waves before it counts. Watch the ring, Commander."},
 	]
 
 static func _level_four() -> Array:
@@ -58,7 +58,7 @@ static func _level_four() -> Array:
 		{"id": 5, "text": "Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Expect it to get harder as the wave goes on."},
 		{"id": 6, "text": "Run out of defenders with evaders still inbound and it is over, same as letting one reach the planet."},
 		{"id": 7, "text": "Simultaneous is brutal on this one. Three trades at once can strip most of your line in a heartbeat, so learn it on sequential first."},
-		{"id": 8, "text": "Every run is submitted for you. Spend them wisely, Commander."},
+		{"id": 8, "text": "Spend them wisely, Commander."},
 	]
 
 static func _level_five() -> Array:
@@ -70,7 +70,7 @@ static func _level_five() -> Array:
 		{"id": 5, "text": "Being seen is survivable. The first defender that gets you in its cone logs a detection and costs you the clean run, but the run carries on."},
 		{"id": 6, "text": "Being touched is not survivable. Any defender that reaches you ends the run then and there."},
 		{"id": 7, "text": "You have three minutes on the clock in the top right. Reach the planet and you win, and reaching it having never been seen is the run worth flying for."},
-		{"id": 8, "text": "Every attempt is recorded and rendered on the website with your times, detected or not. Submit it either way. Good luck, Commander."},
+		{"id": 8, "text": "Every attempt is recorded and rendered on the website with your times, detected or not. Good luck, Commander."},
 	]
 
 static func _level_six() -> Array:

@@ -96,9 +96,7 @@ Each level has a **? Guide** button with a step-by-step walkthrough and a list o
 
 They are inert while a run is in progress, since Level 5 steers the evader with the same keys.
 
-**Every run submits itself.** The moment a run ends the entry is uploaded on its own; there is no submit button to remember, and the result panel reports the upload instead of asking for it.
-
-A Level 1 or Level 2 entry uploads your algorithm and placements, and the evaluation service benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. A Level 3 or Level 4 entry is benchmarked as waves instead: 100 sequential trials and 100 simultaneous trials, each with its own defender scatter, spawn angles and evader count, followed by a sweep that grows the defender count until the algorithm holds cleanly. A Level 5 or Level 6 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
+A Level 1 or Level 2 entry uploads your algorithm and placements, and the evaluation service benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. A Level 3 or Level 4 entry is benchmarked as waves instead: 100 trials split evenly between sequential and simultaneous arrivals, each with its own defender scatter, spawn angles and evader count, followed by a sweep that grows the defender count until the algorithm holds cleanly. A Level 5 or Level 6 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
 
 Only the current game version may submit. The server rejects an older build with a clear message rather than filing its entry, because level ids have moved between releases and an old client would file its run under the wrong level.
 

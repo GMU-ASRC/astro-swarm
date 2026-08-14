@@ -247,7 +247,7 @@ func _show_outcome(reason: String):
 			headline = "The clock ran out with %d of %d evaders destroyed." % [_captured, _evader_total()]
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if reason == "capture" else C_RED)
-	_show_result(title, "%s\n\n%s\n\nThe entry is submitted automatically." % [headline, _event_summary()], _submits_algorithm() and not _submitted)
+	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
 
 func _handle_shortcut(event: InputEvent) -> bool:
 	if super(event):

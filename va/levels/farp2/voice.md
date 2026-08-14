@@ -12,7 +12,7 @@ Same planet, Commander, but this time you do not get to place anything. I have s
 Five of them, dropped at random inside the blue ring and facing whichever way they landed. Press reroll for a different scatter as often as you like.
 
 [Line:3]
-Whatever is on screen when you submit is the layout the server benchmarks, so pick a scatter you are willing to be graded on.
+Whatever is on screen when you launch is the layout the server benchmarks, so pick a scatter you are willing to be graded on.
 
 [Line:4]
 That leaves the algorithm, and only the algorithm. Open the workspace and make them sweep. Turning while moving forward covers far more sky than driving in a straight line.
@@ -24,4 +24,4 @@ Seeing the evader still does not stop it. Add a rule that turns a sighting into 
 An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit.
 
 [Line:7]
-The best entry submitted here becomes the opponent in level three, layout and all. Beat everyone and other commanders will be flying against your work.
+The best entry submitted here becomes the opponent in level five, layout and all. Beat everyone and other commanders will be flying against your work.

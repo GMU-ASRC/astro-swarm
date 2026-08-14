@@ -21,20 +21,20 @@ func _walkthrough_lines() -> Array:
 		"5.  DETECTION is logged the first time any defender sees the evader in its vision cone.",
 		"6.  CAPTURE is the first time a defender physically touches the evader. Capture ends the run and you win.",
 		"7.  The GOAL TIME is when the evader reaches the planet. If that happens first, the planet is breached.",
-		"8.  Every run is submitted automatically. The server benchmarks your algorithm on the layout you launched with, over many enemy approach angles.",
+		"8.  The server benchmarks your algorithm on the layout you launched with, over many enemy approach angles.",
 		"9.  The best submitted entry becomes the opponent in Level 5 - your algorithm and your layout.",
 		"Scroll to zoom, middle-drag to pan.",
 	]
 
 func _hint_lines() -> Array:
 	return [
-		"REROLL until you get a scatter you like - the layout on screen when you submit is the one you are graded on, and the one Level 5 pilots will face if you win.",
-		"An algorithm that only works from one lucky layout will fall apart on the next reroll. Check a few before submitting.",
+		"REROLL until you get a scatter you like - the layout on screen when you launch is the one you are graded on, and the one Level 5 pilots will face if you win.",
+		"An algorithm that only works from one lucky layout will fall apart on the next reroll. Check a few before you launch.",
 		"Make the defenders sweep: turning while moving forward covers far more angles than driving straight.",
 		"Detection alone does not win. Add WHEN SEES ENEMY then DO FACE and DO FORWARD so a defender closes in and touches the evader.",
 		"WHEN SEES ALLY plus a turn keeps defenders from bunching up and watching the same slice of sky.",
 		"Widening FOV costs vision range. A short wide cone catches late, a long narrow cone catches early but misses often.",
-		"Test with REROLL several times before submitting - the benchmark runs many random trials.",
+		"Test with REROLL several times - the benchmark runs many random trials.",
 	]
 
 func _setup_level():

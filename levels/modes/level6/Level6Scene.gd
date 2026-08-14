@@ -91,9 +91,6 @@ func _level_subtitle() -> String:
 func _uses_workspace() -> bool:
 	return false
 
-func _submit_button_text() -> String:
-	return "SUBMIT RUN"
-
 func _time_limit() -> float:
 	return TIME_LIMIT_SECONDS
 
@@ -431,8 +428,6 @@ func _submit_entry():
 	if _submitted or _frames.is_empty():
 		return
 	_submitted = true
-	_submit_btn.disabled = true
-	_submit_btn.text = "SUBMITTING..."
 	if not EvalUploader.submit_finished.is_connected(_on_submit_finished):
 		EvalUploader.submit_finished.connect(_on_submit_finished)
 	var run := {
@@ -463,7 +458,7 @@ func _show_outcome(reason: String):
 		headline = _timeout_headline()
 		_phase_label.add_theme_color_override("font_color", C_RED)
 	_phase_label.text = title
-	_show_result(title, "%s\n\n%s\n\nThe run is submitted automatically and rendered on the website." % [headline, _event_summary()], not _submitted)
+	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
 
 func _timeout_headline() -> String:
 	match _objective:

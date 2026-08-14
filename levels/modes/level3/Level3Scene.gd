@@ -17,9 +17,9 @@ func _walkthrough_lines() -> Array:
 		"3.  WAVE picks how the evaders arrive. SEQUENTIAL sends the next one only after the last is gone, SIMULTANEOUS sends all %d at once." % EVADER_COUNT,
 		"4.  Press LAUNCH WAVE. Every evader spawns on the red ring and drives straight at the planet.",
 		"5.  A defender that touches an evader destroys it. The defender survives and can take the next one.",
-		"6.  One evader reaching the planet ends the run as a breach, however many you had already destroyed.",
+		"6.  The wave always plays out in full. One evader reaching the planet loses the run, however many you had already destroyed.",
 		"7.  The run is a win only if all %d evaders are destroyed." % EVADER_COUNT,
-		"8.  Every run is submitted automatically and benchmarked on the server over many waves.",
+		"8.  The server benchmarks your algorithm over many waves.",
 		"Scroll to zoom, middle-drag to pan.",
 	]
 

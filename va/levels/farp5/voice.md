@@ -27,4 +27,4 @@ Being touched is not survivable. Any defender that reaches you ends the run then
 You have three minutes on the clock in the top right. Reach the planet and you win, and reaching it having never been seen is the run worth flying for.
 
 [Line:8]
-Every attempt is recorded and rendered on the website with your times, detected or not. Submit it either way. Good luck, Commander.
+Every attempt is recorded and rendered on the website with your times, detected or not. Good luck, Commander.

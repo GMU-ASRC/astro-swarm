@@ -118,7 +118,6 @@ var _launch_btn: Button
 var _result_panel: Control
 var _result_title: Label
 var _result_detail: Label
-var _submit_btn: Button
 var _guide_panel: Control
 var _guide_body: VBoxContainer
 var _guide_tab_hints: Button
@@ -192,9 +191,6 @@ func _uses_workspace() -> bool:
 
 func _uses_collisions_toggle() -> bool:
 	return false
-
-func _submit_button_text() -> String:
-	return "SUBMIT ALGORITHM"
 
 func _time_limit() -> float:
 	return MATCH_CAP_SECONDS
@@ -466,7 +462,7 @@ func _show_outcome(reason: String):
 			headline = "The evader was neither captured nor reached the planet."
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if (defender_won != _is_evader_role()) else C_RED)
-	_show_result(title, "%s\n\n%s\n\nThe entry is submitted automatically." % [headline, _event_summary()], _submits_algorithm() and not _submitted)
+	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
 
 func _is_evader_role() -> bool:
 	return false
@@ -492,24 +488,19 @@ func _submit_entry():
 	if _submitted:
 		return
 	_submitted = true
-	_submit_btn.disabled = true
-	_submit_btn.text = "SUBMITTING..."
 	if not EvalUploader.submit_finished.is_connected(_on_submit_finished):
 		EvalUploader.submit_finished.connect(_on_submit_finished)
 	EvalUploader.submit(PlayerData.ship_blocks, _placements_payload(), _level_id(), _collisions_on)
 
 func _on_submit_finished(success: bool, code: int, _response):
-	if code == 409:
-		_submit_btn.text = "ALREADY SUBMITTED"
-	elif code == 426:
-		_submit_btn.text = "GAME OUT OF DATE"
-		_submit_btn.disabled = true
-	elif success:
-		_submit_btn.text = "SUBMITTED"
-	else:
-		_submit_btn.text = "SUBMIT FAILED - RETRY"
-		_submit_btn.disabled = false
-		_submitted = false
+	if success or code == 409:
+		return
+	_result_detail.text += "\n\n" + _submit_error(code)
+
+func _submit_error(code: int) -> String:
+	if code == 426:
+		return "This build is out of date, so the server would not take the entry."
+	return "The server could not be reached, so the entry was not recorded."
 
 func _restart():
 	_clear_ships()
@@ -814,11 +805,6 @@ func _build_result_panel(root: Control):
 	sep.custom_minimum_size = Vector2(0, 1)
 	box.add_child(sep)
 
-	_submit_btn = _make_btn(_submit_button_text(), 11)
-	_submit_btn.visible = false
-	_submit_btn.pressed.connect(_submit_entry)
-	box.add_child(_submit_btn)
-
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -832,10 +818,9 @@ func _build_result_panel(root: Control):
 	levels.pressed.connect(_leave)
 	row.add_child(levels)
 
-func _show_result(title: String, detail: String, can_submit: bool):
+func _show_result(title: String, detail: String):
 	_result_title.text = title
 	_result_detail.text = detail
-	_submit_btn.visible = can_submit
 	_result_panel.visible = true
 
 func _build_guide_panel(root: Control):
