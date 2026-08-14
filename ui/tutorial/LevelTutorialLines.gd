@@ -44,8 +44,8 @@ static func _level_three() -> Array:
 		{"id": 2, "text": "Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here."},
 		{"id": 3, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender carries straight on to the next one."},
 		{"id": 4, "text": "The bad news is that one evader touching the planet loses it. The wave still plays out in full, but destroying two out of three is a loss all the same. There is no partial credit here."},
-		{"id": 5, "text": "The WAVE button decides how they arrive. Sequential sends the next only after the last is gone, which gives your line time to reset. Simultaneous sends all three together and punishes any arc you left uncovered."},
-		{"id": 6, "text": "Chase harder than you did in level two. A defender that sits still might stop the first evader and never see the second."},
+		{"id": 5, "text": "You get two waves in a run. The first sends them one after another, which gives your line time to reset between kills. Then the arena resets and the same three come at you all at once, which punishes any arc you left uncovered."},
+		{"id": 6, "text": "Chase harder than you did in level two. A defender that sits still might stop the first evader and never see the second. Both waves have to hold for the run to count."},
 		{"id": 7, "text": "My machines run the whole thing again over a hundred waves before it counts. Watch the ring, Commander."},
 	]
 
@@ -55,9 +55,9 @@ static func _level_four() -> Array:
 		{"id": 2, "text": "Here a capture takes both ships. The evader dies and so does the defender that caught it. You are trading bodies now."},
 		{"id": 3, "text": "Five defenders, three evaders. The arithmetic works, but only if every trade is a clean one. Two defenders piling onto the same evader is a body wasted."},
 		{"id": 4, "text": "So keep them apart. When sees ally with a turn is worth far more here than it ever was on the earlier levels."},
-		{"id": 5, "text": "Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Expect it to get harder as the wave goes on."},
+		{"id": 5, "text": "Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Your full line comes back for the second wave, and not a moment sooner."},
 		{"id": 6, "text": "Run out of defenders with evaders still inbound and it is over, same as letting one reach the planet."},
-		{"id": 7, "text": "Simultaneous is brutal on this one. Three trades at once can strip most of your line in a heartbeat, so learn it on sequential first."},
+		{"id": 7, "text": "The second wave is brutal on this one. Three trades at once can strip most of your line in a heartbeat, and it comes right after the first whatever happened there."},
 		{"id": 8, "text": "Spend them wisely, Commander."},
 	]
 

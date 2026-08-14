@@ -16,43 +16,32 @@ var _captured: int = 0
 var _breached: int = 0
 var _resolved: int = 0
 var _capture_times: Array = []
-var _simultaneous: bool = false
-var _wave_btn: Button
+var _wave_phase: int = 0
+var _total_captured: int = 0
+var _total_breached: int = 0
 
 func _capture_destroys_defender() -> bool:
 	return false
 
-func _wave_word() -> String:
-	return "at once" if _simultaneous else "one after another"
+func _simultaneous_phase() -> bool:
+	return _wave_phase == 1
+
+func _phase_name() -> String:
+	return "ALL AT ONCE" if _simultaneous_phase() else "ONE AFTER ANOTHER"
 
 func _setup_level():
 	_rng.randomize()
 	_add_top_button("REROLL (R)", _reroll_level)
-	_wave_btn = _make_compact_btn(_wave_button_text())
-	_wave_btn.pressed.connect(_toggle_wave_style)
-	_top_bar.add_child(_wave_btn)
-	_launch_btn.text = "LAUNCH WAVE (S) >"
+	_launch_btn.text = "LAUNCH WAVES (S) >"
 	_place_saved_layout()
-
-func _wave_button_text() -> String:
-	return "WAVE: SIMULTANEOUS" if _simultaneous else "WAVE: SEQUENTIAL"
-
-func _toggle_wave_style():
-	if _phase != Phase.SETUP:
-		return
-	_simultaneous = not _simultaneous
-	_wave_btn.text = _wave_button_text()
-	_hint_label.text = _level_subtitle()
 
 func _restart_level():
 	_wave_size = 0
+	_wave_phase = 0
 	_place_saved_layout()
 	_phase_label.text = _level_title()
 	_hint_label.text = _level_subtitle()
-	_launch_btn.text = "LAUNCH WAVE (S) >"
-	if _wave_btn != null:
-		_wave_btn.text = _wave_button_text()
-		_wave_btn.disabled = false
+	_launch_btn.text = "LAUNCH WAVES (S) >"
 
 func _place_saved_layout():
 	var saved: Array = PlayerData.get_level_placements(_level_id())
@@ -75,7 +64,7 @@ func _can_reroll() -> bool:
 	return _phase == Phase.SETUP
 
 func _shortcut_hint() -> String:
-	return "Shortcuts: S start  ·  P replay  ·  R reroll  ·  W wave style"
+	return "Shortcuts: S start  ·  P replay  ·  R reroll"
 
 func _reroll_level():
 	if _phase != Phase.SETUP:
@@ -93,27 +82,54 @@ func _evader_total() -> int:
 
 func _launch():
 	_start_active()
-	_evaders.clear()
 	_capture_times.clear()
-	_captured = 0
-	_breached = 0
-	_resolved = 0
-	_launched = 0
+	_total_captured = 0
+	_total_breached = 0
+	_wave_phase = 0
 	_wave_size = mini(EVADER_COUNT, maxi(1, _defender_ships.size()))
 	_spawn_angles.clear()
 	var base_angle: float = _rng.randf() * TAU
 	for index in _evader_total():
 		var spread: float = deg_to_rad(WAVE_SPREAD_DEGREES) * float(index)
 		_spawn_angles.append(base_angle + spread + _rng.randf_range(-0.15, 0.15))
-	if _simultaneous:
+	_start_wave_phase()
+
+func _start_wave_phase():
+	_evaders.clear()
+	_captured = 0
+	_breached = 0
+	_resolved = 0
+	_launched = 0
+	if _simultaneous_phase():
 		for index in _evader_total():
 			_launch_next_evader()
 	else:
 		_launch_next_evader()
-	if _wave_btn != null:
-		_wave_btn.disabled = true
-	_phase_label.text = "WAVE INBOUND"
-	_hint_label.text = "%d evaders are coming in %s. Capture every one before any of them touches the planet." % [_evader_total(), _wave_word()]
+	_phase_label.text = "WAVE %d OF 2 - %s" % [_wave_phase + 1, _phase_name()]
+	_hint_label.text = "%d evaders are coming in %s. Capture every one before any of them touches the planet." % [
+		_evader_total(), "at once" if _simultaneous_phase() else "one after another"
+	]
+
+func _reset_arena():
+	for ship in _defender_ships:
+		if is_instance_valid(ship):
+			ship.queue_free()
+	_defender_ships.clear()
+	for evader in _evaders:
+		if is_instance_valid(evader):
+			evader.queue_free()
+	_evaders.clear()
+	_evader = null
+	for placement in _placements:
+		_spawn_defender(placement, PlayerData.ship_blocks)
+	for ship in _defender_ships:
+		if is_instance_valid(ship):
+			ship.set_physics_process(true)
+
+func _advance_wave_phase():
+	_wave_phase += 1
+	_reset_arena()
+	_start_wave_phase()
 
 func _launch_next_evader():
 	if _launched >= _evader_total():
@@ -164,9 +180,14 @@ func _track_events():
 		live.append(evader)
 	_evaders = live
 	if _resolved >= _evader_total():
-		_finish("capture" if _breached == 0 else "goal")
+		_total_captured += _captured
+		_total_breached += _breached
+		if _wave_phase == 0:
+			_advance_wave_phase()
+			return
+		_finish("capture" if _total_breached == 0 else "goal")
 		return
-	if not _simultaneous and _evaders.is_empty() and _launched < _evader_total():
+	if not _simultaneous_phase() and _evaders.is_empty() and _launched < _evader_total():
 		_launch_next_evader()
 
 func _breach_evader(evader: Node2D):
@@ -220,16 +241,18 @@ func _update_count():
 	if _phase == Phase.SETUP:
 		_count_label.text = "DEFENDERS %d / %d" % [_defender_ships.size(), RING_COUNT]
 	else:
-		_count_label.text = "DEFENDERS %d   EVADERS DOWN %d / %d" % [_defender_ships.size(), _captured, _evader_total()]
+		_count_label.text = "DEFENDERS %d   WAVE %d/2   DOWN %d / %d" % [
+			_defender_ships.size(), _wave_phase + 1, _captured, _evader_total()
+		]
 
 func _event_summary() -> String:
-	return "First detection: %s\nEvaders destroyed: %d of %d\nEvaders through: %d\nFirst planet hit: %s" % [
-		_time_text(_detect_time), _captured, _evader_total(), _breached, _time_text(_goal_time)
+	return "First detection: %s\nEvaders destroyed: %d of %d across both waves\nEvaders through: %d\nFirst planet hit: %s" % [
+		_time_text(_detect_time), _total_captured, _evader_total() * 2, _total_breached, _time_text(_goal_time)
 	]
 
 func _update_event_label():
-	_event_label.text = "DETECTED %s   DOWN %d/%d   BREACHED %d   REACHED PLANET %s" % [
-		_time_text(_detect_time), _captured, _evader_total(), _breached, _time_text(_goal_time)
+	_event_label.text = "DETECTED %s   WAVE %d/2   DOWN %d/%d   BREACHED %d" % [
+		_time_text(_detect_time), _wave_phase + 1, _captured, _evader_total(), _breached
 	]
 
 func _show_outcome(reason: String):
@@ -238,26 +261,18 @@ func _show_outcome(reason: String):
 	match reason:
 		"capture":
 			title = "PLANET DEFENDED"
-			headline = "Every evader was destroyed before it reached the planet."
+			headline = "Both waves were stopped: every evader destroyed before it reached the planet."
 		"goal":
 			title = "PLANET BREACHED"
-			headline = "%d of %d evaders reached the planet." % [_breached, _evader_total()]
+			headline = "%d evaders reached the planet across the two waves." % _total_breached
 		_:
 			title = "OUT OF TIME"
-			headline = "The clock ran out with %d of %d evaders destroyed." % [_captured, _evader_total()]
+			headline = "The clock ran out during wave %d of 2, with %d of %d destroyed." % [
+				_wave_phase + 1, _captured, _evader_total()
+			]
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if reason == "capture" else C_RED)
 	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
-
-func _handle_shortcut(event: InputEvent) -> bool:
-	if super(event):
-		return true
-	if _phase != Phase.SETUP or _guide_panel == null or _guide_panel.visible:
-		return false
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_W:
-		_toggle_wave_style()
-		return true
-	return false
 
 func _draw_level():
 	if _phase != Phase.SETUP:

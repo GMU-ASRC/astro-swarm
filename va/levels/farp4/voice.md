@@ -18,13 +18,13 @@ Five defenders, three evaders. The arithmetic works, but only if every trade is 
 So keep them apart. When sees ally with a turn is worth far more here than it ever was on the earlier levels.
 
 [Line:5]
-Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Expect it to get harder as the wave goes on.
+Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Your full line comes back for the second wave, and not a moment sooner.
 
 [Line:6]
 Run out of defenders with evaders still inbound and it is over, same as letting one reach the planet.
 
 [Line:7]
-Simultaneous is brutal on this one. Three trades at once can strip most of your line in a heartbeat, so learn it on sequential first.
+The second wave is brutal on this one. Three trades at once can strip most of your line in a heartbeat, and it comes right after the first whatever happened there.
 
 [Line:8]
 Spend them wisely, Commander.
