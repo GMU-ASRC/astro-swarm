@@ -1,6 +1,10 @@
 extends Control
 
+signal closed
+
 static var return_scene: String = "res://levels/menus/PlayerBaseScene.tscn"
+
+var embedded: bool = false
 
 @onready var back_btn: Button = $TopBar/HBox/BackButton
 @onready var top_hbox: HBoxContainer = $TopBar/HBox
@@ -30,8 +34,9 @@ const FARP_SCENES := [
 const FARP_DISABLED_BLOCKS := ["do_throttle", "set_size"]
 
 func _ready():
-	get_tree().paused = false
-	back_btn.text = " ← Level " if FARP_SCENES.has(return_scene) else " ← Base "
+	if not embedded:
+		get_tree().paused = false
+	back_btn.text = _back_label()
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
 	_build_save_load_ui()
@@ -39,6 +44,11 @@ func _ready():
 	_build_palette()
 	_load_blocks()
 	_update_warning()
+
+func _back_label() -> String:
+	if embedded:
+		return " ← Resume "
+	return " ← Level " if FARP_SCENES.has(return_scene) else " ← Base "
 
 func _build_warning_banner():
 	_warning_label = Label.new()
@@ -144,7 +154,7 @@ func _build_palette():
 		_build_palette_category(category, _allowed_blocks(GAME_PALETTE.get(category, [])))
 
 func _allowed_blocks(ids: Array) -> Array:
-	if not FARP_SCENES.has(return_scene):
+	if embedded or not FARP_SCENES.has(return_scene):
 		return ids
 	var allowed: Array = []
 	for block_id in ids:
@@ -259,4 +269,7 @@ func _save_blocks():
 
 func _on_back():
 	_save_blocks()
+	if embedded:
+		closed.emit()
+		return
 	get_tree().change_scene_to_file(return_scene)

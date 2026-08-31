@@ -212,7 +212,7 @@ func _tutorial_lines() -> Array:
 		{"id": 3, "visual": "herd", "text": "Twenty four purple ships are drifting out there. The moment one sees another ship, any other ship, it turns blue. Leave it with nothing in sight for five seconds and it goes purple again. You cannot push them around, they only react to what they see."},
 		{"id": 4, "visual": "cluster", "text": "You can herd Blue Ships to your planet. And nothing stops you stealing your rival's Blue Ships too."},
 		{"id": 5, "visual": "waves", "text": "After the first minute the red evaders arrive in waves. Fourteen of them, seven at each planet. Every one that lands is a point against you."},
-		{"id": 6, "visual": "laser", "text": "A blue ship that sees an evader kills it with a laser, then burns out. One blue for one red, so collect plenty. Your own ship has no weapons, so the blue ships are your only defence."},
+		{"id": 6, "visual": "laser", "text": "A blue ship that sees an evader kills it with a laser, then burns out. One blue for one red, so collect plenty. Your own ship has no weapons, so the blue ships are your only defense."},
 		{"id": 7, "visual": "freeze", "text": "Two freeze charges each, fifteen seconds apiece. Q for player one, the forward slash key for player two, or the right shoulder button."},
 		{"id": 8, "visual": "score", "text": "Fewest evaders on your planet wins, and an equal count is a draw. Both of you press your drive key to ready up. Five seconds later we launch, and pressing it again before then calls it off. Good luck, Commanders!"},
 	]

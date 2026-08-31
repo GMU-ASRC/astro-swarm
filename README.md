@@ -7,14 +7,14 @@
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
 [![Version](https://img.shields.io/badge/version-v0.0.7--alpha-blue)](#)
 
-AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. It also includes a full **swarm-behaviour simulator** sandbox: design species, program their behaviour with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
+AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. It also includes a full **swarm-behavior simulator** sandbox: design species, program their behavior with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
 
 ## Features
 
 - **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
 - **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Workspace Moon's block editor.
 - **Benchmarked levels.** Six FARP levels: program the defenders for levels 1 to 4 and have your algorithm graded headlessly by the evaluation service, or fly the evader yourself in level 5 against the best algorithm other players have submitted. Every entry is published to the companion website and browsable in-game from My Entries.
-- **Visual block editor.** Build per-species behaviour by stacking condition and action blocks — no coding required.
+- **Visual block editor.** Build per-species behavior by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
 - **Save, record & replay.** Save setups, record live runs, and scrub them back on an interactive timeline.
@@ -30,7 +30,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 
 ## Player base
 
-Reached from **Play** — your home planet sits centre-screen with unlocked moons orbiting it, over the animated starfield:
+Reached from **Play** — your home planet sits center-screen with unlocked moons orbiting it, over the animated starfield:
 
 - **Home planet & moons.** A procedural Terran-Wet planet plus No-Atmosphere moons, each generated from a saved seed so they look identical every run. Moons revolve on their own random orbits, passing in front of and behind the planet.
 - **Progression.** Earn XP to level up; moons unlock with level (up to 5). AstroCoin is the in-game currency. Username, level, XP, coins, and all seeds persist to a local config file.
@@ -53,9 +53,9 @@ A local two-player mode, picked from the game-mode dropdown next to **Levels**. 
 **Ready up.** After the tutorial each player presses their drive key (or gamepad **A**) to ready. When both are ready a **5-second countdown** starts; either player pressing the key again unreadies and cancels it.
 
 - **The swarm.** 24 purple ships spawn across the map and Lévy-walk on their own. The moment one gets *any* other ship in its vision cone — a player, a blue ship, or another purple one — it turns blue. It reverts to purple after 5 seconds with nothing in sight. Nothing in the arena collides except the outer rim — ships pass straight through each other *and* through the planets — so herding is purely a matter of what they can see.
-- **Blue behaviour.** 3.4 m/s, 50° FOV, 4.5 m vision, always moving forward and turning left at 90°/s, turning right at 90°/s when it sees an ally — so a herd settles into a cluster and holds position. Park that cluster on your planet.
+- **Blue behavior.** 3.4 m/s, 50° FOV, 4.5 m vision, always moving forward and turning left at 90°/s, turning right at 90°/s when it sees an ally — so a herd settles into a cluster and holds position. Park that cluster on your planet.
 - **The waves.** No evaders for the first minute. Red evaders then spawn every 5 seconds from t=60 to t=90, cool off, and spawn again from t=120 to t=150 — 14 in total, alternating targets so **each planet gets exactly 7**. They fly straight at their target and explode on contact; each one that lands is a point against that player.
-- **Defence.** A blue ship that sees an evader destroys it with a laser at 100% accuracy and self-destructs in the same instant. One blue for one red, which is why the swarm is stocked 10 ships deeper than the evader count.
+- **Defense.** A blue ship that sees an evader destroys it with a laser at 100% accuracy and self-destructs in the same instant. One blue for one red, which is why the swarm is stocked 10 ships deeper than the evader count.
 - **Stealing.** Nothing anchors a blue ship to the base it was herded to — fly into your rival's base and herd their defenders away.
 - **Freeze.** Two charges each for the whole match (`Q` for player 1, `/` for player 2, or the right shoulder button); a charge locks the rival's ship for 15 seconds. The remaining charges show as snowflake pips down the outer edge of each player's half, and a **FROZEN** countdown appears there while a freeze is running.
 - **Winning.** Fewest evaders on your planet when the clock runs out. Equal counts is a tie.
@@ -72,7 +72,7 @@ The **Levels** screen lists six FARP levels. All of them defend (or attack) the 
 |---|---|
 | **Detected** | The first time any defender sees the evader inside its vision cone. |
 | **Captured** | The first time any defender physically touches (collides with) the evader. |
-| **Goal time** | The time the evader reaches the centre planet. |
+| **Goal time** | The time the evader reaches the center planet. |
 
 Seeing the evader is not enough to stop it — a defender has to reach out and *touch* it. A run ends on capture (the defenders win) or when the evader reaches the planet (the evader wins).
 
@@ -111,7 +111,7 @@ Only the current game version may submit. The server rejects an older build with
 
 ## Block reference
 
-Behaviour is built from four block types:
+Behavior is built from four block types:
 
 - **Config** — set a physical parameter (speed, turn rate, vision range, FOV, size).
 - **Condition** — start a rule (On start; Always; When I see anyone / nobody; When I touch or see a wall). The simulator adds *When I see / don't see a [species]*; the ship workspace instead adds *When I see an enemy / ally*.
@@ -124,7 +124,7 @@ The FARP ship workspace shares the simulator's block set (minus the variable blo
 
 ## Default species
 
-| Species | Speed | Turn rate | Vision | FOV | Default behaviour |
+| Species | Speed | Turn rate | Vision | FOV | Default behavior |
 |---|---|---|---|---|---|
 | Hunter | 5.25 m/s | 3.0 rad/s | 5.5 m | 55° | Face anyone it sees |
 | Scout | 3.75 m/s | 2.0 rad/s | 4.5 m | 110° | Random walk |

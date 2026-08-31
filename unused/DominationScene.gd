@@ -412,7 +412,7 @@ func _on_enemy_killed(_ship):
 			alert_msg.text = "PLANET DOMINATED!\n+%d Market Tokens\n\nStage %d incoming…" % [coins, _stage + 1]
 		alert_panel.visible = true
 
-		# Camera slides RIGHT — "going deeper into space" (background is extended so no grey)
+		# Camera slides RIGHT — "going deeper into space" (background is extended so no gray)
 		var tw := create_tween()
 		tw.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
 		tw.tween_property(_camera, "position", CAM_SLIDE_POS, 1.5)
@@ -576,7 +576,7 @@ func _on_drag_release(start: Vector2, end: Vector2, zone: String):
 
 # ── Drawing ───────────────────────────────────────────────────────────────────
 func _draw():
-	# Extended background — fills well beyond arena so camera slide never shows grey
+	# Extended background — fills well beyond arena so camera slide never shows gray
 	draw_rect(Rect2(-2000.0, -2000.0, ARENA.x + 4000.0, ARENA.y + 4000.0), BG_COLOR)
 
 	for s in _bg_stars:

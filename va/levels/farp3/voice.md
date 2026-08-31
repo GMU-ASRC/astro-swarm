@@ -6,7 +6,7 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Back on defence, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring.
+Back on defense, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring.
 
 [Line:2]
 Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here.

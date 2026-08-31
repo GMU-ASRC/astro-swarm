@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="32" viewBox="0 0 1000 250" shape-rendering="crispEdges">
+  <g id="laser-beam">
+    <rect x="0" y="65" width="1000" height="120" fill="#14536b"/>
+    <rect x="0" y="85" width="1000" height="80" fill="#2f9dc4"/>
+    <rect x="0" y="100" width="1000" height="50" fill="#7fdcff"/>
+    <rect x="0" y="113" width="1000" height="24" fill="#ffffff"/>
+  </g>
+  <g id="laser-nodes" fill="#7fdcff">
+    <rect x="0" y="75" width="20" height="100"/>
+    <rect x="230" y="75" width="40" height="100"/>
+    <rect x="480" y="75" width="40" height="100"/>
+    <rect x="730" y="75" width="40" height="100"/>
+    <rect x="980" y="75" width="20" height="100"/>
+  </g>
+  <g id="laser-node-cores" fill="#ffffff">
+    <rect x="0" y="95" width="20" height="60"/>
+    <rect x="230" y="95" width="40" height="60"/>
+    <rect x="480" y="95" width="40" height="60"/>
+    <rect x="730" y="95" width="40" height="60"/>
+    <rect x="980" y="95" width="20" height="60"/>
+  </g>
+</svg>

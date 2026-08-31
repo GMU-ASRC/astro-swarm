@@ -6,7 +6,7 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Something different today, Commander. No evaders, no defence. Two swarms are out there milling in circles, minding their own business.
+Something different today, Commander. No evaders, no defense. Two swarms are out there milling in circles, minding their own business.
 
 [Line:2]
 Every one of those agents follows a single rule. It turns one way when it can see another ship, and the other way when it sees nothing at all. That rule on its own is what makes them mill.

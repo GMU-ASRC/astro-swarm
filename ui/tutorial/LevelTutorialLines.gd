@@ -40,7 +40,7 @@ static func _level_two() -> Array:
 
 static func _level_three() -> Array:
 	return [
-		{"id": 1, "text": "Back on defence, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring."},
+		{"id": 1, "text": "Back on defense, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring."},
 		{"id": 2, "text": "Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here."},
 		{"id": 3, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender carries straight on to the next one."},
 		{"id": 4, "text": "The bad news is that one evader touching the planet loses it. The wave still plays out in full, but destroying two out of three is a loss all the same. There is no partial credit here."},
@@ -75,7 +75,7 @@ static func _level_five() -> Array:
 
 static func _level_six() -> Array:
 	return [
-		{"id": 1, "text": "Something different today, Commander. No evaders, no defence. Two swarms are out there milling in circles, minding their own business."},
+		{"id": 1, "text": "Something different today, Commander. No evaders, no defense. Two swarms are out there milling in circles, minding their own business."},
 		{"id": 2, "text": "Every one of those agents follows a single rule. It turns one way when it can see another ship, and the other way when it sees nothing at all. That rule on its own is what makes them mill."},
 		{"id": 3, "text": "You fly the gold leader. They cannot tell you apart from one of their own, so wherever you go, you bend their turning. That is your only tool here."},
 		{"id": 4, "text": "First job is the merge. The two groups count as one swarm when every agent is linked to the rest through its neighbours. Watch the two center markers become one gold marker."},

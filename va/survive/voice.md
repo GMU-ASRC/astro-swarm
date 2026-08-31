@@ -22,7 +22,7 @@ You can herd Blue Ships to your planet. And nothing stops you stealing your riva
 After the first minute the red evaders arrive in waves. Fourteen of them, seven at each planet. Every one that lands is a point against you.
 
 [Line:6]
-A blue ship that sees an evader kills it with a laser, then burns out. One blue for one red, so collect plenty. Your own ship has no weapons, so the blue ships are your only defence.
+A blue ship that sees an evader kills it with a laser, then burns out. One blue for one red, so collect plenty. Your own ship has no weapons, so the blue ships are your only defense.
 
 [Line:7]
 Two freeze charges each, fifteen seconds apiece. Q for player one, the forward slash key for player two, or the right shoulder button.

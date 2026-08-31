@@ -66,7 +66,7 @@ func _build_ui():
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 
-	# Centred root (apply theme so buttons inherit it)
+	# Centered root (apply theme so buttons inherit it)
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.theme = GAME_THEME
