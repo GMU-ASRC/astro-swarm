@@ -21,7 +21,7 @@ So keep them apart. When sees ally with a turn is worth far more here than it ev
 Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Nothing comes back.
 
 [Line:6]
-The run ends when the last defender is gone or the clock runs out, whichever finds you first. I report how many you destroyed, how many got through, and how many bodies it cost.
+Five waves here, and the run ends early if the last defender goes. I report how many you destroyed, how many got through, and how many bodies it cost.
 
 [Line:7]
-Sometimes the right answer is to let a far one go and hold your arc. Spend them wisely, Commander.
+Out on the server I do not stop at five. I keep sending them until your line is gone, so a trade you can afford in the fifth wave may be one you cannot afford in the fifteenth. Spend them wisely, Commander.

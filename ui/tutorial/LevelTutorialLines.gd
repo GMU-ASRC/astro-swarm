@@ -43,12 +43,12 @@ static func _level_two() -> Array:
 static func _level_three() -> Array:
 	return [
 		{"id": 1, "text": "Back on defense, Commander, and this time they are not sending one ship and going home. They keep coming."},
-		{"id": 2, "text": "One evader at a time, wave after wave. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing."},
+		{"id": 2, "text": "One evader at a time, five waves in all. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing."},
 		{"id": 3, "text": "Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here."},
 		{"id": 4, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the next wave."},
 		{"id": 5, "text": "Every bearing gets used eventually, so an arc you left uncovered will be found. There is no lucky angle to hide behind over a whole run."},
 		{"id": 6, "text": "A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home."},
-		{"id": 7, "text": "Hold until the clock runs out. I count every evader you destroy and every one that touches the planet. Watch the ring, Commander."},
+		{"id": 7, "text": "Hold all five and nothing touches the planet. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander."},
 	]
 
 static func _level_four() -> Array:
@@ -58,8 +58,8 @@ static func _level_four() -> Array:
 		{"id": 3, "text": "Five defenders means five kills, and not one more. Two defenders piling onto the same evader is a body wasted and a wave you will not be there for."},
 		{"id": 4, "text": "So keep them apart. When sees ally with a turn is worth far more here than it ever was on the earlier levels."},
 		{"id": 5, "text": "Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Nothing comes back."},
-		{"id": 6, "text": "The run ends when the last defender is gone or the clock runs out, whichever finds you first. I report how many you destroyed, how many got through, and how many bodies it cost."},
-		{"id": 7, "text": "Sometimes the right answer is to let a far one go and hold your arc. Spend them wisely, Commander."},
+		{"id": 6, "text": "Five waves here, and the run ends early if the last defender goes. I report how many you destroyed, how many got through, and how many bodies it cost."},
+		{"id": 7, "text": "Out on the server I do not stop at five. I keep sending them until your line is gone, so a trade you can afford in the fifth wave may be one you cannot afford in the fifteenth. Spend them wisely, Commander."},
 	]
 
 static func _level_five() -> Array:

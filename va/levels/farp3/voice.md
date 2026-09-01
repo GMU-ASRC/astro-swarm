@@ -9,7 +9,7 @@ the lines can be recorded one at a time.
 Back on defense, Commander, and this time they are not sending one ship and going home. They keep coming.
 
 [Line:2]
-One evader at a time, wave after wave. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing.
+One evader at a time, five waves in all. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing.
 
 [Line:3]
 Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here.
@@ -24,4 +24,4 @@ Every bearing gets used eventually, so an arc you left uncovered will be found. 
 A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home.
 
 [Line:7]
-Hold until the clock runs out. I count every evader you destroy and every one that touches the planet. Watch the ring, Commander.
+Hold all five and nothing touches the planet. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander.
