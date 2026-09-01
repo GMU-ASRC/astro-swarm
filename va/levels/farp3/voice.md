@@ -6,22 +6,22 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Back on defense, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring.
+Back on defense, Commander, and this time they are not sending one ship and going home. They keep coming.
 
 [Line:2]
-Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here.
+One evader at a time, wave after wave. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing.
 
 [Line:3]
-The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender carries straight on to the next one.
+Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here.
 
 [Line:4]
-The bad news is that one evader touching the planet loses it. The wave still plays out in full, but destroying two out of three is a loss all the same. There is no partial credit here.
+The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the next wave.
 
 [Line:5]
-You get two waves in a run. The first sends them one after another, which gives your line time to reset between kills. Then the arena resets and the same three come at you all at once, which punishes any arc you left uncovered.
+Every bearing gets used eventually, so an arc you left uncovered will be found. There is no lucky angle to hide behind over a whole run.
 
 [Line:6]
-Chase harder than you did in level two. A defender that sits still might stop the first evader and never see the second. Both waves have to hold for the run to count.
+A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home.
 
 [Line:7]
-My machines run the whole thing again over a hundred waves before it counts. Watch the ring, Commander.
+Hold until the clock runs out. I count every evader you destroy and every one that touches the planet. Watch the ring, Commander.

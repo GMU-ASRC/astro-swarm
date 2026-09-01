@@ -14,6 +14,8 @@ static func for_level(level_id: String) -> Array:
 			return _level_five()
 		"farp6":
 			return _level_six()
+		"farp7":
+			return _level_seven()
 	return []
 
 static func _level_one() -> Array:
@@ -35,33 +37,43 @@ static func _level_two() -> Array:
 		{"id": 4, "text": "That leaves the algorithm, and only the algorithm. Open the workspace and make them sweep. Turning while moving forward covers far more sky than driving in a straight line."},
 		{"id": 5, "text": "Seeing the evader still does not stop it. Add a rule that turns a sighting into a chase, or you will watch it sail past a defender that spotted it."},
 		{"id": 6, "text": "An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit."},
-		{"id": 7, "text": "The best entry submitted here becomes the opponent in level five, layout and all. Beat everyone and other commanders will be flying against your work."},
+		{"id": 7, "text": "The best entry submitted here becomes the opponent in level six, layout and all. Beat everyone and other commanders will be flying against your work."},
 	]
 
 static func _level_three() -> Array:
 	return [
-		{"id": 1, "text": "Back on defense, Commander, and this time they are not sending one ship. Three evaders are inbound off the same red ring."},
-		{"id": 2, "text": "Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here."},
-		{"id": 3, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender carries straight on to the next one."},
-		{"id": 4, "text": "The bad news is that one evader touching the planet loses it. The wave still plays out in full, but destroying two out of three is a loss all the same. There is no partial credit here."},
-		{"id": 5, "text": "You get two waves in a run. The first sends them one after another, which gives your line time to reset between kills. Then the arena resets and the same three come at you all at once, which punishes any arc you left uncovered."},
-		{"id": 6, "text": "Chase harder than you did in level two. A defender that sits still might stop the first evader and never see the second. Both waves have to hold for the run to count."},
-		{"id": 7, "text": "My machines run the whole thing again over a hundred waves before it counts. Watch the ring, Commander."},
+		{"id": 1, "text": "Back on defense, Commander, and this time they are not sending one ship and going home. They keep coming."},
+		{"id": 2, "text": "One evader at a time, wave after wave. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing."},
+		{"id": 3, "text": "Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here."},
+		{"id": 4, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the next wave."},
+		{"id": 5, "text": "Every bearing gets used eventually, so an arc you left uncovered will be found. There is no lucky angle to hide behind over a whole run."},
+		{"id": 6, "text": "A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home."},
+		{"id": 7, "text": "Hold until the clock runs out. I count every evader you destroy and every one that touches the planet. Watch the ring, Commander."},
 	]
 
 static func _level_four() -> Array:
 	return [
-		{"id": 1, "text": "Same three evaders, Commander, same scattered line. One rule changes, and it changes everything."},
+		{"id": 1, "text": "Same waves, Commander, same scattered line. One rule changes, and it changes everything."},
 		{"id": 2, "text": "Here a capture takes both ships. The evader dies and so does the defender that caught it. You are trading bodies now."},
-		{"id": 3, "text": "Five defenders, three evaders. The arithmetic works, but only if every trade is a clean one. Two defenders piling onto the same evader is a body wasted."},
+		{"id": 3, "text": "Five defenders means five kills, and not one more. Two defenders piling onto the same evader is a body wasted and a wave you will not be there for."},
 		{"id": 4, "text": "So keep them apart. When sees ally with a turn is worth far more here than it ever was on the earlier levels."},
-		{"id": 5, "text": "Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Your full line comes back for the second wave, and not a moment sooner."},
-		{"id": 6, "text": "Run out of defenders with evaders still inbound and it is over, same as letting one reach the planet."},
-		{"id": 7, "text": "The second wave is brutal on this one. Three trades at once can strip most of your line in a heartbeat, and it comes right after the first whatever happened there."},
-		{"id": 8, "text": "Spend them wisely, Commander."},
+		{"id": 5, "text": "Every kill thins your line, and the defenders still standing have to cover the sky the dead one was watching. Nothing comes back."},
+		{"id": 6, "text": "The run ends when the last defender is gone or the clock runs out, whichever finds you first. I report how many you destroyed, how many got through, and how many bodies it cost."},
+		{"id": 7, "text": "Sometimes the right answer is to let a far one go and hold your arc. Spend them wisely, Commander."},
 	]
 
 static func _level_five() -> Array:
+	return [
+		{"id": 1, "text": "No waves today, Commander. They are done trickling in one at a time. Five evaders, all at once, all aimed at your planet."},
+		{"id": 2, "text": "They do not come off the ring either. They come off the edges of the arena, spread right around it, so the ones on the long sides arrive well after the ones above and below."},
+		{"id": 3, "text": "Your five defenders are scattered for you, same as always, and they run whatever you write in the workspace."},
+		{"id": 4, "text": "Attrition is still on. A capture takes both ships, so five defenders against five evaders only works if every single trade is a clean one."},
+		{"id": 5, "text": "Chasing far out is how you lose this. An evader you miss on the way out is behind your line, and the body you spent chasing is not coming back."},
+		{"id": 6, "text": "Watch the timing instead. They arrive in a stagger, so a line that holds its arcs near the planet gets to meet them one at a time anyway."},
+		{"id": 7, "text": "The run plays out until every one of them is destroyed or has touched the planet. I count both, and the defenders it cost you. Good luck, Commander."},
+	]
+
+static func _level_six() -> Array:
 	return [
 		{"id": 1, "text": "Change of seat, Commander. Today you are the evader, and the planet is the thing you are trying to reach."},
 		{"id": 2, "text": "The defenders in your way run the best level two algorithm anyone has submitted, standing exactly where that entry placed them. Their commander's name is up in the top bar."},
@@ -73,7 +85,7 @@ static func _level_five() -> Array:
 		{"id": 8, "text": "Every attempt is recorded and rendered on the website with your times, detected or not. Good luck, Commander."},
 	]
 
-static func _level_six() -> Array:
+static func _level_seven() -> Array:
 	return [
 		{"id": 1, "text": "Something different today, Commander. No evaders, no defense. Two swarms are out there milling in circles, minding their own business."},
 		{"id": 2, "text": "Every one of those agents follows a single rule. It turns one way when it can see another ship, and the other way when it sees nothing at all. That rule on its own is what makes them mill."},

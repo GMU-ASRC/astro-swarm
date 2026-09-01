@@ -4,31 +4,30 @@ func _level_id() -> String:
 	return "farp3"
 
 func _level_title() -> String:
-	return "LEVEL 3 - HOLD THE WAVE"
+	return "LEVEL 3 - HOLD THE WAVES"
 
 func _level_subtitle() -> String:
-	return "Two waves of %d evaders come in off the red ring: the first one after another, the second all at once. A defender that touches an evader destroys it and keeps hunting. Stop every evader in both waves. REROLL for a new scatter." % EVADER_COUNT
+	return "Evaders come in one at a time, wave after wave, each from a fresh random bearing on the red ring. A defender that catches one destroys it and keeps hunting. Hold the planet until the clock runs out. REROLL for a new scatter."
 
 func _walkthrough_lines() -> Array:
 	return [
-		"GOAL: destroy every evader in the wave before any of them touches the planet.",
+		"GOAL: keep every evader off the planet for the whole run.",
 		"1.  %d defenders are dropped at random inside the blue placement ring, exactly as in Level 2." % RING_COUNT,
 		"2.  Open WORKSPACE and write the algorithm all of them run. You cannot move them by hand.",
-		"3.  A run is two waves. The first sends the evaders one after another, then the arena resets and the second sends all %d at once against the same layout." % EVADER_COUNT,
-		"4.  Press LAUNCH WAVES. Every evader spawns on the red ring and drives straight at the planet.",
-		"5.  A defender that touches an evader destroys it. The defender survives and can take the next one.",
-		"6.  The wave always plays out in full. One evader reaching the planet loses the run, however many you had already destroyed.",
-		"7.  The run is a win only if both waves are stopped, so all %d evaders." % (EVADER_COUNT * 2),
-		"8.  The server benchmarks your algorithm over many waves.",
+		"3.  Press LAUNCH WAVES. One evader spawns on the red ring at a random bearing and drives straight at the planet.",
+		"4.  The moment that evader is resolved the next wave launches, and it keeps going until the clock runs out.",
+		"5.  A defender that touches an evader destroys it. The defender survives and takes the next wave.",
+		"6.  Every evader that reaches the planet is counted. The run is clean only if none of them do.",
+		"7.  The server benchmarks your algorithm over many runs and reports the share of evaders you destroyed.",
 		"Scroll to zoom, middle-drag to pan.",
 	]
 
 func _hint_lines() -> Array:
 	return [
-		"One defender can clear the whole wave here, so an algorithm that chases hard pays off more than one that holds position.",
-		"The first wave gives your defenders time to reset between evaders. The second punishes a layout that leaves one arc uncovered.",
-		"The evaders arrive within a narrow arc of each other, so a defender parked on the far side may never see any of them.",
+		"Nothing is spent here, so a defender that chases hard costs you nothing and pays off every wave.",
+		"Each wave picks a fresh bearing, so a layout that leaves one arc uncovered will be found eventually.",
 		"WHEN SEES ENEMY with DO FACE and DO FORWARD turns a sighting into a capture. Without it you will watch evaders sail past.",
-		"Speed matters more than in Level 2 - a slow defender that kills one evader may not reach the next in time.",
+		"A defender that chased the last wave out to the ring is out of position for the next one. Give it a reason to come home.",
+		"Speed matters more than in Level 2 - the waves do not wait for a slow defender to get back.",
 		"REROLL a few scatters before you settle. The server benchmarks the layout you launched with.",
 	]

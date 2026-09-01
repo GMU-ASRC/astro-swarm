@@ -6,25 +6,22 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Change of seat, Commander. Today you are the evader, and the planet is the thing you are trying to reach.
+No waves today, Commander. They are done trickling in one at a time. Five evaders, all at once, all aimed at your planet.
 
 [Line:2]
-The defenders in your way run the best level two algorithm anyone has submitted, standing exactly where that entry placed them. Their commander's name is up in the top bar.
+They do not come off the ring either. They come off the edges of the arena, spread right around it, so the ones on the long sides arrive well after the ones above and below.
 
 [Line:3]
-Drag anywhere on the red ring to choose where you start. Pick your approach before you launch, because you only get the one.
+Your five defenders are scattered for you, same as always, and they run whatever you write in the workspace.
 
 [Line:4]
-Then you fly it yourself. Forward and back drive, left and right turn, and you can remap all of that in settings.
+Attrition is still on. A capture takes both ships, so five defenders against five evaders only works if every single trade is a clean one.
 
 [Line:5]
-Being seen is survivable. The first defender that gets you in its cone logs a detection and costs you the clean run, but the run carries on.
+Chasing far out is how you lose this. An evader you miss on the way out is behind your line, and the body you spent chasing is not coming back.
 
 [Line:6]
-Being touched is not survivable. Any defender that reaches you ends the run then and there.
+Watch the timing instead. They arrive in a stagger, so a line that holds its arcs near the planet gets to meet them one at a time anyway.
 
 [Line:7]
-You have three minutes on the clock in the top right. Reach the planet and you win, and reaching it having never been seen is the run worth flying for.
-
-[Line:8]
-Every attempt is recorded and rendered on the website with your times, detected or not. Good luck, Commander.
+The run plays out until every one of them is destroyed or has touched the planet. I count both, and the defenders it cost you. Good luck, Commander.
