@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="AstroSwarm"
-config/version="0.0.7"
+config/version="0.0.8"
 run/main_scene="res://levels/menus/HomeScene.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 boot_splash/bg_color=Color(0.09803922, 0.09019608, 0.14117648, 1)
