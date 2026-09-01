@@ -506,6 +506,7 @@ func _restart():
 	_clear_ships()
 	_placements.clear()
 	_phase = Phase.SETUP
+	_submitted = false
 	_elapsed = 0.0
 	_end_reason = ""
 	_detect_time = -1.0
