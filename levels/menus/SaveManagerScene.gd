@@ -82,10 +82,10 @@ func _on_upload_run():
 	var selected = run_list.get_selected_items()
 	if selected.size() > 0:
 		var fn = run_list.get_item_text(selected[0])
-		var dialog: ConfirmationDialog = SIMULATOR_UPLOAD_DIALOG.new()
+		var dialog = SIMULATOR_UPLOAD_DIALOG.new()
 		dialog.run_path = "user://runs/" + fn
 		add_child(dialog)
-		dialog.popup_centered()
+		dialog.open()
 
 func _on_delete_run():
 	var selected = run_list.get_selected_items()

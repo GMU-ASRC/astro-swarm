@@ -1,8 +1,9 @@
 extends ConfirmationDialog
 
 const MAIN_THEME := preload("res://ui/MainTheme.tres")
-const DIALOG_WIDTH := 420.0
-const DESCRIPTION_HEIGHT := 96.0
+const CONTENT_WIDTH := 380.0
+const DESCRIPTION_HEIGHT := 72.0
+const MAX_VIEWPORT_FRACTION := 0.9
 const SUCCESS_COLOR := Color(0.18, 0.54, 0.32, 1.0)
 const ERROR_COLOR := Color(0.85, 0.32, 0.27, 1.0)
 const SimulatorEntryPayload := preload("res://levels/components/SimulatorEntryPayload.gd")
@@ -29,13 +30,22 @@ func _ready():
 			queue_free()
 	)
 
+func open():
+	popup_centered()
+	_refit.call_deferred()
+
+func _refit():
+	var visible_size: Vector2 = get_parent().get_viewport().get_visible_rect().size
+	max_size = Vector2i(visible_size * MAX_VIEWPORT_FRACTION)
+	reset_size()
+	move_to_center()
+
 func _build_layout():
 	var box := VBoxContainer.new()
-	box.custom_minimum_size = Vector2(DIALOG_WIDTH, 0)
-	box.add_theme_constant_override("separation", 8)
+	box.custom_minimum_size = Vector2(CONTENT_WIDTH, 0)
+	box.add_theme_constant_override("separation", 6)
 
-	var owner_label := Label.new()
-	owner_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var owner_label := _wrapped_label()
 	if PlayerData.has_profile():
 		owner_label.text = "Uploading %s as %s" % [run_path.get_file(), PlayerData.username]
 	else:
@@ -54,8 +64,8 @@ func _build_layout():
 	_description_edit.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	box.add_child(_description_edit)
 
-	_status_label = Label.new()
-	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status_label = _wrapped_label()
+	_status_label.visible = false
 	box.add_child(_status_label)
 
 	_open_button = Button.new()
@@ -65,6 +75,12 @@ func _build_layout():
 	box.add_child(_open_button)
 
 	add_child(box)
+
+func _wrapped_label() -> Label:
+	var label := Label.new()
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size = Vector2(CONTENT_WIDTH, 0)
+	return label
 
 func _field_label(text: String) -> Label:
 	var label := Label.new()
@@ -93,4 +109,6 @@ func _on_upload_finished(success: bool, message: String, entry_url: String):
 
 func _set_status(text: String, color: Color):
 	_status_label.text = text
+	_status_label.visible = true
 	_status_label.add_theme_color_override("font_color", color)
+	_refit.call_deferred()
