@@ -24,13 +24,13 @@ const BASE_RADIUS    := 300.0                                              # pix
 const VIEW_ZOOM   := 0.7 # camera zoom factor
 const CAMERA_LERP := 7.0 # camera follow rate, higher is snappier
 
-const MATCH_SECONDS   := 180.0 # seconds in a round
+const MATCH_SECONDS   := 120.0 # seconds in a round
 const WILD_COUNT      := 24    # count, wild ships present at the start
-const EVADER_TOTAL    := 14    # count, evaders spawned over the round
-const WAVE_ONE_START  := 60.0  # seconds into the round
-const WAVE_ONE_END    := 90.0  # seconds into the round
-const WAVE_TWO_START  := 120.0 # seconds into the round
-const WAVE_TWO_END    := 150.0 # seconds into the round
+const EVADER_TOTAL    := 10    # count, evaders spawned over the round
+const WAVE_ONE_START  := 40.0  # seconds into the round
+const WAVE_ONE_END    := 60.0  # seconds into the round
+const WAVE_TWO_START  := 80.0  # seconds into the round
+const WAVE_TWO_END    := 100.0 # seconds into the round
 const SPAWN_INTERVAL  := 5.0   # seconds between spawns inside a wave
 const READY_COUNTDOWN := 5.0   # seconds before the round starts
 
@@ -208,10 +208,10 @@ func _on_tutorial_finished():
 func _tutorial_lines() -> Array:
 	return [
 		{"id": 1, "visual": "title", "text": "Hello Commanders! Dr. Blob at your service. Welcome to Astro Swarm."},
-		{"id": 2, "visual": "pilots", "text": "In this mode you and a friend can play against each other. Each of you have a planet to protect for three minutes.\nPlayer one flies the gold ship on W A S D. Player two flies the green ship on the arrow keys. Controllers work as well, just press A on the one you want and it attaches to the next free player."},
+		{"id": 2, "visual": "pilots", "text": "In this mode you and a friend can play against each other. Each of you have a planet to protect for two minutes.\nPlayer one flies the gold ship on W A S D. Player two flies the green ship on the arrow keys. Controllers work as well, just press A on the one you want and it attaches to the next free player."},
 		{"id": 3, "visual": "herd", "text": "Twenty four purple ships are drifting out there. The moment one sees another ship, any other ship, it turns blue. Leave it with nothing in sight for five seconds and it goes purple again. You cannot push them around, they only react to what they see."},
 		{"id": 4, "visual": "cluster", "text": "You can herd Blue Ships to your planet. And nothing stops you stealing your rival's Blue Ships too."},
-		{"id": 5, "visual": "waves", "text": "After the first minute the red evaders arrive in waves. Fourteen of them, seven at each planet. Every one that lands is a point against you."},
+		{"id": 5, "visual": "waves", "text": "After the first forty seconds the red evaders arrive in waves. Ten of them, five at each planet. Every one that lands is a point against you."},
 		{"id": 6, "visual": "laser", "text": "A blue ship that sees an evader kills it with a laser, then burns out. One blue for one red, so collect plenty. Your own ship has no weapons, so the blue ships are your only defense."},
 		{"id": 7, "visual": "freeze", "text": "Two freeze charges each, fifteen seconds apiece. Q for player one, the forward slash key for player two, or the right shoulder button."},
 		{"id": 8, "visual": "score", "text": "Fewest evaders on your planet wins, and an equal count is a draw. Both of you press your drive key to ready up. Five seconds later we launch, and pressing it again before then calls it off. Good luck, Commanders!"},

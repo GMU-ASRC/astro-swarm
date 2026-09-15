@@ -17,7 +17,17 @@ func _animate(_time: float):
 	pass
 
 func _seed_to_shader(sd: int) -> float:
-	return float(sd % 1000) / 100.0
+	return 1.0 + float(abs(sd) % 900) / 100.0
+
+func _shift_colors(colors: PackedColorArray, hue_shift: float, saturation: float, brightness: float) -> PackedColorArray:
+	var out := PackedColorArray()
+	for color in colors:
+		out.append(Color.from_hsv(
+			fposmod(color.h + hue_shift, 1.0),
+			clampf(color.s * saturation, 0.0, 1.0),
+			clampf(color.v * brightness, 0.0, 1.0),
+			color.a))
+	return out
 
 func _multiplier(mat: ShaderMaterial) -> float:
 	return (round(mat.get_shader_parameter("size")) * 2.0) / mat.get_shader_parameter("time_speed")

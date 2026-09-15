@@ -5,6 +5,7 @@
 [ext_resource type="Shader" path="res://entities/planet/shaders/moon_craters.gdshader" id="3"]
 
 [sub_resource type="ShaderMaterial" id="ground_mat"]
+resource_local_to_scene = true
 shader = ExtResource("2")
 shader_parameter/pixels = 100.0
 shader_parameter/rotation = 0.0
@@ -21,6 +22,7 @@ shader_parameter/time = 0.0
 shader_parameter/should_dither = true
 
 [sub_resource type="ShaderMaterial" id="crater_mat"]
+resource_local_to_scene = true
 shader = ExtResource("3")
 shader_parameter/pixels = 100.0
 shader_parameter/rotation = 0.0

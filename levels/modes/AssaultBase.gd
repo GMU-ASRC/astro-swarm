@@ -4,6 +4,8 @@ const EXPLOSION := preload("res://entities/ship/Explosion.gd")
 
 const EVADER_BLAST_SIZE   := 90.0  # pixels, drawn size of an evader explosion
 const DEFENDER_BLAST_SIZE := 110.0 # pixels, drawn size of a defender explosion
+const EDGE_INSET          := 60.0  # pixels the spawn band sits inside the arena border
+const ANGLE_JITTER        := 0.35  # radians a spawn bearing may wander inside its slice
 
 var _evaders: Array = []
 var _launched: int = 0
@@ -91,6 +93,29 @@ func _destroy_evader(evader: Node2D, catcher: Node2D):
 		catcher.queue_free()
 		_defenders_lost += 1
 	_update_count()
+
+# Spreads count evaders evenly around the planet and walks each bearing out to
+# the arena border, so they come in off the edges rather than off a ring.
+func _spawn_edge_wave(count: int):
+	var base_angle: float = _rng.randf() * TAU
+	for index in count:
+		var slice: float = TAU * float(index) / float(count)
+		var angle: float = base_angle + slice + _rng.randf_range(-ANGLE_JITTER, ANGLE_JITTER)
+		_spawn_evader_at(_edge_point(angle))
+
+func _edge_point(angle: float) -> Vector2:
+	var direction: Vector2 = Vector2(1.0, 0.0).rotated(angle)
+	var half: Vector2 = _arena * 0.5 - Vector2(EDGE_INSET, EDGE_INSET)
+	var reach: float = INF
+	if absf(direction.x) > 0.0001:
+		reach = minf(reach, half.x / absf(direction.x))
+	if absf(direction.y) > 0.0001:
+		reach = minf(reach, half.y / absf(direction.y))
+	return _planet + direction * reach
+
+func _draw_spawn_band():
+	var half: Vector2 = _arena * 0.5 - Vector2(EDGE_INSET, EDGE_INSET)
+	draw_rect(Rect2(_planet - half, half * 2.0), Color(1.0, 0.42, 0.32, 0.3), false, 2.0)
 
 func _live_defenders() -> int:
 	var count: int = 0

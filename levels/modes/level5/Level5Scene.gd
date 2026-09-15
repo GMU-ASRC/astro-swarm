@@ -1,8 +1,6 @@
 extends "res://levels/modes/AssaultBase.gd"
 
-const SIEGE_EVADERS := 5  # count, evaders that come in together
-const EDGE_INSET    := 60.0 # pixels the spawn band sits inside the arena border
-const ANGLE_JITTER  := 0.35 # radians a spawn bearing may wander inside its slice
+const SIEGE_EVADERS := 5 # count, evaders that come in together
 
 func _has_attrition() -> bool:
 	return true
@@ -45,26 +43,10 @@ func _hint_lines() -> Array:
 func _launch():
 	_start_active()
 	_reset_counters()
-	var base_angle: float = _rng.randf() * TAU
-	for index in SIEGE_EVADERS:
-		var slice: float = TAU * float(index) / float(SIEGE_EVADERS)
-		var angle: float = base_angle + slice + _rng.randf_range(-ANGLE_JITTER, ANGLE_JITTER)
-		_spawn_evader_at(_edge_point(angle))
+	_spawn_edge_wave(SIEGE_EVADERS)
 	_phase_label.text = "SIEGE INBOUND"
 	_hint_label.text = "All %d are on their way in. Every capture costs you the defender that made it." % SIEGE_EVADERS
 	_update_count()
-
-# Walks out from the planet on a bearing until it meets the arena border, so a
-# spawn always lands on the edge rather than on a ring around the planet.
-func _edge_point(angle: float) -> Vector2:
-	var direction: Vector2 = Vector2(1.0, 0.0).rotated(angle)
-	var half: Vector2 = _arena * 0.5 - Vector2(EDGE_INSET, EDGE_INSET)
-	var reach: float = INF
-	if absf(direction.x) > 0.0001:
-		reach = minf(reach, half.x / absf(direction.x))
-	if absf(direction.y) > 0.0001:
-		reach = minf(reach, half.y / absf(direction.y))
-	return _planet + direction * reach
 
 func _track_events():
 	if _phase != Phase.ACTIVE:
@@ -112,9 +94,3 @@ func _draw_level():
 	super()
 	if _phase == Phase.SETUP:
 		_draw_spawn_band()
-
-func _draw_spawn_band():
-	var color := Color(1.0, 0.42, 0.32, 0.3)
-	var half: Vector2 = _arena * 0.5 - Vector2(EDGE_INSET, EDGE_INSET)
-	var rect := Rect2(_planet - half, half * 2.0)
-	draw_rect(rect, color, false, 2.0)

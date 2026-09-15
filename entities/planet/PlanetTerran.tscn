@@ -5,6 +5,7 @@
 [ext_resource type="Shader" path="res://entities/planet/shaders/terran_cloud.gdshader" id="3"]
 
 [sub_resource type="ShaderMaterial" id="land_mat"]
+resource_local_to_scene = true
 shader = ExtResource("2")
 shader_parameter/pixels = 100.0
 shader_parameter/rotation = 0.2
@@ -22,6 +23,7 @@ shader_parameter/seed = 8.98
 shader_parameter/time = 0.0
 
 [sub_resource type="ShaderMaterial" id="cloud_mat"]
+resource_local_to_scene = true
 shader = ExtResource("3")
 shader_parameter/pixels = 100.0
 shader_parameter/rotation = 0.0

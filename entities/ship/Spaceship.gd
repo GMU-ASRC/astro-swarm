@@ -41,6 +41,7 @@ var planet_center: Vector2 = Vector2.ZERO # pixels
 var planet_radius: float = 0.0            # pixels, 0 means there is no planet
 var collisions_enabled: bool = true
 var is_evader: bool = false
+var sensor_visible: bool = true # false hides this ship from every other ship's sensors
 
 var forward_input: float = 0.0 # throttle in -1..1, negative drives backward
 var turn_input: float = 0.0    # turn in -1..1, scaled by turn_rate
@@ -431,14 +432,14 @@ func take_damage(amount: float):
 func _live_enemies() -> Array:
 	var out: Array = []
 	for s in _visible:
-		if is_instance_valid(s) and s.hp > 0.0 and s.team != team:
+		if is_instance_valid(s) and s.hp > 0.0 and s.sensor_visible and s.team != team:
 			out.append(s)
 	return out
 
 func _live_allies() -> Array:
 	var out: Array = []
 	for s in _visible:
-		if is_instance_valid(s) and s.hp > 0.0 and s.team == team:
+		if is_instance_valid(s) and s.hp > 0.0 and s.sensor_visible and s.team == team:
 			out.append(s)
 	return out
 

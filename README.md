@@ -13,7 +13,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 
 - **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
 - **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Workspace Moon's block editor.
-- **Benchmarked levels.** Seven FARP levels: program the defenders for levels 1 to 5 and have your algorithm graded headlessly by the evaluation service, or fly the evader yourself in level 6 against the best algorithm other players have submitted. Every entry is published to the companion website and browsable in-game from My Entries.
+- **Benchmarked levels.** Eight FARP levels: program the defenders for levels 1 to 5 and have your algorithm graded headlessly by the evaluation service, fly the evader yourself in level 6 against the best algorithm other players have submitted, or split one force across two planets in level 8. Every entry is published to the companion website and browsable in-game from My Entries.
 - **Visual block editor.** Build per-species behavior by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
@@ -33,7 +33,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 
 Reached from **Play** — your home planet sits center-screen with unlocked moons orbiting it, over the animated starfield:
 
-- **Home planet & moons.** A procedural Terran-Wet planet plus No-Atmosphere moons, each generated from a saved seed so they look identical every run. Moons revolve on their own random orbits, passing in front of and behind the planet.
+- **Home planet & moons.** A procedural Terran-Wet planet plus No-Atmosphere moons, each generated from its own saved seed — terrain, palette and spin all come from that seed, so every moon is distinct and looks identical every run. Moons revolve on their own random orbits, passing in front of and behind the planet.
 - **Progression.** Earn XP to level up; moons unlock with level (up to 5). AstroCoin is the in-game currency. Username, level, XP, coins, and all seeds persist to a local config file.
 - **First launch.** A modal asks for your callsign before you claim your planet.
 
@@ -47,7 +47,7 @@ Deploy up to five ships (left-click + drag in your deploy zone) to wipe out the 
 
 ## Survive
 
-A local two-player mode, picked from the game-mode dropdown next to **Levels**. Two commanders, two home planets, and one three-minute match on a **split screen** — the left half follows player 1, the right half follows player 2.
+A local two-player mode, picked from the game-mode dropdown next to **Levels**. Two commanders, two home planets, and one two-minute match on a **split screen** — the left half follows player 1, the right half follows player 2.
 
 **Dr. Blob** opens every match with a click-through tutorial: he stands bottom-left with his line in a text box beside him, and an animated panel above it demonstrates each point with the real ship sprites. His script lives in `va/survive/voice.md`; drop `line_01.mp3`, `line_02.mp3`, … next to it and the tutorial plays them.
 
@@ -55,8 +55,8 @@ A local two-player mode, picked from the game-mode dropdown next to **Levels**. 
 
 - **The swarm.** 24 purple ships spawn across the map and Lévy-walk on their own. The moment one gets *any* other ship in its vision cone — a player, a blue ship, or another purple one — it turns blue. It reverts to purple after 5 seconds with nothing in sight. Nothing in the arena collides except the outer rim — ships pass straight through each other *and* through the planets — so herding is purely a matter of what they can see.
 - **Blue behavior.** 3.4 m/s, 50° FOV, 4.5 m vision, always moving forward and turning left at 90°/s, turning right at 90°/s when it sees an ally — so a herd settles into a cluster and holds position. Park that cluster on your planet.
-- **The waves.** No evaders for the first minute. Red evaders then spawn every 5 seconds from t=60 to t=90, cool off, and spawn again from t=120 to t=150 — 14 in total, alternating targets so **each planet gets exactly 7**. They fly straight at their target and explode on contact; each one that lands is a point against that player.
-- **Defense.** A blue ship that sees an evader destroys it with a laser at 100% accuracy and self-destructs in the same instant. One blue for one red, which is why the swarm is stocked 10 ships deeper than the evader count.
+- **The waves.** No evaders for the first 40 seconds. Red evaders then spawn every 5 seconds from t=40 to t=60, cool off, and spawn again from t=80 to t=100 — 10 in total, alternating targets so **each planet gets exactly 5**. They fly straight at their target and explode on contact; each one that lands is a point against that player.
+- **Defense.** A blue ship that sees an evader destroys it with a laser at 100% accuracy and self-destructs in the same instant. One blue for one red, which is why the swarm is stocked well deeper than the evader count.
 - **Stealing.** Nothing anchors a blue ship to the base it was herded to — fly into your rival's base and herd their defenders away.
 - **Freeze.** Two charges each for the whole match (`Q` for player 1, `/` for player 2, or the right shoulder button); a charge locks the rival's ship for 15 seconds. The remaining charges show as snowflake pips down the outer edge of each player's half, and a **FROZEN** countdown appears there while a freeze is running.
 - **Winning.** Fewest evaders on your planet when the clock runs out. Equal counts is a tie.
@@ -67,7 +67,7 @@ A local two-player mode, picked from the game-mode dropdown next to **Levels**. 
 
 ## Levels
 
-The **Levels** screen lists seven FARP levels. All of them defend (or attack) the same central planet, and all of them measure the same three events:
+The **Levels** screen lists eight FARP levels. Levels 1 to 7 defend (or attack) the same central planet, level 8 runs over two of them, and all of them measure the same three events:
 
 | Event | Definition |
 |---|---|
@@ -88,6 +88,7 @@ Levels 3 and 4 play **five waves** in game, which is enough to feel out an algor
 - **Level 5 — Defense · Siege.** No waves. Five evaders spawn at once, spread around the **edges of the arena** rather than a ring, and all drive at the planet, so they arrive in a stagger. A capture still destroys the defender that made it. The run plays out until every evader is destroyed or has reached the planet.
 - **Level 6 — Evasion · Pilot.** You fly the evader yourself against the **best Level 2 algorithm submitted by another player**, standing exactly where that player placed their defenders; their name is shown in the top bar. (With no entries on the server yet, you face a house algorithm on a fixed ring.) Drag on the red ring to pick your start point, then drive with the movement keys from your **Settings** (WASD or the arrow keys by default). A **three-minute countdown** runs in the top right. Reaching the planet wins; reaching it *without ever being seen* is a **clean run**, and reaching the planet is worth a large XP payout.
 - **Level 7 — Swarm · Merge.** Two milling swarms and one player-flown leader. Merge the groups, walk the merged mill onto the planet, then leave and let it hold together without you.
+- **Level 8 — Supply · Allocation.** Two planets in two scenes, each with its own seed. Ten defenders start scattered around planet A and planet B starts empty, and both are attacked by five evaders each. You fly a gold shuttle that carries nothing. Every defender runs your **workspace algorithm** during the deployment window, not just in the fight, and the shuttle reads to their sensors as one of their own — so whatever your `WHEN SEES ALLY` rule does is how they react to you, exactly as the Level 7 leader steers a mill. **Q** takes the shuttle dark: a purple shuttle drops off their sensors entirely, so they carry on as if it were not there and you can fly off without pulling them after you. The camera follows the shuttle. The blue jump gate at the arena edge crosses to the other planet, and the defenders stay behind. Sitting inside the blue placement band, **E** drops a marker and calls one defender across from the other planet — it leaves purple, flies in through the gate, and settles on the marker facing the heading you had. The deployment window runs two and a half minutes, or **Begin Assault** closes it early, and anything still crossing lands where it was headed. Planet A is then attacked, then planet B, both with the split you chose and the one algorithm you wrote. **You keep flying through both assaults** — `E` is finished with, but the shuttle still reads as an ally, so it can pull a defender onto an evader it never saw, or drag one off the arc it was covering. It can never catch anything itself. A panel on the right tracks **both planets at once** — a pip per evader, red when one lands and green when one is stopped — so the result on the planet you are not standing on stays readable.
 
 Each level has a **? Guide** button with a step-by-step walkthrough and a list of hints, and it opens automatically the first time you play that level.
 
@@ -98,14 +99,16 @@ Each level has a **? Guide** button with a step-by-step walkthrough and a list o
 | `S` | Start the run |
 | `P` | Replay — reset and try again |
 | `R` | Reroll the defender scatter (Levels 2 to 5) |
+| `E` | Call a defender across from the other planet (Level 8, deployment window only) |
+| `Q` | Take the shuttle dark so defenders stop sensing it (Level 8) |
 
-They are inert while a run is in progress, since Level 6 steers the evader with the same keys.
+`S`, `P` and `R` are inert while a run is in progress, since Level 6 steers the evader with the same keys. `E` and `Q` are the other way around: they only work during a Level 8 deployment window.
 
-A Level 1 or Level 2 entry uploads your algorithm and placements, and the evaluation service benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. A Level 3, 4 or 5 entry is benchmarked as an assault instead: 100 trials, each with its own defender scatter and spawn bearings, each run far past the five waves the level plays — until the defenders are spent or the clock stops — followed by a sweep that grows the defender count until the algorithm holds cleanly. A Level 6 or Level 7 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating.
+A Level 1 or Level 2 entry uploads your algorithm and placements, and the evaluation service benchmarks them headlessly: the placement runs grade the layout you submitted against many enemy approach angles, then a ring-sweep measures detection and capture rates against defender count. A Level 3, 4 or 5 entry is benchmarked as an assault instead: 100 trials, each with its own defender scatter and spawn bearings, each run far past the five waves the level plays — until the defenders are spent or the clock stops — followed by a sweep that grows the defender count until the algorithm holds cleanly. A Level 6, 7 or 8 entry uploads the **recorded flight itself** — every defender and evader movement — which the server renders into a watchable replay rather than re-simulating. A Level 8 recording holds both assaults back to back in one replay.
 
 Only the current game version may submit. The server rejects an older build with a clear message rather than filing its entry, because level ids have moved between releases and an old client would file its run under the wrong level.
 
-**My Entries** lists every entry you've submitted across all seven levels, each with a **Claim XP** button right in the list — it reads *Pending* until the server finishes processing the entry, and shows the amount once claimed. **View** opens an info screen pulled live from the server: capture and detection rates plus the outcome breakdown for a benchmarked level, or the result and the detected / captured / reached-planet times for a piloted run. XP is awarded from your best result on a level, so re-claiming a worse entry pays nothing; reaching the planet in level 6 is worth far more than a benchmark run.
+**My Entries** lists every entry you've submitted across all eight levels, each with a **Claim XP** button right in the list — it reads *Pending* until the server finishes processing the entry, and shows the amount once claimed. **View** opens an info screen pulled live from the server: capture and detection rates plus the outcome breakdown for a benchmarked level, or the result and the detected / captured / reached-planet times for a piloted run. XP is awarded from your best result on a level, so re-claiming a worse entry pays nothing; reaching the planet in level 6 is worth far more than a benchmark run.
 
 ## Controls
 

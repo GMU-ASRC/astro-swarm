@@ -43,6 +43,7 @@ const SCATTER_ATTEMPTS := 40            # count, retries before a scattered posi
 const MATCH_CAP_SECONDS := 240.0 # seconds before a match times out
 const WARNING_SECONDS   := 30.0  # seconds left on the clock when the timer turns red
 
+const STAR_SEED := 77421     # rng seed for the background starfield
 const EDGE_THICKNESS := 16.0 # pixels, arena border texture width
 const ZOOM_MIN := 0.4        # camera zoom factor
 const ZOOM_MAX := 2.5        # camera zoom factor
@@ -167,6 +168,12 @@ func _arena_size() -> Vector2:
 
 func _planet_center() -> Vector2:
 	return PLANET_CENTER
+
+func _planet_seed() -> int:
+	return PlayerData.planet_seed
+
+func _star_seed() -> int:
+	return STAR_SEED
 
 func _level_id() -> String:
 	return "farp1"
@@ -619,7 +626,7 @@ func _start_music():
 
 func _make_bg_stars():
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 77421
+	rng.seed = _star_seed()
 	for _i in 500:
 		_bg_stars.append({
 			"pos": Vector2(rng.randf_range(0.0, _arena.x), rng.randf_range(0.0, _arena.y)),
@@ -630,7 +637,7 @@ func _make_bg_stars():
 func _build_planet():
 	var planet := TERRAN.instantiate() as Control
 	add_child(planet)
-	planet.generate(PlayerData.planet_seed, PLANET_PIXELS)
+	planet.generate(_planet_seed(), PLANET_PIXELS)
 	planet.z_index = 2
 	var sc: float = PLANET_DISP / PLANET_PIXELS
 	planet.scale = Vector2(sc, sc)
