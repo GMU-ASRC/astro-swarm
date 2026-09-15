@@ -14,6 +14,7 @@ const CAT_COLORS := {
 	"condition": Color(0.482, 0.302, 0.686, 1.0),
 	"logic":     Color(0.851, 0.522, 0.200, 1.0),
 	"variable":  Color(0.200, 0.620, 0.600, 1.0),
+	"spawn":     Color(0.788, 0.310, 0.502, 1.0),
 	"action":    Color(0.255, 0.463, 0.843, 1.0),
 }
 
@@ -22,6 +23,7 @@ const CAT_DARK := {
 	"condition": Color(0.361, 0.216, 0.541, 1.0),
 	"logic":     Color(0.682, 0.408, 0.137, 1.0),
 	"variable":  Color(0.133, 0.451, 0.435, 1.0),
+	"spawn":     Color(0.620, 0.216, 0.373, 1.0),
 	"action":    Color(0.180, 0.345, 0.682, 1.0),
 }
 

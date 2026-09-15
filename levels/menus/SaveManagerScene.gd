@@ -1,5 +1,7 @@
 extends Control
 
+const SIMULATOR_UPLOAD_DIALOG := preload("res://levels/menus/SimulatorUploadDialog.gd")
+
 @onready var save_list: ItemList = $VBox/Content/VBox/SaveList
 @onready var run_list: ItemList = $VBox/Content/VBox2/RunList
 @onready var save_name_edit: LineEdit = $VBox/Content/VBox/HBox/SaveNameEdit
@@ -80,13 +82,10 @@ func _on_upload_run():
 	var selected = run_list.get_selected_items()
 	if selected.size() > 0:
 		var fn = run_list.get_item_text(selected[0])
-		var path: String = "user://runs/" + fn
-		SimulationManager.pending_upload = true
-		SimulationManager.pending_upload_run = path
-		if SimulationManager.export_run(path):
-			get_tree().change_scene_to_file("res://levels/modes/Arena.tscn")
-		else:
-			SimulationManager.pending_upload = false
+		var dialog: ConfirmationDialog = SIMULATOR_UPLOAD_DIALOG.new()
+		dialog.run_path = "user://runs/" + fn
+		add_child(dialog)
+		dialog.popup_centered()
 
 func _on_delete_run():
 	var selected = run_list.get_selected_items()

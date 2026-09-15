@@ -17,6 +17,7 @@ AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Go
 - **Visual block editor.** Build per-species behavior by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
 - **Resizable arena.** Simulate swarms on custom-sized maps with free camera pan and zoom, plus walls and obstacles.
+- **Spawn zones.** Draw zones that bring in new robots of a chosen species mid-run, driven by the arena program in the block editor.
 - **Save, record & replay.** Save setups, record live runs, and scrub them back on an interactive timeline.
 - **Take-over control.** Drive any robot mid-simulation with the keyboard or a gamepad, including a 2-player multiplayer mode.
 - **Pixel-art game shell.** An animated home screen and menus themed independently from the simulator.
@@ -118,13 +119,35 @@ Only the current game version may submit. The server rejects an older build with
 Behavior is built from four block types:
 
 - **Config** — set a physical parameter (speed, turn rate, vision range, FOV, size).
-- **Condition** — start a rule (On start; Always; When I see anyone / nobody; When I touch or see a wall). The simulator adds *When I see / don't see a [species]*; the ship workspace instead adds *When I see an enemy / ally*.
+- **Condition** — start a rule (On start; Always; Every [N] seconds; When I see anyone / nobody; When I touch or see a wall). The simulator adds *When I see / don't see a [species]*; the ship workspace instead adds *When I see an enemy / ally*.
 - **Logic** — branch inside a rule (If I see anyone / an enemy / an ally / an object / a wall / a [species]; If target within / beyond a distance; Else).
 - **Action** — run while the condition holds (move, stop, random walk, turn, face target, flee, throttle, and — in the ship workspace — fire).
 
-Actions placed before any condition run under `Always`. **Random walk** steers on a Lévy-flight pattern: mostly short hops with the occasional long straight run. For branching, place an **Else** block directly after its **If** at the same level — the `Else` runs when that `If`'s condition was false.
+Actions placed before any condition run under `Always`. **Every [N] seconds** runs its blocks through once each time N seconds of simulation time pass; if the blocks are still running when the next interval is due, that run starts as soon as they finish. **Random walk** steers on a Lévy-flight pattern: mostly short hops with the occasional long straight run. For branching, place an **Else** block directly after its **If** at the same level — the `Else` runs when that `If`'s condition was false.
 
 The FARP ship workspace shares the simulator's block set (minus the variable blocks): it swaps the species conditions for **enemy/ally** detection, and hides the **Fire**, **Throttle**, and **Set size** blocks, since a FARP defender stops the evader by intercepting it rather than shooting it. Sliders also accept keyboard arrow keys once focused.
+
+## Spawn zones
+
+Spawn zones are simulator only.
+
+1. Pick a species swatch in the top bar, then choose the **Spawn Zone** tool and left-drag a rectangle. The zone takes the selected species.
+2. Right-click a zone while the run is stopped or paused to **Use** the currently selected species, set whether it **starts on or off**, or **Remove** it.
+3. Open the **Workspace** and select the **Arena** tab. This is the arena program: it runs once for the whole arena rather than once per robot, so a spawn block fires once no matter how many robots are on the map.
+
+A zone does nothing on its own. The arena program drives it with these blocks:
+
+| Block | What it does |
+|---|---|
+| **Every [N] seconds** | Event that runs its blocks each time N seconds pass. |
+| **Spawn [count] robots in [zone]** | Adds robots of the zone's current species at random points inside it, facing random directions. Does nothing while the zone is off. |
+| **Set [zone] species to [species]** | Changes which species the zone spawns for the rest of the run. |
+| **Turn [zone] on / off** | Enables or disables spawning for the rest of the run. |
+| **If [zone] has [op] [N] robots** | Condition on how many robots of any species are inside the zone right now. |
+
+The arena program also has **On start**, **Always**, the variable blocks, **If [variable]**, **Else**, and **Stop / Pause simulation**. Changes a block makes to a zone last only for the current run; **Stop** puts every zone back to its saved species and on/off state. The arena holds at most 600 robots, so spawns past that are dropped.
+
+Zones and the arena program are saved with setups and runs. Robots that spawned during a recorded run appear in its replay and video export at the moment they spawned.
 
 ## Default species
 
@@ -139,6 +162,10 @@ All move forward by default; add your own species with the **+** button.
 ## Recording and replay
 
 Starting a run records every robot's position and rotation in the background; on **Stop** or **Clear** it's saved as a `.run` file. Load one from **Manage Setups** to scrub it back and forth on an interactive timeline.
+
+## Uploading to the website
+
+Select a run in **Manage Setups** and press **Upload**. Give the entry a title and an optional description, and it is published under the website's **Simulator** game mode with the full recording, every species with its settings and blocks, the arena program, and the arena's walls, obstacles and spawn zones. Uploading needs a commander profile, created the first time you press **Play**, and is limited to ten minutes of recording. Simulator entries are separate from level entries and never touch XP or the leaderboard.
 
 ## Take-over mode
 

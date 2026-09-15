@@ -23,11 +23,12 @@ boot_splash/minimum_display_time=2000
 [autoload]
 
 SimulationManager="*res://autoloads/SimulationManager.gd"
+SpawnZoneManager="*res://autoloads/SpawnZoneManager.gd"
 GameManager="*res://autoloads/GameManager.gd"
 PlayerSettings="*res://autoloads/PlayerSettings.gd"
 PlayerData="*res://autoloads/PlayerData.gd"
 Leaderboard="*res://autoloads/Leaderboard.gd"
-RunUploader="*res://autoloads/RunUploader.gd"
+SimulatorUploader="*res://autoloads/SimulatorUploader.gd"
 DominationData="*res://autoloads/DominationData.gd"
 EvalUploader="*res://autoloads/EvalUploader.gd"
 SurviveUploader="*res://autoloads/SurviveUploader.gd"

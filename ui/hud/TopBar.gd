@@ -36,7 +36,10 @@ const TOOLS := [
 	{"id": "measure",     "icon": "📏", "tip": "Measure"},
 	{"id": "wall",        "icon": "▢", "tip": "Wall"},
 	{"id": "obstacle",    "icon": "◯", "tip": "Obstacle"},
+	{"id": "spawn_zone",  "icon": "▣", "tip": "Spawn Zone (uses the selected species)"},
 ]
+
+const SPECIES_TOOLS := ["place_robot", "spawn_zone"]
 
 func _ready():
 	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn"))
@@ -114,12 +117,12 @@ func _on_tool_changed(tool_id: String):
 	for id in _tool_buttons.keys():
 		_tool_buttons[id].set_pressed_no_signal(id == tool_id)
 	for id in _species_buttons.keys():
-		var is_selected: bool = (tool_id == "place_robot" and id == SimulationManager.selected_type_id)
+		var is_selected: bool = (SPECIES_TOOLS.has(tool_id) and id == SimulationManager.selected_type_id)
 		_species_buttons[id].set_pressed_no_signal(is_selected)
 
 func _on_selected_type_changed(type_id: String):
 	for id in _species_buttons.keys():
-		_species_buttons[id].set_pressed_no_signal(id == type_id and SimulationManager.active_tool == "place_robot")
+		_species_buttons[id].set_pressed_no_signal(id == type_id and SPECIES_TOOLS.has(SimulationManager.active_tool))
 
 func _build_species_swatches():
 	for child in species_box.get_children():
@@ -138,10 +141,11 @@ func _build_species_swatches():
 		btn.toggled.connect(func(pressed):
 			if pressed:
 				SimulationManager.set_selected_type(type_id)
-				SimulationManager.set_active_tool("place_robot")
+				if not SPECIES_TOOLS.has(SimulationManager.active_tool):
+					SimulationManager.set_active_tool("place_robot")
 			_style_species_btn(btn, color, pressed)
 		)
-		var should_press: bool = (SimulationManager.active_tool == "place_robot" and t.id == SimulationManager.selected_type_id)
+		var should_press: bool = (SPECIES_TOOLS.has(SimulationManager.active_tool) and t.id == SimulationManager.selected_type_id)
 		btn.button_pressed = should_press
 		_style_species_btn(btn, color, should_press)
 		species_box.add_child(btn)

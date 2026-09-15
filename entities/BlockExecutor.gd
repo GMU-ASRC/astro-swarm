@@ -2,9 +2,11 @@ extends RefCounted
 
 const DONE := true
 const RUNNING := false
+const MIN_INTERVAL := 0.05
 
 var host
 var scripts: Array = []
+var single_pass: bool = false
 
 func _init(h):
 	host = h
@@ -29,10 +31,17 @@ func _collect_scripts(blocks: Array):
 				"active": false,
 				"once": cond == "start",
 				"done": false,
+				"interval": _interval_seconds(cond, b.get("params", {})),
+				"elapsed": 0.0,
 			}
 			scripts.append(current)
 		elif current != null:
 			current.body.append(b)
+
+func _interval_seconds(cond: String, params: Dictionary) -> float:
+	if cond != "every":
+		return 0.0
+	return maxf(MIN_INTERVAL, float(params.get("value", 1.0)))
 
 func process(delta: float):
 	host.reset_inputs()
@@ -46,6 +55,9 @@ func _run_script(sc: Dictionary, delta: float):
 		if sc.once:
 			sc.done = true
 		return
+	if sc.interval > 0.0:
+		_run_interval_script(sc, delta)
+		return
 	if not (sc.once or host.eval_condition(sc.cond, sc.cond_params)):
 		if sc.active and host.has_method("on_deactivate"):
 			host.on_deactivate()
@@ -57,7 +69,20 @@ func _run_script(sc: Dictionary, delta: float):
 		sc.active = true
 		sc.frames = [{"blocks": sc.body, "idx": 0, "matched": false}]
 		sc.state = {}
+	_advance(sc, delta)
 
+func _run_interval_script(sc: Dictionary, delta: float):
+	sc.elapsed += delta
+	if not sc.active:
+		if sc.elapsed < sc.interval:
+			return
+		sc.elapsed = minf(sc.elapsed - sc.interval, sc.interval)
+		sc.active = true
+		sc.frames = [{"blocks": sc.body, "idx": 0, "matched": false}]
+		sc.state = {}
+	_advance(sc, delta)
+
+func _advance(sc: Dictionary, delta: float):
 	var guard := 0
 	while guard < 64:
 		guard += 1
@@ -65,8 +90,13 @@ func _run_script(sc: Dictionary, delta: float):
 			if sc.once:
 				sc.done = true
 				return
+			if sc.interval > 0.0:
+				sc.active = false
+				return
 			sc.frames = [{"blocks": sc.body, "idx": 0, "matched": false}]
 			sc.state = {}
+			if single_pass:
+				return
 			continue
 		var frame: Dictionary = sc.frames.back()
 		if frame.idx >= frame.blocks.size():

@@ -70,27 +70,7 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 							return true
 					return false
 		"compare":
-			return _compare_var(params)
-	return false
-
-func _compare_var(params: Dictionary) -> bool:
-	var left = SimulationManager.get_var(params.get("var", ""))
-	var op: String = params.get("op", "=")
-	var right = params.get("value", 0.0)
-	if left is String:
-		var rs := str(right)
-		if op == "=":  return left == rs
-		if op == "!=": return left != rs
-		return false
-	var a := float(left)
-	var b := float(right)
-	match op:
-		"=":  return a == b
-		"!=": return a != b
-		"<":  return a < b
-		">":  return a > b
-		"<=": return a <= b
-		">=": return a >= b
+			return SimulationManager.compare_variable(params)
 	return false
 
 func _nearest_dist() -> float:
@@ -104,19 +84,8 @@ func _nearest_dist() -> float:
 	return best
 
 func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
-	match block_type:
-		"set_var":
-			SimulationManager.set_var(params.get("var", ""), params.get("value", 0))
-			return BlockExecutor.DONE
-		"set_var_random":
-			var lo: int = int(params.get("min", 0))
-			var hi: int = int(params.get("max", 0))
-			if lo > hi:
-				var tmp := lo
-				lo = hi
-				hi = tmp
-			SimulationManager.set_var(params.get("var", ""), randi_range(lo, hi))
-			return BlockExecutor.DONE
+	if SimulationManager.apply_variable_block(block_type, params):
+		return BlockExecutor.DONE
 	if block_type.begins_with("set_"):
 		return BlockExecutor.DONE
 	match block_type.substr(3):

@@ -26,7 +26,10 @@ const TOOL_PREVIEW_COLOR := Color(0.176, 0.341, 0.714, 1.0)
 
 const SETTINGS_MODAL_SCENE = preload("res://ui/modal/SettingsModal.tscn")
 const EXPORT_MODAL_SCRIPT = preload("res://ui/modal/ExportProgressModal.gd")
+const SPAWN_ZONE_LAYER_SCRIPT = preload("res://levels/components/SpawnZoneLayer.gd")
+const ARENA_PROGRAM_SCRIPT = preload("res://levels/components/ArenaProgram.gd")
 var settings_modal: CanvasLayer
+var spawn_zone_layer: Node2D
 
 var _measure_anchor: Vector2 = Vector2.ZERO
 var _has_measure_anchor: bool = false
@@ -44,6 +47,14 @@ func _ready():
 	settings_modal.name = "ArenaSettingsModal"
 	add_child(settings_modal)
 
+	spawn_zone_layer = SPAWN_ZONE_LAYER_SCRIPT.new()
+	spawn_zone_layer.name = "SpawnZoneLayer"
+	add_child(spawn_zone_layer)
+	move_child(spawn_zone_layer, drag_indicator.get_index())
+	var arena_program: Node = ARENA_PROGRAM_SCRIPT.new()
+	arena_program.name = "ArenaProgram"
+	add_child(arena_program)
+
 	_fit_to_viewport()
 	_restore_placements()
 	_restore_obstacles()
@@ -55,7 +66,10 @@ func _ready():
 	$RadialMenu.menu_closed.connect(func():
 		_selected_robot = null
 		_selected_obstacle = -1
+		_selected_zone = -1
 	)
+	SpawnZoneManager.spawn_requested.connect(_on_spawn_requested)
+	SimulationManager.replay_robot_needed.connect(_on_replay_robot_needed)
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	SimulationManager.settings_changed.connect(_on_settings_changed)
 	SimulationManager.obstacles_changed.connect(_on_obstacles_changed)
@@ -222,20 +236,48 @@ func _fit_to_viewport():
 
 var _selected_robot: Node2D = null
 var _selected_obstacle: int = -1
+var _selected_zone: int = -1
 var _controlled_robot: Node2D = null
 var _controlled_robots: Array = []
 
 func _restore_placements():
 	for i in SimulationManager.placements.size():
 		var p = SimulationManager.placements[i]
-		var robot := robot_scene.instantiate()
-		robot.type_id = p.type_id
-		robot.robot_name = p.get("name", SimulationManager.get_random_name())
-		robot.spawn_id = int(p.get("id", i))
-		robot.global_position = p.position
-		robot.rotation = p.rotation
-		robot.clicked.connect(_on_robot_clicked)
-		add_child(robot)
+		create_robot(p.type_id, int(p.get("id", i)), p.position, p.rotation, p.get("name", ""))
+
+func create_robot(type_id: String, spawn_id: int, spawn_position: Vector2, spawn_rotation: float, robot_name: String = "") -> Node2D:
+	var robot := robot_scene.instantiate()
+	robot.type_id = type_id
+	robot.robot_name = robot_name if robot_name != "" else SimulationManager.get_random_name()
+	robot.spawn_id = spawn_id
+	robot.global_position = spawn_position
+	robot.rotation = spawn_rotation
+	robot.clicked.connect(_on_robot_clicked)
+	add_child(robot)
+	return robot
+
+func _on_spawn_requested(zone: Dictionary, type_id: String, count: int):
+	if SimulationManager.is_replaying:
+		return
+	var room: int = SpawnZoneManager.MAX_ROBOTS - get_tree().get_nodes_in_group("robots").size()
+	for _spawn_index in range(mini(count, room)):
+		var spawn_position := SpawnZoneManager.random_point_in_zone(zone)
+		create_robot(type_id, SimulationManager.next_robot_id(), spawn_position, randf_range(0.0, TAU))
+
+func _on_replay_robot_needed(spawn_id: int, type_id: String):
+	if not SimulationManager.has_species(type_id):
+		return
+	create_robot(type_id, spawn_id, Vector2.ZERO, 0.0)
+
+func _open_zone_menu(point: Vector2) -> bool:
+	var zone: Dictionary = spawn_zone_layer.pickable_zone_at(point)
+	if zone.is_empty():
+		return false
+	_selected_robot = null
+	_selected_obstacle = -1
+	_selected_zone = int(zone.get("id", -1))
+	$RadialMenu.open(get_viewport().get_mouse_position(), spawn_zone_layer.menu_actions(zone), str(zone.get("name", "Zone")))
+	return true
 
 func _restore_obstacles():
 	for child in obstacles_root.get_children():
@@ -271,6 +313,7 @@ func _on_obstacle_input(event: InputEvent, ob_id: int):
 		if SimulationManager.has_started and not get_tree().paused:
 			return
 		_selected_robot = null
+		_selected_zone = -1
 		_selected_obstacle = ob_id
 		var actions: Array = [{"id": "remove_obstacle", "label": "Remove", "color": Color(0.8, 0.25, 0.25, 1.0)}]
 		$RadialMenu.open(get_viewport().get_mouse_position(), actions, "Obstacle")
@@ -313,6 +356,11 @@ func _unhandled_input(event):
 	if SimulationManager.has_started and not get_tree().paused:
 		return
 
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		if _open_zone_menu(get_global_mouse_position()):
+			get_viewport().set_input_as_handled()
+		return
+
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			if _is_in_ui_zone(event.position):
@@ -346,6 +394,10 @@ func _on_left_press(pos: Vector2):
 			is_dragging = true
 			drag_start_pos = pos
 			drag_indicator.update_drag(true, "circle", pos, pos, TOOL_PREVIEW_COLOR)
+		"spawn_zone":
+			is_dragging = true
+			drag_start_pos = pos
+			drag_indicator.update_drag(true, "rect", pos, pos, _selected_species_color())
 		_:
 			is_dragging = true
 			drag_start_pos = pos
@@ -358,6 +410,8 @@ func _on_drag_update(pos: Vector2):
 			drag_indicator.update_drag(true, "rect", drag_start_pos, pos, TOOL_PREVIEW_COLOR)
 		"obstacle":
 			drag_indicator.update_drag(true, "circle", drag_start_pos, pos, TOOL_PREVIEW_COLOR)
+		"spawn_zone":
+			drag_indicator.update_drag(true, "rect", drag_start_pos, pos, _selected_species_color())
 		_:
 			var type_color: Color = SimulationManager.get_type(SimulationManager.selected_type_id).color
 			drag_indicator.update_drag(true, "arrow", drag_start_pos, pos, type_color)
@@ -382,8 +436,15 @@ func _on_left_release(pos: Vector2):
 					"position": drag_start_pos,
 					"radius": radius,
 				})
+		"spawn_zone":
+			var zone_rect: Rect2 = Rect2(drag_start_pos, pos - drag_start_pos).abs()
+			if zone_rect.size.x >= SpawnZoneManager.MIN_ZONE_SIZE and zone_rect.size.y >= SpawnZoneManager.MIN_ZONE_SIZE:
+				SpawnZoneManager.add_zone(zone_rect, SimulationManager.selected_type_id)
 		"place_robot":
 			_spawn_robot(drag_start_pos, pos)
+
+func _selected_species_color() -> Color:
+	return SimulationManager.get_type(SimulationManager.selected_type_id).color
 
 func _is_in_ui_zone(pos: Vector2) -> bool:
 	if pos.y < 76.0:
@@ -394,18 +455,11 @@ func _spawn_robot(start_pos: Vector2, end_pos: Vector2):
 	if robot_scene == null:
 		push_error("robot_scene is not assigned in Arena!")
 		return
-	var robot := robot_scene.instantiate()
 	var spawn_id := SimulationManager.next_robot_id()
-	robot.type_id = SimulationManager.selected_type_id
-	robot.robot_name = SimulationManager.get_random_name()
-	robot.spawn_id = spawn_id
-	robot.global_position = start_pos
+	var spawn_rotation: float = randf_range(0.0, TAU)
 	if start_pos.distance_to(end_pos) > 4.0:
-		robot.rotation = start_pos.angle_to_point(end_pos)
-	else:
-		robot.rotation = randf_range(0.0, TAU)
-	robot.clicked.connect(_on_robot_clicked)
-	add_child(robot)
+		spawn_rotation = start_pos.angle_to_point(end_pos)
+	var robot := create_robot(SimulationManager.selected_type_id, spawn_id, start_pos, spawn_rotation)
 	SimulationManager.placements.append({
 		"type_id": robot.type_id,
 		"name": robot.robot_name,
@@ -416,6 +470,7 @@ func _spawn_robot(start_pos: Vector2, end_pos: Vector2):
 
 func _on_robot_clicked(robot: Node2D):
 	_selected_robot = robot
+	_selected_zone = -1
 	var playing := SimulationManager.has_started and not get_tree().paused
 	var replaying := SimulationManager.is_replaying
 	var actions: Array = []
@@ -457,6 +512,10 @@ func _robot_title(robot: Node2D) -> String:
 	return "%s\n(%.1fm, %.1fm)" % [robot.robot_name, meters.x, meters.y]
 
 func _on_radial_action(action_id: String):
+	if _selected_zone >= 0:
+		spawn_zone_layer.apply_menu_action(_selected_zone, action_id)
+		_selected_zone = -1
+		return
 	if action_id == "remove_obstacle":
 		if _selected_obstacle >= 0:
 			SimulationManager.remove_obstacle(_selected_obstacle)
@@ -562,6 +621,7 @@ func _release_control():
 
 func _clear_arena():
 	_release_all_controlled()
+	SpawnZoneManager.end_runtime()
 	SimulationManager.stop_recording_and_save()
 	SimulationManager.has_started = false
 	SimulationManager.is_replaying = false
@@ -577,6 +637,7 @@ func _clear_arena():
 
 func _stop_arena():
 	_release_all_controlled()
+	SpawnZoneManager.end_runtime()
 	SimulationManager.stop_recording_and_save()
 	SimulationManager.has_started = false
 	SimulationManager.is_replaying = false
@@ -662,19 +723,7 @@ func _run_video_export() -> void:
 	if exit_code == 0:
 		for fname in DirAccess.get_files_at(_EXPORT_FRAMES_DIR):
 			DirAccess.remove_absolute(_EXPORT_FRAMES_DIR + "/" + fname)
-		if SimulationManager.pending_upload:
-			overlay.set_status("Uploading to website…")
-			await get_tree().process_frame
-			RunUploader.upload(SimulationManager.pending_upload_run, out_path, SimulationManager.get_setup_data())
-			var result = await RunUploader.upload_finished
-			SimulationManager.pending_upload = false
-			SimulationManager.pending_upload_run = ""
-			if result[0]:
-				overlay.show_success(out_path)
-			else:
-				overlay.show_error("Upload failed (%s). Video saved at:" % result[1], out_path)
-		else:
-			overlay.show_success(out_path)
+		overlay.show_success(out_path)
 	else:
 		var pngs_path := ProjectSettings.globalize_path(_EXPORT_FRAMES_DIR)
 		var msg := "ffmpeg was not found or failed (exit %d). Install ffmpeg, or use the captured PNG frames left at:" % exit_code
@@ -688,8 +737,6 @@ func _finish_export() -> void:
 	SimulationManager.is_replaying = false
 	SimulationManager.replay_time = 0.0
 	SimulationManager.current_replay = []
-	SimulationManager.pending_upload = false
-	SimulationManager.pending_upload_run = ""
 	get_tree().change_scene_to_file("res://levels/menus/SaveManagerScene.tscn")
 
 func _resolve_ffmpeg() -> String:

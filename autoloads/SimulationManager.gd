@@ -8,6 +8,7 @@ signal species_list_changed
 signal tool_changed(tool_id: String)
 signal obstacles_changed
 signal variables_changed
+signal replay_robot_needed(spawn_id: int, type_id: String)
 
 var simulation_time: float = 0.0
 var has_started: bool = false
@@ -21,8 +22,6 @@ var is_replaying: bool = false
 var current_replay: Array = []
 var replay_time: float = 0.0
 var is_exporting: bool = false
-var pending_upload: bool = false
-var pending_upload_run: String = ""
 
 const PX_PER_METER := 40.0
 
@@ -62,10 +61,14 @@ var obstacles: Array = []
 var variables: Array = []
 var var_values: Dictionary = {}
 
+const ARENA_PROGRAM_ID := "arena_program"
+var arena_scripts: Array = []
+
 const TOOL_PLACE := "place_robot"
 const TOOL_MEASURE := "measure"
 const TOOL_WALL := "wall"
 const TOOL_OBSTACLE := "obstacle"
+const TOOL_SPAWN_ZONE := "spawn_zone"
 
 var active_tool: String = TOOL_PLACE
 
@@ -100,6 +103,10 @@ const BLOCK_DEFS := {
 	"when_sees_ally":       {"category": "condition", "label": "When I see an ally",   "input": null},
 	"when_sees_object":     {"category": "condition", "label": "When I see an object",    "input": null},
 	"when_sees_rim":        {"category": "condition", "label": "When I see the outer rim", "input": null},
+	"when_every":           {"category": "condition", "label": "Every", "inputs": [
+		{"type": "number", "key": "value", "min": 0.1, "max": 3600.0, "step": 0.1, "default": 1.0},
+		{"type": "label", "text": "seconds"},
+	]},
 
 	"if_sees":           {"category": "logic", "label": "If I see anyone",  "input": null},
 	"if_sees_species":   {"category": "logic", "label": "If I see a",       "input": {"type": "species", "default": "hunter"}},
@@ -112,6 +119,13 @@ const BLOCK_DEFS := {
 		{"type": "dropdown", "key": "var", "provider": "variables"},
 		{"type": "dropdown", "key": "op", "provider": "operators"},
 		{"type": "number", "key": "value", "min": -99999.0, "max": 99999.0, "step": 1.0, "default": 0.0},
+	]},
+	"if_zone_count":     {"category": "logic", "label": "If", "inputs": [
+		{"type": "dropdown", "key": "zone", "provider": "zones"},
+		{"type": "label", "text": "has"},
+		{"type": "dropdown", "key": "op", "provider": "operators"},
+		{"type": "number", "key": "value", "min": 0.0, "max": 9999.0, "step": 1.0, "default": 0.0},
+		{"type": "label", "text": "robots"},
 	]},
 	"else":              {"category": "logic", "label": "Else", "input": null},
 
@@ -143,14 +157,37 @@ const BLOCK_DEFS := {
 	"do_throttle":   {"category": "action", "label": "Throttle to",     "input": {"min": 0.0, "max": 1.5, "default": 1.0, "step": 0.05, "suffix": "×"}},
 	"do_stop_sim":   {"category": "action", "label": "Stop simulation",  "input": null},
 	"do_pause_sim":  {"category": "action", "label": "Pause simulation", "input": null},
+
+	"do_spawn":        {"category": "spawn", "label": "Spawn", "inputs": [
+		{"type": "number", "key": "count", "min": 1.0, "max": 50.0, "step": 1.0, "default": 1.0},
+		{"type": "label", "text": "robots in"},
+		{"type": "dropdown", "key": "zone", "provider": "zones"},
+	]},
+	"do_zone_species": {"category": "spawn", "label": "Set", "inputs": [
+		{"type": "dropdown", "key": "zone", "provider": "zones"},
+		{"type": "label", "text": "species to"},
+		{"type": "species", "key": "species"},
+	]},
+	"do_zone_toggle":  {"category": "spawn", "label": "Turn", "inputs": [
+		{"type": "dropdown", "key": "zone", "provider": "zones"},
+		{"type": "dropdown", "key": "state", "provider": "zone_states"},
+	]},
 }
 
 const PALETTE_ORDER := {
 	"config":    ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
-	"condition": ["when_start", "when_always", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
+	"condition": ["when_start", "when_always", "when_every", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
 	"logic":     ["if_see", "if_within", "if_beyond", "if_compare", "else"],
 	"variable":  ["set_var", "set_var_random"],
 	"action":    ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_stop_sim", "do_pause_sim"],
+}
+
+const ARENA_PALETTE_ORDER := {
+	"condition": ["when_start", "when_always", "when_every"],
+	"logic":     ["if_zone_count", "if_compare", "else"],
+	"variable":  ["set_var", "set_var_random"],
+	"spawn":     ["do_spawn", "do_zone_species", "do_zone_toggle"],
+	"action":    ["do_stop_sim", "do_pause_sim"],
 }
 
 func _ready():
@@ -308,6 +345,12 @@ func get_type(type_id: String) -> Dictionary:
 		return robot_types[0]
 	return {"id": "", "name": "", "color": Color.WHITE}
 
+func has_species(type_id: String) -> bool:
+	for t in robot_types:
+		if t.id == type_id:
+			return true
+	return false
+
 func get_type_config(type_id: String) -> Dictionary:
 	return type_configs.get(type_id, {
 		"speed": settings.speed * PX_PER_METER,
@@ -318,9 +361,15 @@ func get_type_config(type_id: String) -> Dictionary:
 	})
 
 func get_scripts(type_id: String) -> Array:
+	if type_id == ARENA_PROGRAM_ID:
+		return arena_scripts
 	return behaviors.get(type_id, {}).get("scripts", [])
 
 func set_scripts(type_id: String, scripts: Array):
+	if type_id == ARENA_PROGRAM_ID:
+		arena_scripts = normalize_to_scripts(scripts)
+		behavior_changed.emit(type_id)
+		return
 	behaviors[type_id] = {"scripts": normalize_to_scripts(scripts)}
 	compile(type_id)
 	behavior_changed.emit(type_id)
@@ -440,6 +489,11 @@ func dropdown_options(provider: String) -> Array:
 		"variables":
 			for v in variables:
 				options.append({"value": v.name, "text": v.name})
+		"zones":
+			options = SpawnZoneManager.dropdown_options()
+		"zone_states":
+			options.append({"value": "on", "text": "on"})
+			options.append({"value": "off", "text": "off"})
 		"operators":
 			options.append({"value": "=", "text": "="})
 			options.append({"value": "!=", "text": "≠"})
@@ -458,6 +512,39 @@ func get_var(var_name: String):
 
 func set_var(var_name: String, value):
 	var_values[var_name] = value
+
+func apply_variable_block(block_type: String, params: Dictionary) -> bool:
+	match block_type:
+		"set_var":
+			set_var(params.get("var", ""), params.get("value", 0))
+			return true
+		"set_var_random":
+			var low: int = int(params.get("min", 0))
+			var high: int = int(params.get("max", 0))
+			set_var(params.get("var", ""), randi_range(mini(low, high), maxi(low, high)))
+			return true
+	return false
+
+func compare_variable(params: Dictionary) -> bool:
+	var left = get_var(params.get("var", ""))
+	var op: String = params.get("op", "=")
+	var right = params.get("value", 0.0)
+	if left is String:
+		var right_text := str(right)
+		if op == "=":  return left == right_text
+		if op == "!=": return left != right_text
+		return false
+	return compare_numbers(float(left), op, float(right))
+
+static func compare_numbers(left: float, op: String, right: float) -> bool:
+	match op:
+		"=":  return left == right
+		"!=": return left != right
+		"<":  return left < right
+		">":  return left > right
+		"<=": return left <= right
+		">=": return left >= right
+	return false
 
 func update_setting(key: String, value):
 	settings[key] = value
@@ -485,6 +572,7 @@ func clear_all_arena():
 	placements.clear()
 	obstacles.clear()
 	obstacles_changed.emit()
+	SpawnZoneManager.clear_zones()
 	reset_time()
 
 
@@ -510,6 +598,7 @@ func remove_species(type_id: String):
 	behaviors.erase(type_id)
 	type_configs.erase(type_id)
 	placements = placements.filter(func(p): return p.type_id != type_id)
+	SpawnZoneManager.replace_species(type_id, robot_types[0].id)
 	if selected_type_id == type_id:
 		selected_type_id = robot_types[0].id
 		selected_type_changed.emit(selected_type_id)
@@ -538,6 +627,8 @@ func get_setup_data() -> Dictionary:
 		"obstacles": obstacles,
 		"settings": settings,
 		"variables": variables,
+		"arena_program": arena_scripts,
+		"spawn_zones": SpawnZoneManager.zones,
 	}
 
 func save_setup(path: String):
@@ -550,24 +641,30 @@ func load_setup(path: String) -> bool:
 	if f == null: return false
 	var data = f.get_var()
 	if typeof(data) == TYPE_DICTIONARY:
-		robot_types = data.get("robot_types", robot_types)
-		behaviors = data.get("behaviors", behaviors)
-		placements = data.get("placements", placements)
-		obstacles = data.get("obstacles", [])
-		settings = data.get("settings", settings)
-		variables = data.get("variables", [])
-		_normalize_all_behaviors()
-		_resync_species_counter()
-		_normalize_placement_ids()
-		_normalize_obstacle_ids()
-		for t in robot_types:
-			compile(t.id)
-
-		species_list_changed.emit()
-		settings_changed.emit()
-		obstacles_changed.emit()
+		_apply_setup(data)
 		return true
 	return false
+
+func _apply_setup(setup: Dictionary):
+	robot_types = setup.get("robot_types", robot_types)
+	behaviors = setup.get("behaviors", behaviors)
+	placements = setup.get("placements", placements)
+	obstacles = setup.get("obstacles", [])
+	settings = setup.get("settings", settings)
+	variables = setup.get("variables", [])
+	arena_scripts = normalize_to_scripts(setup.get("arena_program", []))
+	_normalize_all_behaviors()
+	_resync_species_counter()
+	_normalize_placement_ids()
+	_normalize_obstacle_ids()
+	for t in robot_types:
+		compile(t.id)
+	SpawnZoneManager.load_zones(setup.get("spawn_zones", []))
+
+	species_list_changed.emit()
+	settings_changed.emit()
+	obstacles_changed.emit()
+	behavior_changed.emit(ARENA_PROGRAM_ID)
 
 func _resync_species_counter():
 	var max_id := 0
@@ -606,23 +703,7 @@ func load_run(path: String) -> bool:
 	if f == null: return false
 	var data = f.get_var()
 	if typeof(data) == TYPE_DICTIONARY and data.has("setup") and data.has("frames"):
-		var setup = data["setup"]
-		robot_types = setup.get("robot_types", robot_types)
-		behaviors = setup.get("behaviors", behaviors)
-		placements = setup.get("placements", placements)
-		obstacles = setup.get("obstacles", [])
-		settings = setup.get("settings", settings)
-		variables = setup.get("variables", [])
-		_normalize_all_behaviors()
-		_resync_species_counter()
-		_normalize_placement_ids()
-		_normalize_obstacle_ids()
-		for t in robot_types:
-			compile(t.id)
-
-		species_list_changed.emit()
-		settings_changed.emit()
-		obstacles_changed.emit()
+		_apply_setup(data["setup"])
 
 		current_replay = data["frames"]
 		is_replaying = true
@@ -690,8 +771,11 @@ func _physics_process(delta: float):
 			record_timer -= RECORD_INTERVAL
 			var frame = []
 			for r in get_tree().get_nodes_in_group("robots"):
+				if r.is_queued_for_deletion():
+					continue
 				frame.append({
 					"id": r.spawn_id,
+					"type": r.type_id,
 					"pos": r.global_position,
 					"rot": r.rotation
 				})
@@ -702,13 +786,29 @@ func _apply_replay_frame(frame: Array):
 	var by_id := {}
 	for r in robots:
 		by_id[r.spawn_id] = r
+	var shown := {}
 	for k in frame.size():
 		var entry: Dictionary = frame[k]
 		var target = null
 		if entry.has("id"):
-			target = by_id.get(int(entry["id"]), null)
+			var spawn_id := int(entry["id"])
+			target = by_id.get(spawn_id, null)
+			if target == null and entry.has("type"):
+				target = _create_replay_robot(spawn_id, str(entry["type"]))
 		elif k < robots.size():
 			target = robots[k]
 		if target != null:
 			target.global_position = entry["pos"]
 			target.rotation = entry["rot"]
+			target.visible = true
+			shown[target] = true
+	for r in robots:
+		if not shown.has(r):
+			r.visible = false
+
+func _create_replay_robot(spawn_id: int, type_id: String):
+	replay_robot_needed.emit(spawn_id, type_id)
+	for r in get_tree().get_nodes_in_group("robots"):
+		if r.spawn_id == spawn_id:
+			return r
+	return null

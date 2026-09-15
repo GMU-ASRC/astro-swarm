@@ -7,17 +7,23 @@ extends Control
 @onready var name_edit:      LineEdit = $Body/Right/RightVBox/HeaderBar/Header/NameEdit
 @onready var color_picker:   ColorPickerButton = $Body/Right/RightVBox/HeaderBar/Header/ColorPicker
 @onready var delete_species_btn: Button = $Body/Right/RightVBox/HeaderBar/Header/DeleteSpeciesBtn
+@onready var hint_label: Label = $Body/Right/RightVBox/HeaderBar/Header/HintLabel
 
 const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
 const SIM := preload("res://autoloads/SimulationManager.gd")
+const ARENA_TAB_COLOR := Color(0.788, 0.310, 0.502, 1.0)
+const ARENA_HINT := "Runs once for the whole arena · Controls spawn zones"
+const PALETTE_CATEGORIES := ["config", "condition", "logic", "variable", "spawn", "action"]
 
 var _current_type_id: String = "hunter"
 var _tab_buttons: Dictionary = {}
 var _warning_label: Label
+var _species_hint: String = ""
 
 func _ready():
 	get_tree().paused = false
 	_current_type_id = SimulationManager.selected_type_id
+	_species_hint = hint_label.text
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
 	color_picker.color_changed.connect(_on_color_changed)
@@ -74,43 +80,9 @@ func _build_tabs():
 		child.queue_free()
 	_tab_buttons.clear()
 	var group := ButtonGroup.new()
+	_add_tab_button("Arena", ARENA_TAB_COLOR, SimulationManager.ARENA_PROGRAM_ID, group)
 	for t in SimulationManager.robot_types:
-		var btn := Button.new()
-		btn.text = " %s " % t.name
-		btn.toggle_mode = true
-		btn.button_group = group
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.add_theme_color_override("font_color", t.color)
-		btn.add_theme_color_override("font_hover_color", t.color)
-		btn.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1))
-		var _margins := func(s: StyleBoxFlat) -> StyleBoxFlat:
-			s.set_border_width_all(1)
-			s.set_corner_radius_all(3)
-			s.content_margin_left = 14
-			s.content_margin_right = 14
-			s.content_margin_top = 7
-			s.content_margin_bottom = 7
-			return s
-		var sb_normal: StyleBoxFlat = _margins.call(StyleBoxFlat.new())
-		sb_normal.bg_color = Color(t.color.r, t.color.g, t.color.b, 0.08)
-		sb_normal.border_color = t.color.darkened(0.15)
-		var sb_hover: StyleBoxFlat = _margins.call(StyleBoxFlat.new())
-		sb_hover.bg_color = Color(t.color.r, t.color.g, t.color.b, 0.18)
-		sb_hover.border_color = t.color
-		var sb: StyleBoxFlat = _margins.call(StyleBoxFlat.new())
-		sb.bg_color = t.color
-		sb.border_color = t.color
-		btn.add_theme_stylebox_override("normal", sb_normal)
-		btn.add_theme_stylebox_override("hover", sb_hover)
-		btn.add_theme_stylebox_override("focus", sb_normal)
-		btn.add_theme_stylebox_override("pressed", sb)
-		btn.add_theme_stylebox_override("hover_pressed", sb)
-		var type_id: String = t.id
-		btn.pressed.connect(func(): _switch_type(type_id))
-		if t.id == _current_type_id:
-			btn.button_pressed = true
-		tab_box.add_child(btn)
-		_tab_buttons[t.id] = btn
+		_add_tab_button(t.name, t.color, t.id, group)
 	var add_btn := Button.new()
 	add_btn.text = " + "
 	add_btn.focus_mode = Control.FOCUS_NONE
@@ -118,10 +90,53 @@ func _build_tabs():
 	add_btn.pressed.connect(_on_add_species)
 	tab_box.add_child(add_btn)
 
+func _add_tab_button(label: String, color: Color, program_id: String, group: ButtonGroup):
+	var btn := Button.new()
+	btn.text = " %s " % label
+	btn.toggle_mode = true
+	btn.button_group = group
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.add_theme_color_override("font_color", color)
+	btn.add_theme_color_override("font_hover_color", color)
+	btn.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1))
+	var sb_normal := _tab_style()
+	sb_normal.bg_color = Color(color.r, color.g, color.b, 0.08)
+	sb_normal.border_color = color.darkened(0.15)
+	var sb_hover := _tab_style()
+	sb_hover.bg_color = Color(color.r, color.g, color.b, 0.18)
+	sb_hover.border_color = color
+	var sb_pressed := _tab_style()
+	sb_pressed.bg_color = color
+	sb_pressed.border_color = color
+	btn.add_theme_stylebox_override("normal", sb_normal)
+	btn.add_theme_stylebox_override("hover", sb_hover)
+	btn.add_theme_stylebox_override("focus", sb_normal)
+	btn.add_theme_stylebox_override("pressed", sb_pressed)
+	btn.add_theme_stylebox_override("hover_pressed", sb_pressed)
+	btn.pressed.connect(func(): _switch_type(program_id))
+	if program_id == _current_type_id:
+		btn.button_pressed = true
+	tab_box.add_child(btn)
+	_tab_buttons[program_id] = btn
+
+func _tab_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(3)
+	style.content_margin_left = 14
+	style.content_margin_right = 14
+	style.content_margin_top = 7
+	style.content_margin_bottom = 7
+	return style
+
+func _is_arena_program() -> bool:
+	return _current_type_id == SimulationManager.ARENA_PROGRAM_ID
+
 func _switch_type(type_id: String):
 	_commit_species_name()
 	_save_blocks()
 	_current_type_id = type_id
+	_build_palette()
 	_refresh()
 
 func _on_color_changed(color: Color):
@@ -192,6 +207,8 @@ func _on_name_submitted(_new_name: String):
 	name_edit.release_focus()
 
 func _commit_species_name():
+	if _is_arena_program():
+		return
 	var t: String = name_edit.text.strip_edges()
 	var current_name: String = SimulationManager.get_type(_current_type_id).name
 	if t == "":
@@ -201,7 +218,7 @@ func _commit_species_name():
 		SimulationManager.set_species_name(_current_type_id, t)
 
 func _on_species_list_changed():
-	var found := false
+	var found := _is_arena_program()
 	for t in SimulationManager.robot_types:
 		if t.id == _current_type_id:
 			found = true
@@ -215,11 +232,14 @@ func _on_species_list_changed():
 func _build_palette():
 	for child in palette_list.get_children():
 		child.queue_free()
-	for category in ["config", "condition", "logic", "variable", "action"]:
+	var palette_order: Dictionary = SimulationManager.ARENA_PALETTE_ORDER if _is_arena_program() else SimulationManager.PALETTE_ORDER
+	for category in PALETTE_CATEGORIES:
+		if not palette_order.has(category):
+			continue
 		if category == "variable":
 			_build_variable_section()
 		else:
-			_build_palette_category(category, SimulationManager.PALETTE_ORDER.get(category, []))
+			_build_palette_category(category, palette_order[category])
 
 func _build_variable_section():
 	var header := Label.new()
@@ -313,16 +333,11 @@ func _category_label(category: String) -> String:
 	match category:
 		"condition": return "EVENTS"
 		"logic":     return "CONDITIONS"
+		"spawn":     return "SPAWN ZONES"
 	return category.to_upper()
 
 func _refresh():
-	var type_def := SimulationManager.get_type(_current_type_id)
-	name_edit.text = type_def.name
-	name_edit.add_theme_color_override("font_color", type_def.color)
-	name_edit.add_theme_color_override("font_uneditable_color", type_def.color)
-	color_picker.color = type_def.color
-	_update_picker_swatch(type_def.color)
-	delete_species_btn.visible = SimulationManager.robot_types.size() > 1
+	_refresh_header()
 	for child in canvas.get_children():
 		child.queue_free()
 	for s in SimulationManager.get_scripts(_current_type_id):
@@ -331,6 +346,25 @@ func _refresh():
 			_spawn_block_widget(b, zone)
 	canvas.resolve_overlaps()
 	_update_warning()
+
+func _refresh_header():
+	var arena_program := _is_arena_program()
+	name_edit.editable = not arena_program
+	color_picker.visible = not arena_program
+	hint_label.text = ARENA_HINT if arena_program else _species_hint
+	if arena_program:
+		name_edit.text = "Arena program"
+		name_edit.add_theme_color_override("font_color", ARENA_TAB_COLOR)
+		name_edit.add_theme_color_override("font_uneditable_color", ARENA_TAB_COLOR)
+		delete_species_btn.visible = false
+		return
+	var type_def := SimulationManager.get_type(_current_type_id)
+	name_edit.text = type_def.name
+	name_edit.add_theme_color_override("font_color", type_def.color)
+	name_edit.add_theme_color_override("font_uneditable_color", type_def.color)
+	color_picker.color = type_def.color
+	_update_picker_swatch(type_def.color)
+	delete_species_btn.visible = SimulationManager.robot_types.size() > 1
 
 func _add_block(block_id: String):
 	var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
