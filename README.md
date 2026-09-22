@@ -5,7 +5,7 @@
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macOS-lightgrey)](#building-from-source)
 [![Video Export](https://img.shields.io/badge/video%20export-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
-[![Version](https://img.shields.io/badge/version-v0.0.8--alpha-blue)](#)
+[![Version](https://img.shields.io/badge/version-0.0.8-blue)](#)
 
 AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. It also includes a full **swarm-behavior simulator** sandbox: design species, program their behavior with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
 
