@@ -196,6 +196,9 @@ func _submits_algorithm() -> bool:
 func _uses_workspace() -> bool:
 	return true
 
+func _planet_collisions() -> bool:
+	return true
+
 func _uses_collisions_toggle() -> bool:
 	return false
 
@@ -338,6 +341,7 @@ func _make_ship(program: Array, hp_value: float, color: Color) -> Node2D:
 	ship.setup_player(program, hp_value)
 	ship.ship_color = color
 	ship.set_obstacles(Vector2.ZERO, 0.0, _planet, PLANET_RADIUS)
+	ship.planet_collisions = _planet_collisions()
 	ship.collisions_enabled = _collisions_on
 	ship.arena_size = _arena
 	ship.can_fire = false

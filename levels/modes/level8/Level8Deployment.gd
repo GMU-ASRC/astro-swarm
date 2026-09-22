@@ -129,6 +129,8 @@ func _steer(ship: Node2D, heading: float, delta: float, speed: float, turn: floa
 func _keep_clear(ship: Node2D):
 	ship.global_position.x = clampf(ship.global_position.x, 20.0, _arena.x - 20.0)
 	ship.global_position.y = clampf(ship.global_position.y, 20.0, _arena.y - 20.0)
+	if not _planet_collisions():
+		return
 	var offset: Vector2 = ship.global_position - _planet
 	var minimum: float = PLANET_RADIUS + ship.hull_radius
 	var distance: float = offset.length()

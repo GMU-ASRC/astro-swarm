@@ -19,6 +19,9 @@ func _other_scene() -> String:
 func _level_id() -> String:
 	return "farp8"
 
+func _planet_collisions() -> bool:
+	return _planet_index() == STATE.PLANET_A
+
 func _planet_seed() -> int:
 	return STATE.planet_seed(_planet_index())
 

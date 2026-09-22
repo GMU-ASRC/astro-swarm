@@ -39,6 +39,7 @@ var star_center: Vector2 = Vector2.ZERO   # pixels
 var star_radius: float = 0.0              # pixels, 0 means there is no star
 var planet_center: Vector2 = Vector2.ZERO # pixels
 var planet_radius: float = 0.0            # pixels, 0 means there is no planet
+var planet_collisions: bool = true
 var collisions_enabled: bool = true
 var is_evader: bool = false
 var sensor_visible: bool = true # false hides this ship from every other ship's sensors
@@ -189,7 +190,7 @@ func _resolve_obstacles():
 	if star_radius > 0.0 and global_position.distance_to(star_center) < star_radius + hull_radius:
 		take_damage(max_hp)
 		return
-	if planet_radius > 0.0:
+	if planet_radius > 0.0 and planet_collisions:
 		var min_dist: float = planet_radius + hull_radius
 		var offset: Vector2 = global_position - planet_center
 		var dist: float = offset.length()
