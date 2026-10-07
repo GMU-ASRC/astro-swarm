@@ -121,10 +121,10 @@ Only the current game version may submit. The server rejects an older build with
 
 Behavior is built from four block types:
 
-- **Config** — set a physical parameter (speed, turn rate, vision range, FOV, size).
-- **Condition** — start a rule (On start; Always; Every [N] seconds; When I see anyone / nobody; When I touch or see a wall). The simulator adds *When I see / don't see a [species]*; the ship workspace instead adds *When I see an enemy / ally*.
-- **Logic** — branch inside a rule (If I see anyone / an enemy / an ally / an object / a wall / a [species]; If target within / beyond a distance; Else).
-- **Action** — run while the condition holds (move, stop, random walk, turn, face target, flee, throttle, and — in the ship workspace — fire).
+- **Config** — set a physical parameter (speed, turn rate, vision range, FOV, size). Config blocks apply whenever they run, so they can be placed under any event or If block, not only On start.
+- **Condition** — start a rule (On start; Always; Every [N] seconds; When I see anyone / nobody; When I don't see [a target]; When I touch / don't touch / see a wall). The simulator adds *When I see / don't see a [species]*; the ship workspace instead adds *When I see an enemy / ally*.
+- **Logic** — branch inside a rule (If I see / don't see anyone / an enemy / an ally / an object / a wall / a [species]; If I touch / don't touch a wall; Else).
+- **Action** — run while the condition holds (move, stop, random walk, turn, face target, throttle, and — in the ship workspace — fire).
 
 Actions placed before any condition run under `Always`. **Every [N] seconds** runs its blocks through once each time N seconds of simulation time pass; if the blocks are still running when the next interval is due, that run starts as soon as they finish. **Random walk** steers on a Lévy-flight pattern: mostly short hops with the occasional long straight run. For branching, place an **Else** block directly after its **If** at the same level — the `Else` runs when that `If`'s condition was false.
 
@@ -158,7 +158,7 @@ Zones and the arena program are saved with setups and runs. Robots that spawned 
 |---|---|---|---|---|---|
 | Hunter | 5.25 m/s | 3.0 rad/s | 5.5 m | 55° | Face anyone it sees |
 | Scout | 3.75 m/s | 2.0 rad/s | 4.5 m | 110° | Random walk |
-| Worker | 2.4 m/s | 1.4 rad/s | 3.25 m | 180° | Flee anyone it sees |
+| Worker | 2.4 m/s | 1.4 rad/s | 3.25 m | 180° | Turns around when it sees anyone |
 
 All move forward by default; add your own species with the **+** button.
 

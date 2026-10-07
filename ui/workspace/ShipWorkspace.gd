@@ -14,16 +14,16 @@ var embedded: bool = false
 var _name_edit: LineEdit
 var _algo_option: OptionButton
 var _loading: bool = false
-var _warning_label: Label
+var _error_banner: PanelContainer
 
-const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
-const SIM := preload("res://autoloads/SimulationManager.gd")
+const BlockFactory := preload("res://ui/workspace/BlockFactory.gd")
+const ERROR_BANNER := preload("res://ui/workspace/WorkspaceErrorBanner.gd")
 
 const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
-	"condition": ["when_start", "when_always", "when_sees", "when_sees_enemy", "when_sees_ally", "when_alone", "when_near_wall", "when_sees_wall"],
-	"logic": ["if_see", "if_within", "if_beyond", "else"],
-	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle"],
+	"condition": ["when_start", "when_always", "when_sees", "when_sees_enemy", "when_sees_ally", "when_alone", "when_not_see", "when_near_wall", "when_not_near_wall", "when_sees_wall"],
+	"logic": ["if_see", "if_not_see", "if_near_wall", "if_not_near_wall", "else"],
+	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_throttle"],
 }
 
 const FARP_SCENES := [
@@ -40,34 +40,24 @@ func _ready():
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
 	_build_save_load_ui()
-	_build_warning_banner()
+	_build_error_banner()
 	_build_palette()
 	_load_blocks()
-	_update_warning()
 
 func _back_label() -> String:
 	if embedded:
 		return " ← Resume "
 	return " ← Level " if FARP_SCENES.has(return_scene) else " ← Base "
 
-func _build_warning_banner():
-	_warning_label = Label.new()
-	_warning_label.add_theme_color_override("font_color", Color(1.0, 0.42, 0.32, 1.0))
-	_warning_label.add_theme_font_size_override("font_size", 12)
-	_warning_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_warning_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_warning_label.offset_top = 44
-	_warning_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_warning_label.visible = false
-	add_child(_warning_label)
+func _build_error_banner():
+	var scroll: ScrollContainer = $Body/Right/RightVBox/Scroll
+	_error_banner = ERROR_BANNER.new()
+	scroll.get_parent().add_child(_error_banner)
+	scroll.get_parent().move_child(_error_banner, scroll.get_index())
 
-func _update_warning():
-	if _warning_label == null:
-		return
-	var invalid: bool = SIM.has_unnested_conditional(_current_scripts())
-	_warning_label.visible = invalid
-	if invalid:
-		_warning_label.text = "Warning: a condition block (IF) must be placed inside an event block (WHEN)."
+func _update_errors():
+	if _error_banner != null:
+		_error_banner.show_messages(canvas.highlight_errors())
 
 func _build_save_load_ui():
 	var spacer: Control = $TopBar/HBox/Spacer
@@ -110,7 +100,8 @@ func _build_save_load_ui():
 	top_hbox.add_child(delete_btn)
 	top_hbox.move_child(delete_btn, spacer.get_index())
 
-	_refresh_algo_list()
+	_name_edit.text = PlayerData.active_algorithm
+	_refresh_algo_list(PlayerData.active_algorithm)
 
 func _refresh_algo_list(select_name: String = ""):
 	_algo_option.clear()
@@ -128,7 +119,7 @@ func _on_save_algorithm():
 	var algo_name: String = _name_edit.text.strip_edges()
 	if algo_name == "":
 		return
-	PlayerData.save_algorithm(algo_name, _current_scripts())
+	PlayerData.save_algorithm(algo_name, canvas.collect_scripts())
 	_refresh_algo_list(algo_name)
 
 func _on_load_algorithm():
@@ -138,6 +129,7 @@ func _on_load_algorithm():
 	var scripts: Array = PlayerData.get_algorithm(algo_name)
 	_populate_canvas(scripts)
 	PlayerData.set_ship_blocks(scripts)
+	PlayerData.set_active_algorithm(algo_name)
 	_name_edit.text = algo_name
 
 func _on_delete_algorithm():
@@ -145,7 +137,9 @@ func _on_delete_algorithm():
 		return
 	var algo_name: String = _algo_option.get_item_text(_algo_option.selected)
 	PlayerData.delete_algorithm(algo_name)
-	_refresh_algo_list()
+	if _name_edit.text.strip_edges() == algo_name:
+		_name_edit.text = ""
+	_refresh_algo_list(PlayerData.active_algorithm)
 
 func _build_palette():
 	for child in palette_list.get_children():
@@ -165,32 +159,10 @@ func _allowed_blocks(ids: Array) -> Array:
 func _build_palette_category(category: String, ids: Array):
 	if ids.is_empty():
 		return
-	var header := Label.new()
-	header.text = _category_label(category)
-	header.add_theme_font_size_override("font_size", 10)
-	header.add_theme_color_override("font_color", Color(0.435, 0.435, 0.498, 1.0))
-	palette_list.add_child(header)
+	BlockFactory.add_palette_header(palette_list, _category_label(category))
 	for block_id in ids:
-		_make_palette_item(block_id)
-	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 8)
-	palette_list.add_child(spacer)
-
-func _make_palette_item(block_id: String):
-	var item := MarginContainer.new()
-	item.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	item.mouse_filter = Control.MOUSE_FILTER_STOP
-	item.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var preview := SCRATCH_BLOCK.instantiate()
-	item.add_child(preview)
-	palette_list.add_child(item)
-	preview.setup_preview(block_id)
-	item.gui_input.connect(func(event):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			_add_block(block_id)
-	)
-	item.mouse_entered.connect(func(): item.modulate = Color(1.12, 1.12, 1.12))
-	item.mouse_exited.connect(func(): item.modulate = Color(1, 1, 1))
+		BlockFactory.add_palette_item(palette_list, block_id, _add_block)
+	BlockFactory.add_palette_spacer(palette_list)
 
 func _category_label(category: String) -> String:
 	match category:
@@ -198,7 +170,6 @@ func _category_label(category: String) -> String:
 		"condition": return "EVENTS"
 		"logic":     return "CONDITIONS"
 	return category.to_upper()
-
 
 func _load_blocks():
 	_populate_canvas(PlayerData.get_ship_algorithm())
@@ -210,19 +181,14 @@ func _populate_canvas(scripts: Array):
 	for s in scripts:
 		var zone: VBoxContainer = canvas.spawn_stack(Vector2(s.get("x", 40.0), s.get("y", 40.0)))
 		for b in s.get("blocks", []):
-			_spawn_block_widget(b, zone)
+			BlockFactory.create_block(b, zone, _save_blocks)
 	canvas.resolve_overlaps()
 	_loading = false
-	_update_warning()
+	_update_errors()
 
 func _add_block(block_id: String):
-	var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
-	var params := {}
-	var input_def = def.get("input", null)
-	if input_def != null and input_def is Dictionary:
-		params["value"] = input_def.get("default", 0.0)
 	var zone: VBoxContainer = canvas.spawn_stack(_new_stack_position())
-	_spawn_block_widget({"type": block_id, "params": params, "children": []}, zone)
+	BlockFactory.create_block({"type": block_id}, zone, _save_blocks)
 	_save_blocks()
 
 func _new_stack_position() -> Vector2:
@@ -230,42 +196,11 @@ func _new_stack_position() -> Vector2:
 	var n: int = canvas.get_child_count() % 6
 	return Vector2(scroll.scroll_horizontal + 30.0 + n * 28.0, scroll.scroll_vertical + 30.0 + n * 28.0)
 
-func _spawn_block_widget(data: Dictionary, parent_zone: VBoxContainer):
-	var block := SCRATCH_BLOCK.instantiate()
-	parent_zone.add_child(block)
-	block.setup(data.get("type", ""), data.get("params", {}))
-	block.block_changed.connect(_save_blocks)
-	block.block_deleted.connect(func():
-		block.queue_free()
-		await get_tree().process_frame
-		_save_blocks()
-	)
-	if block.is_container():
-		var zone: VBoxContainer = block.get_children_zone()
-		zone.blocks_mutated.connect(_save_blocks)
-		for child_data in data.get("children", []):
-			_spawn_block_widget(child_data, zone)
-
-func _current_scripts() -> Array:
-	canvas.remove_empty_stacks()
-	var scripts: Array = []
-	for zone in canvas.get_children():
-		if not zone is VBoxContainer:
-			continue
-		var blocks: Array = []
-		for child in zone.get_children():
-			if child is PanelContainer and child.has_method("get_block_data"):
-				blocks.append(child.get_block_data())
-		if blocks.is_empty():
-			continue
-		scripts.append({"x": zone.position.x, "y": zone.position.y, "blocks": blocks})
-	return scripts
-
 func _save_blocks():
 	if _loading:
 		return
-	PlayerData.set_ship_blocks(_current_scripts())
-	_update_warning()
+	PlayerData.set_ship_blocks(canvas.collect_scripts())
+	_update_errors()
 
 func _on_back():
 	_save_blocks()

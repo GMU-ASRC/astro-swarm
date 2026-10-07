@@ -3,6 +3,7 @@ extends RefCounted
 const DONE := true
 const RUNNING := false
 const MIN_INTERVAL := 0.05
+const NEGATION_PREFIX := "not_"
 
 var host
 var scripts: Array = []
@@ -58,7 +59,7 @@ func _run_script(sc: Dictionary, delta: float):
 	if sc.interval > 0.0:
 		_run_interval_script(sc, delta)
 		return
-	if not (sc.once or host.eval_condition(sc.cond, sc.cond_params)):
+	if not (sc.once or _evaluate(sc.cond, sc.cond_params)):
 		if sc.active and host.has_method("on_deactivate"):
 			host.on_deactivate()
 		sc.active = false
@@ -70,6 +71,11 @@ func _run_script(sc: Dictionary, delta: float):
 		sc.frames = [{"blocks": sc.body, "idx": 0, "matched": false}]
 		sc.state = {}
 	_advance(sc, delta)
+
+func _evaluate(cond: String, params: Dictionary) -> bool:
+	if cond.begins_with(NEGATION_PREFIX):
+		return not host.eval_condition(cond.substr(NEGATION_PREFIX.length()), params)
+	return host.eval_condition(cond, params)
 
 func _run_interval_script(sc: Dictionary, delta: float):
 	sc.elapsed += delta
@@ -117,7 +123,7 @@ func _advance(sc: Dictionary, delta: float):
 				frame.idx += 1
 			continue
 		if t.begins_with("when_") or t.begins_with("if_"):
-			var result: bool = host.eval_condition(t.substr(t.find("_") + 1), b.get("params", {}))
+			var result: bool = _evaluate(t.substr(t.find("_") + 1), b.get("params", {}))
 			frame.matched = result
 			if result:
 				sc.frames.append({"blocks": b.get("children", []), "idx": 0, "matched": false})

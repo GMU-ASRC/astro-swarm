@@ -50,12 +50,6 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 				if is_instance_valid(t) and t is CharacterBody2D and "type_id" in t and t.type_id == target_type2:
 					return false
 			return true
-		"within":
-			var d: float = _nearest_dist()
-			return d >= 0.0 and d <= float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
-		"beyond":
-			var d2: float = _nearest_dist()
-			return d2 >= 0.0 and d2 > float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
 		"see":
 			var target: String = params.get("target", "anyone")
 			match target:
@@ -73,20 +67,11 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 			return SimulationManager.compare_variable(params)
 	return false
 
-func _nearest_dist() -> float:
-	var best: float = -1.0
-	for t in sensor.visible_targets:
-		if not is_instance_valid(t):
-			continue
-		var d: float = robot.global_position.distance_to(t.global_position)
-		if best < 0.0 or d < best:
-			best = d
-	return best
-
 func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
 	if SimulationManager.apply_variable_block(block_type, params):
 		return BlockExecutor.DONE
 	if block_type.begins_with("set_"):
+		robot.apply_config(SimulationManager.config_entry(block_type, params))
 		return BlockExecutor.DONE
 	match block_type.substr(3):
 		"forward":
@@ -125,11 +110,7 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
 		"face":
 			robot.turn_cmd = 0.0
-			_rotate_toward(0.0, delta)
-			return _step(state, delta)
-		"flee":
-			robot.turn_cmd = 0.0
-			_rotate_toward(PI, delta)
+			_face_target(delta)
 			return _step(state, delta)
 		"throttle":
 			_throttle_mult = float(params.get("value", 1.0))
@@ -159,8 +140,7 @@ func _step(state: Dictionary, delta: float) -> bool:
 func _turn_by(state: Dictionary, delta: float, dir: float, deg: float) -> bool:
 	if not state.has("rem"):
 		state.rem = deg_to_rad(deg)
-	var cfg := SimulationManager.get_type_config(robot.type_id)
-	var step: float = cfg.turn_speed * delta
+	var step: float = robot.config.turn_speed * delta
 	if step >= state.rem:
 		robot.rotation += dir * state.rem
 		return BlockExecutor.DONE
@@ -168,7 +148,7 @@ func _turn_by(state: Dictionary, delta: float, dir: float, deg: float) -> bool:
 	state.rem -= step
 	return BlockExecutor.RUNNING
 
-func _rotate_toward(offset: float, delta: float):
+func _face_target(delta: float):
 	var target = null
 	for t in sensor.visible_targets:
 		if is_instance_valid(t):
@@ -176,5 +156,5 @@ func _rotate_toward(offset: float, delta: float):
 			break
 	if target == null:
 		return
-	var a: float = robot.global_position.angle_to_point(target.global_position) + offset
-	robot.rotation = lerp_angle(robot.rotation, a, 5.0 * delta)
+	var target_angle: float = robot.global_position.angle_to_point(target.global_position)
+	robot.rotation = lerp_angle(robot.rotation, target_angle, 5.0 * delta)

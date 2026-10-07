@@ -9,15 +9,15 @@ extends Control
 @onready var delete_species_btn: Button = $Body/Right/RightVBox/HeaderBar/Header/DeleteSpeciesBtn
 @onready var hint_label: Label = $Body/Right/RightVBox/HeaderBar/Header/HintLabel
 
-const SCRATCH_BLOCK := preload("res://ui/workspace/ScratchBlock.tscn")
-const SIM := preload("res://autoloads/SimulationManager.gd")
+const BlockFactory := preload("res://ui/workspace/BlockFactory.gd")
+const ERROR_BANNER := preload("res://ui/workspace/WorkspaceErrorBanner.gd")
 const ARENA_TAB_COLOR := Color(0.788, 0.310, 0.502, 1.0)
 const ARENA_HINT := "Runs once for the whole arena · Controls spawn zones"
 const PALETTE_CATEGORIES := ["config", "condition", "logic", "variable", "spawn", "action"]
 
 var _current_type_id: String = "hunter"
 var _tab_buttons: Dictionary = {}
-var _warning_label: Label
+var _error_banner: PanelContainer
 var _species_hint: String = ""
 
 func _ready():
@@ -33,43 +33,20 @@ func _ready():
 	SimulationManager.species_list_changed.connect(_on_species_list_changed)
 	SimulationManager.variables_changed.connect(_on_variables_changed)
 	_style_color_picker()
-	_build_warning_banner()
+	_build_error_banner()
 	_build_tabs()
 	_build_palette()
 	_refresh()
 
-func _build_warning_banner():
-	_warning_label = Label.new()
-	_warning_label.add_theme_color_override("font_color", Color(0.851, 0.322, 0.271, 1.0))
-	_warning_label.add_theme_font_size_override("font_size", 12)
-	_warning_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_warning_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_warning_label.offset_top = 44
-	_warning_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_warning_label.visible = false
-	add_child(_warning_label)
+func _build_error_banner():
+	var scroll: ScrollContainer = $Body/Right/RightVBox/Scroll
+	_error_banner = ERROR_BANNER.new()
+	scroll.get_parent().add_child(_error_banner)
+	scroll.get_parent().move_child(_error_banner, scroll.get_index())
 
-func _gather_scripts() -> Array:
-	var scripts: Array = []
-	for zone in canvas.get_children():
-		if not zone is VBoxContainer:
-			continue
-		var blocks: Array = []
-		for child in zone.get_children():
-			if child is PanelContainer and child.has_method("get_block_data"):
-				blocks.append(child.get_block_data())
-		if blocks.is_empty():
-			continue
-		scripts.append({"x": zone.position.x, "y": zone.position.y, "blocks": blocks})
-	return scripts
-
-func _update_warning():
-	if _warning_label == null:
-		return
-	var invalid: bool = SIM.has_unnested_conditional(_gather_scripts())
-	_warning_label.visible = invalid
-	if invalid:
-		_warning_label.text = "Warning: a condition block (IF) must be placed inside an event block (WHEN)."
+func _update_errors():
+	if _error_banner != null:
+		_error_banner.show_messages(canvas.highlight_errors())
 
 func _on_variables_changed():
 	_build_palette()
@@ -242,11 +219,7 @@ func _build_palette():
 			_build_palette_category(category, palette_order[category])
 
 func _build_variable_section():
-	var header := Label.new()
-	header.text = "VARIABLES"
-	header.add_theme_font_size_override("font_size", 10)
-	header.add_theme_color_override("font_color", Color(0.435, 0.435, 0.498, 1.0))
-	palette_list.add_child(header)
+	BlockFactory.add_palette_header(palette_list, "VARIABLES")
 	for v in SimulationManager.variables:
 		var row := HBoxContainer.new()
 		var name_label := Label.new()
@@ -269,10 +242,8 @@ func _build_variable_section():
 	new_btn.pressed.connect(_open_new_variable_dialog)
 	palette_list.add_child(new_btn)
 	for block_id in SimulationManager.PALETTE_ORDER.get("variable", []):
-		_make_palette_item(block_id)
-	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 8)
-	palette_list.add_child(spacer)
+		BlockFactory.add_palette_item(palette_list, block_id, _add_block)
+	BlockFactory.add_palette_spacer(palette_list)
 
 func _open_new_variable_dialog():
 	var dialog := AcceptDialog.new()
@@ -302,32 +273,10 @@ func _open_new_variable_dialog():
 	name_edit.grab_focus()
 
 func _build_palette_category(category: String, ids: Array):
-	var header := Label.new()
-	header.text = _category_label(category)
-	header.add_theme_font_size_override("font_size", 10)
-	header.add_theme_color_override("font_color", Color(0.435, 0.435, 0.498, 1.0))
-	palette_list.add_child(header)
+	BlockFactory.add_palette_header(palette_list, _category_label(category))
 	for block_id in ids:
-		_make_palette_item(block_id)
-	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 8)
-	palette_list.add_child(spacer)
-
-func _make_palette_item(block_id: String):
-	var wrap := MarginContainer.new()
-	wrap.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
-	wrap.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var preview := SCRATCH_BLOCK.instantiate()
-	wrap.add_child(preview)
-	palette_list.add_child(wrap)
-	preview.setup_preview(block_id)
-	wrap.gui_input.connect(func(event):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			_add_block(block_id)
-	)
-	wrap.mouse_entered.connect(func(): wrap.modulate = Color(1.12, 1.12, 1.12))
-	wrap.mouse_exited.connect(func(): wrap.modulate = Color(1, 1, 1))
+		BlockFactory.add_palette_item(palette_list, block_id, _add_block)
+	BlockFactory.add_palette_spacer(palette_list)
 
 func _category_label(category: String) -> String:
 	match category:
@@ -343,9 +292,9 @@ func _refresh():
 	for s in SimulationManager.get_scripts(_current_type_id):
 		var zone: VBoxContainer = canvas.spawn_stack(Vector2(s.get("x", 40.0), s.get("y", 40.0)))
 		for b in s.get("blocks", []):
-			_spawn_block_widget(b, zone)
+			BlockFactory.create_block(b, zone, _save_blocks)
 	canvas.resolve_overlaps()
-	_update_warning()
+	_update_errors()
 
 func _refresh_header():
 	var arena_program := _is_arena_program()
@@ -367,17 +316,8 @@ func _refresh_header():
 	delete_species_btn.visible = SimulationManager.robot_types.size() > 1
 
 func _add_block(block_id: String):
-	var def: Dictionary = SimulationManager.BLOCK_DEFS.get(block_id, {})
-	var params := {}
-	var input_def = def.get("input", null)
-	if input_def != null and input_def is Dictionary:
-		var itype: String = input_def.get("type", "slider")
-		if itype == "species":
-			params["value"] = input_def.get("default", "hunter")
-		else:
-			params["value"] = input_def.get("default", 0.0)
 	var zone: VBoxContainer = canvas.spawn_stack(_new_stack_position())
-	_spawn_block_widget({"type": block_id, "params": params, "children": []}, zone)
+	BlockFactory.create_block({"type": block_id}, zone, _save_blocks)
 	_save_blocks()
 
 func _new_stack_position() -> Vector2:
@@ -385,37 +325,9 @@ func _new_stack_position() -> Vector2:
 	var n: int = canvas.get_child_count() % 6
 	return Vector2(scroll.scroll_horizontal + 30.0 + n * 28.0, scroll.scroll_vertical + 30.0 + n * 28.0)
 
-func _spawn_block_widget(data: Dictionary, parent_zone: VBoxContainer):
-	var block := SCRATCH_BLOCK.instantiate()
-	parent_zone.add_child(block)
-	block.setup(data.get("type", ""), data.get("params", {}))
-	block.block_changed.connect(_save_blocks)
-	block.block_deleted.connect(func():
-		block.queue_free()
-		await get_tree().process_frame
-		_save_blocks()
-	)
-	if block.is_container():
-		var zone: VBoxContainer = block.get_children_zone()
-		zone.blocks_mutated.connect(_save_blocks)
-		for child_data in data.get("children", []):
-			_spawn_block_widget(child_data, zone)
-
 func _save_blocks():
-	canvas.remove_empty_stacks()
-	var scripts: Array = []
-	for zone in canvas.get_children():
-		if not zone is VBoxContainer:
-			continue
-		var blocks: Array = []
-		for child in zone.get_children():
-			if child is PanelContainer and child.has_method("get_block_data"):
-				blocks.append(child.get_block_data())
-		if blocks.is_empty():
-			continue
-		scripts.append({"x": zone.position.x, "y": zone.position.y, "blocks": blocks})
-	SimulationManager.set_scripts(_current_type_id, scripts)
-	_update_warning()
+	SimulationManager.set_scripts(_current_type_id, canvas.collect_scripts())
+	_update_errors()
 
 func _on_back():
 	_commit_species_name()

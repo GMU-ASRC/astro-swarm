@@ -11,6 +11,7 @@ var turn_cmd: float = 0.0
 var is_controlled: bool = false
 var controller_index: int = -1
 var _color: Color
+var config: Dictionary = {}
 const STICK_DEADZONE := 0.18
 
 var _collision_cooldown: float = 0.0
@@ -107,9 +108,8 @@ func _physics_process(delta: float):
 		_poll_control_input()
 	elif _collision_cooldown <= 0.0 and has_node("Interpreter"):
 		$Interpreter.process_behavior(scaled_delta)
-	var cfg := SimulationManager.get_type_config(type_id)
-	rotation += (turn_input * cfg.turn_speed + turn_cmd) * scaled_delta
-	velocity = Vector2.RIGHT.rotated(rotation) * cfg.speed * forward_input * ts
+	rotation += (turn_input * config.turn_speed + turn_cmd) * scaled_delta
+	velocity = Vector2.RIGHT.rotated(rotation) * config.speed * forward_input * ts
 	move_and_slide()
 	var s = Vector2(SimulationManager.settings.arena_width, SimulationManager.settings.arena_height)
 	var r := dot_radius
@@ -183,14 +183,28 @@ func toggle_pin_coords():
 	queue_redraw()
 
 func _apply_type_config():
-	var cfg := SimulationManager.get_type_config(type_id)
-	dot_radius = cfg.get("dot_radius", 6.0)
+	config = SimulationManager.get_type_config(type_id).duplicate()
+	dot_radius = config.get("dot_radius", 6.0)
 	queue_redraw()
+	_refresh_vision_cone()
+
+func _refresh_vision_cone():
 	if has_node("VisionCone"):
 		var sensor = $VisionCone
-		sensor.view_distance = cfg.view_distance
-		sensor.fov_degrees = cfg.fov_degrees
+		sensor.view_distance = config.view_distance
+		sensor.fov_degrees = config.fov_degrees
 		sensor.call_deferred("generate_cone")
+
+func apply_config(entry: Dictionary):
+	if entry.is_empty() or is_equal_approx(float(config.get(entry.key, 0.0)), entry.value):
+		return
+	config[entry.key] = entry.value
+	match entry.key:
+		"dot_radius":
+			dot_radius = entry.value
+			queue_redraw()
+		"view_distance", "fov_degrees":
+			_refresh_vision_cone()
 
 func _on_type_config_changed(changed_type: String):
 	if changed_type == type_id:

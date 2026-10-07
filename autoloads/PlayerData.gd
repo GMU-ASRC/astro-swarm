@@ -30,6 +30,7 @@ var planet_type: String = "terran"
 var moon_seeds: Array = []
 var ship_blocks: Array = []
 var ship_algorithms: Dictionary = {}
+var active_algorithm: String = ""
 var game_mode: String = "levels"
 var farp_placements: Array = []
 var farp_layouts: Dictionary = {}
@@ -135,6 +136,7 @@ func save_algorithm(algo_name: String, scripts: Array):
 	if key == "":
 		return
 	ship_algorithms[key] = SIM.normalize_to_scripts(scripts)
+	active_algorithm = key
 	_save()
 
 func get_algorithm(algo_name: String) -> Array:
@@ -142,7 +144,13 @@ func get_algorithm(algo_name: String) -> Array:
 
 func delete_algorithm(algo_name: String):
 	if ship_algorithms.erase(algo_name):
+		if active_algorithm == algo_name:
+			active_algorithm = ""
 		_save()
+
+func set_active_algorithm(algo_name: String):
+	active_algorithm = algo_name if ship_algorithms.has(algo_name) else ""
+	_save()
 
 func algorithm_names() -> Array:
 	return ship_algorithms.keys()
@@ -176,6 +184,7 @@ func reset_game():
 	moon_seeds = []
 	ship_blocks = []
 	ship_algorithms = {}
+	active_algorithm = ""
 	game_mode = "levels"
 	farp_placements = []
 	farp_layouts = {}
@@ -214,6 +223,7 @@ func _save():
 	cfg.set_value("moons", "seeds", moon_seeds)
 	cfg.set_value("ship", "blocks", ship_blocks)
 	cfg.set_value("ship", "algorithms", ship_algorithms)
+	cfg.set_value("ship", "active_algorithm", active_algorithm)
 	cfg.set_value("match", "game_mode", game_mode)
 	cfg.set_value("farp", "placements", farp_placements)
 	cfg.set_value("farp", "layouts", farp_layouts)
@@ -233,6 +243,7 @@ func _load():
 	moon_seeds = cfg.get_value("moons", "seeds", [])
 	ship_blocks = SIM.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
 	ship_algorithms = cfg.get_value("ship", "algorithms", {})
+	active_algorithm = cfg.get_value("ship", "active_algorithm", "")
 	game_mode = cfg.get_value("match", "game_mode", "levels")
 	farp_placements = cfg.get_value("farp", "placements", [])
 	farp_layouts = cfg.get_value("farp", "layouts", {})

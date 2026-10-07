@@ -103,6 +103,10 @@ const BLOCK_DEFS := {
 	"when_sees_ally":       {"category": "condition", "label": "When I see an ally",   "input": null},
 	"when_sees_object":     {"category": "condition", "label": "When I see an object",    "input": null},
 	"when_sees_rim":        {"category": "condition", "label": "When I see the outer rim", "input": null},
+	"when_not_see":         {"category": "condition", "label": "When I don't see", "inputs": [
+		{"type": "dropdown", "key": "target", "provider": "targets"},
+	]},
+	"when_not_near_wall":   {"category": "condition", "label": "When I don't touch a wall", "input": null},
 	"when_every":           {"category": "condition", "label": "Every", "inputs": [
 		{"type": "number", "key": "value", "min": 0.1, "max": 3600.0, "step": 0.1, "default": 1.0},
 		{"type": "label", "text": "seconds"},
@@ -110,11 +114,14 @@ const BLOCK_DEFS := {
 
 	"if_sees":           {"category": "logic", "label": "If I see anyone",  "input": null},
 	"if_sees_species":   {"category": "logic", "label": "If I see a",       "input": {"type": "species", "default": "hunter"}},
-	"if_within":         {"category": "logic", "label": "If target within", "input": {"min": 0.5, "max": 12.5, "default": 3.0, "step": 0.1, "suffix": " m"}},
-	"if_beyond":         {"category": "logic", "label": "If target beyond", "input": {"min": 0.5, "max": 12.5, "default": 3.0, "step": 0.1, "suffix": " m"}},
 	"if_see":            {"category": "logic", "label": "If I see", "inputs": [
 		{"type": "dropdown", "key": "target", "provider": "targets"},
 	]},
+	"if_not_see":        {"category": "logic", "label": "If I don't see", "inputs": [
+		{"type": "dropdown", "key": "target", "provider": "targets"},
+	]},
+	"if_near_wall":      {"category": "logic", "label": "If I touch a wall",       "input": null},
+	"if_not_near_wall":  {"category": "logic", "label": "If I don't touch a wall", "input": null},
 	"if_compare":        {"category": "logic", "label": "If", "inputs": [
 		{"type": "dropdown", "key": "var", "provider": "variables"},
 		{"type": "dropdown", "key": "op", "provider": "operators"},
@@ -152,7 +159,6 @@ const BLOCK_DEFS := {
 	"do_turn_left_by":  {"category": "action", "label": "Turn left by",  "input": {"min": 1.0, "max": 360.0, "default": 180.0, "step": 1.0, "suffix": "°"}},
 	"do_turn_right_by": {"category": "action", "label": "Turn right by", "input": {"min": 1.0, "max": 360.0, "default": 180.0, "step": 1.0, "suffix": "°"}},
 	"do_face":       {"category": "action", "label": "Face the target",  "input": null},
-	"do_flee":       {"category": "action", "label": "Flee the target",  "input": null},
 	"do_fire":       {"category": "action", "label": "Fire",             "input": null},
 	"do_throttle":   {"category": "action", "label": "Throttle to",     "input": {"min": 0.0, "max": 1.5, "default": 1.0, "step": 0.05, "suffix": "×"}},
 	"do_stop_sim":   {"category": "action", "label": "Stop simulation",  "input": null},
@@ -174,12 +180,14 @@ const BLOCK_DEFS := {
 	]},
 }
 
+const REMOVED_BLOCK_TYPES := ["if_within", "if_beyond", "do_flee"]
+
 const PALETTE_ORDER := {
 	"config":    ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
-	"condition": ["when_start", "when_always", "when_every", "when_sees", "when_alone", "when_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species"],
-	"logic":     ["if_see", "if_within", "if_beyond", "if_compare", "else"],
+	"condition": ["when_start", "when_always", "when_every", "when_sees", "when_alone", "when_near_wall", "when_not_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species", "when_not_see"],
+	"logic":     ["if_see", "if_not_see", "if_near_wall", "if_not_near_wall", "if_compare", "else"],
 	"variable":  ["set_var", "set_var_random"],
-	"action":    ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_flee", "do_throttle", "do_stop_sim", "do_pause_sim"],
+	"action":    ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_throttle", "do_stop_sim", "do_pause_sim"],
 }
 
 const ARENA_PALETTE_ORDER := {
@@ -206,6 +214,8 @@ static func normalize_blocks(blocks: Array) -> Array:
 	var current = null
 	for b in blocks:
 		var t: String = b.get("type", "")
+		if is_removed_block(t):
+			continue
 		var node := {"type": t, "params": (b.get("params", {}) as Dictionary).duplicate(true), "children": []}
 		if t.begins_with("when_"):
 			current = node
@@ -217,9 +227,14 @@ static func normalize_blocks(blocks: Array) -> Array:
 			result.append(node)
 	return result
 
+static func is_removed_block(block_type: String) -> bool:
+	return REMOVED_BLOCK_TYPES.has(block_type)
+
 static func _rebuild_nested(blocks: Array) -> Array:
 	var result: Array = []
 	for b in blocks:
+		if is_removed_block(b.get("type", "")):
+			continue
 		result.append({
 			"type": b.get("type", ""),
 			"params": (b.get("params", {}) as Dictionary).duplicate(true),
@@ -282,22 +297,6 @@ static func is_event_block(block_type: String) -> bool:
 static func is_conditional_block(block_type: String) -> bool:
 	return block_type.begins_with("if_") or block_type == "else"
 
-static func has_unnested_conditional(scripts: Array) -> bool:
-	for s in scripts:
-		if _blocks_have_unnested_conditional(s.get("blocks", []), false):
-			return true
-	return false
-
-static func _blocks_have_unnested_conditional(blocks: Array, has_event_ancestor: bool) -> bool:
-	for b in blocks:
-		var t: String = b.get("type", "")
-		if is_conditional_block(t) and not has_event_ancestor:
-			return true
-		var child_has_event: bool = has_event_ancestor or is_event_block(t)
-		if _blocks_have_unnested_conditional(b.get("children", []), child_has_event):
-			return true
-	return false
-
 func _normalize_all_behaviors():
 	for id in behaviors.keys():
 		behaviors[id] = {"scripts": normalize_to_scripts(behaviors[id])}
@@ -328,7 +327,7 @@ func _install_defaults():
 		{"type": "set_view",  "params": {"value": 3.25}},
 		{"type": "set_fov",   "params": {"value": 180.0}},
 		{"type": "when_sees",   "params": {}},
-		{"type": "do_flee",     "params": {}},
+		{"type": "do_turn_right_by", "params": {"value": 180.0}},
 		{"type": "when_always", "params": {}},
 		{"type": "do_forward",  "params": {}},
 	]}
@@ -389,16 +388,22 @@ func compile(type_id: String):
 
 func _collect_config(blocks: Array, cfg: Dictionary):
 	for b in blocks:
-		var t: String = b.get("type", "")
-		var p: Dictionary = b.get("params", {})
-		match t:
-			"set_speed":  cfg.speed         = float(p.get("value", settings.speed)) * PX_PER_METER
-			"set_turn":   cfg.turn_speed    = deg_to_rad(float(p.get("value", 120.0)))
-			"set_view":   cfg.view_distance = float(p.get("value", settings.view_distance)) * PX_PER_METER
-			"set_fov":    cfg.fov_degrees   = minf(180.0, float(p.get("value", settings.fov_degrees)))
-			"set_size":   cfg.dot_radius    = float(p.get("value", 6.0))
-			"when_start":
-				_collect_config(b.get("children", []), cfg)
+		var block_type: String = b.get("type", "")
+		if block_type == "when_start":
+			_collect_config(b.get("children", []), cfg)
+			continue
+		var entry: Dictionary = config_entry(block_type, b.get("params", {}))
+		if not entry.is_empty():
+			cfg[entry.key] = entry.value
+
+func config_entry(block_type: String, params: Dictionary) -> Dictionary:
+	match block_type:
+		"set_speed": return {"key": "speed",         "value": float(params.get("value", settings.speed)) * PX_PER_METER}
+		"set_turn":  return {"key": "turn_speed",    "value": deg_to_rad(float(params.get("value", 120.0)))}
+		"set_view":  return {"key": "view_distance", "value": float(params.get("value", settings.view_distance)) * PX_PER_METER}
+		"set_fov":   return {"key": "fov_degrees",   "value": minf(180.0, float(params.get("value", settings.fov_degrees)))}
+		"set_size":  return {"key": "dot_radius",    "value": float(params.get("value", 6.0))}
+	return {}
 
 func ship_config_from_scripts(scripts: Array, base_view: float, base_fov: float, base_speed: float = 150.0, base_turn: float = 3.2, base_size: float = 9.0) -> Dictionary:
 	var cfg := {

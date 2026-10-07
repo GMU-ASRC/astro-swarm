@@ -50,7 +50,7 @@ text = "✕"
 [node name="InnerWrap" type="MarginContainer" parent="Outer"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 14
+theme_override_constants/margin_left = 16
 visible = false
 
 [node name="InnerPanel" type="PanelContainer" parent="Outer/InnerWrap"]
@@ -60,5 +60,5 @@ mouse_filter = 2
 [node name="Children" type="VBoxContainer" parent="Outer/InnerWrap/InnerPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(150, 30)
-theme_override_constants/separation = 4
+theme_override_constants/separation = 0
 script = ExtResource("2_dz")

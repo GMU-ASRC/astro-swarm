@@ -231,12 +231,6 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 			return _sees_object()
 		"sees_rim":
 			return _sees_rim()
-		"within":
-			var d: float = _nearest_enemy_dist()
-			return d >= 0.0 and d <= float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
-		"beyond":
-			var d2: float = _nearest_enemy_dist()
-			return d2 >= 0.0 and d2 > float(params.get("value", 3.0)) * SimulationManager.PX_PER_METER
 		"see":
 			match params.get("target", "anyone"):
 				"object": return _sees_object()
@@ -267,14 +261,6 @@ func _compare_var(params: Dictionary) -> bool:
 		">=": return a >= b
 	return false
 
-func _nearest_enemy_dist() -> float:
-	var best: float = -1.0
-	for e in _enemies_cache:
-		var d: float = global_position.distance_to(e.global_position)
-		if best < 0.0 or d < best:
-			best = d
-	return best
-
 func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
 	match block_type:
 		"set_var":
@@ -290,6 +276,7 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			SimulationManager.set_var(params.get("var", ""), randi_range(lo, hi))
 			return BlockExecutor.DONE
 	if block_type.begins_with("set_"):
+		_apply_config(SimulationManager.config_entry(block_type, params))
 		return BlockExecutor.DONE
 	match block_type.substr(3):
 		"forward":
@@ -328,11 +315,7 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
 		"face":
 			_turn_cmd = 0.0
-			_rotate_toward(0.0, delta)
-			return _step(state, delta)
-		"flee":
-			_turn_cmd = 0.0
-			_rotate_toward(PI, delta)
+			_face_target(delta)
 			return _step(state, delta)
 		"throttle":
 			_throttle_mult = float(params.get("value", 1.0))
@@ -341,6 +324,28 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			_fire()
 			return BlockExecutor.DONE
 	return BlockExecutor.DONE
+
+func _apply_config(entry: Dictionary):
+	if entry.is_empty():
+		return
+	var new_value: float = entry.value
+	match entry.key:
+		"speed":
+			max_speed = new_value
+		"turn_speed":
+			turn_rate = new_value
+		"view_distance":
+			if not is_equal_approx(view_distance, new_value):
+				view_distance = new_value
+				refresh_cone()
+		"fov_degrees":
+			if not is_equal_approx(fov_degrees, new_value):
+				fov_degrees = new_value
+				refresh_cone()
+		"dot_radius":
+			if not is_equal_approx(hull_radius, new_value):
+				hull_radius = new_value
+				refresh_cone()
 
 func _levy_step_time() -> float:
 	var shortest := 0.2
@@ -366,12 +371,12 @@ func _turn_by(state: Dictionary, delta: float, dir: float, deg: float) -> bool:
 	state.rem -= step
 	return BlockExecutor.RUNNING
 
-func _rotate_toward(offset: float, delta: float):
-	var t = _nearest(_enemies_cache)
-	if t == null:
+func _face_target(delta: float):
+	var target = _nearest(_enemies_cache)
+	if target == null:
 		return
-	var a: float = global_position.angle_to_point(t.global_position) + offset
-	rotation = lerp_angle(rotation, a, clampf(turn_rate * delta, 0.0, 1.0))
+	var target_angle: float = global_position.angle_to_point(target.global_position)
+	rotation = lerp_angle(rotation, target_angle, clampf(turn_rate * delta, 0.0, 1.0))
 
 func _object_in_view(center: Vector2, radius: float) -> bool:
 	var to: Vector2 = center - global_position
