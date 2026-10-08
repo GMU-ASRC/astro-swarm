@@ -28,7 +28,7 @@ static func build(run_data: Dictionary, title: String, description: String) -> D
 		"title": title.strip_edges().left(MAX_TITLE_LENGTH),
 		"description": description.strip_edges().left(MAX_DESCRIPTION_LENGTH),
 		"setup": {
-			"arena": [float(settings.get("arena_width", 1280.0)), float(settings.get("arena_height", 720.0))],
+			"arena": [float(settings.get("arena_width", 3840.0)), float(settings.get("arena_height", 2160.0))],
 			"species": _species(robot_types, setup.get("type_configs", {})),
 			"behaviors": _behaviors(robot_types, setup.get("behaviors", {})),
 			"arena_program": json_safe(SimulationManager.normalize_to_scripts(setup.get("arena_program", []))),

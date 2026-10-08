@@ -96,15 +96,21 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Display/Margin" unique_id=1373973208]
+[node name="Scroll" type="ScrollContainer" parent="VBox/TabContainer/Display/Margin"]
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Display/Margin/Scroll" unique_id=1373973208]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="Label" type="Label" parent="VBox/TabContainer/Display/Margin/VBox" unique_id=1669727292]
+[node name="Label" type="Label" parent="VBox/TabContainer/Display/Margin/Scroll/VBox" unique_id=1669727292]
 layout_mode = 2
 text = "Window Mode"
 
-[node name="WindowModeOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/VBox" unique_id=231448888]
+[node name="WindowModeOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/Scroll/VBox" unique_id=231448888]
 layout_mode = 2
 selected = 0
 item_count = 3
@@ -115,24 +121,24 @@ popup/item_1/id = 1
 popup/item_2/text = "Borderless"
 popup/item_2/id = 2
 
-[node name="ResolutionLabel" type="Label" parent="VBox/TabContainer/Display/Margin/VBox"]
+[node name="ResolutionLabel" type="Label" parent="VBox/TabContainer/Display/Margin/Scroll/VBox"]
 layout_mode = 2
 text = "Resolution"
 
-[node name="ResolutionOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/VBox"]
+[node name="ResolutionOption" type="OptionButton" parent="VBox/TabContainer/Display/Margin/Scroll/VBox"]
 layout_mode = 2
 
-[node name="ResolutionHint" type="Label" parent="VBox/TabContainer/Display/Margin/VBox"]
+[node name="ResolutionHint" type="Label" parent="VBox/TabContainer/Display/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.45, 0.51, 1)
 theme_override_font_sizes/font_size = 11
 text = "Resolution applies in Windowed mode. UI scales to fit the window."
 
-[node name="DisplaySpacer" type="Control" parent="VBox/TabContainer/Display/Margin/VBox"]
+[node name="DisplaySpacer" type="Control" parent="VBox/TabContainer/Display/Margin/Scroll/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="DisplayApply" type="Button" parent="VBox/TabContainer/Display/Margin/VBox"]
+[node name="DisplayApply" type="Button" parent="VBox/TabContainer/Display/Margin/Scroll/VBox"]
 layout_mode = 2
 size_flags_horizontal = 8
 focus_mode = 0
@@ -150,19 +156,25 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Graphics/Margin" unique_id=1669016850]
+[node name="Scroll" type="ScrollContainer" parent="VBox/TabContainer/Graphics/Margin"]
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Graphics/Margin/Scroll" unique_id=1669016850]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="VSyncCheck" type="CheckBox" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=348781010]
+[node name="VSyncCheck" type="CheckBox" parent="VBox/TabContainer/Graphics/Margin/Scroll/VBox" unique_id=348781010]
 layout_mode = 2
 text = "Enable V-Sync"
 
-[node name="FpsLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=526013318]
+[node name="FpsLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/Scroll/VBox" unique_id=526013318]
 layout_mode = 2
 text = "Max FPS"
 
-[node name="FpsOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=1092389657]
+[node name="FpsOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/Scroll/VBox" unique_id=1092389657]
 layout_mode = 2
 selected = 0
 item_count = 4
@@ -175,11 +187,11 @@ popup/item_2/id = 2
 popup/item_3/text = "144 FPS"
 popup/item_3/id = 3
 
-[node name="MsaaLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=1976708527]
+[node name="MsaaLabel" type="Label" parent="VBox/TabContainer/Graphics/Margin/Scroll/VBox" unique_id=1976708527]
 layout_mode = 2
 text = "Anti-Aliasing (MSAA 2D)"
 
-[node name="MsaaOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/VBox" unique_id=860231824]
+[node name="MsaaOption" type="OptionButton" parent="VBox/TabContainer/Graphics/Margin/Scroll/VBox" unique_id=860231824]
 layout_mode = 2
 selected = 0
 item_count = 4
@@ -192,11 +204,11 @@ popup/item_2/id = 2
 popup/item_3/text = "8x"
 popup/item_3/id = 3
 
-[node name="GraphicsSpacer" type="Control" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+[node name="GraphicsSpacer" type="Control" parent="VBox/TabContainer/Graphics/Margin/Scroll/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="GraphicsApply" type="Button" parent="VBox/TabContainer/Graphics/Margin/VBox"]
+[node name="GraphicsApply" type="Button" parent="VBox/TabContainer/Graphics/Margin/Scroll/VBox"]
 layout_mode = 2
 size_flags_horizontal = 8
 focus_mode = 0
@@ -251,70 +263,76 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Sound/Margin" unique_id=76368297]
+[node name="Scroll" type="ScrollContainer" parent="VBox/TabContainer/Sound/Margin"]
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Sound/Margin/Scroll" unique_id=76368297]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="DeviceLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=142625471]
+[node name="DeviceLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=142625471]
 layout_mode = 2
 text = "Audio Output Device"
 
-[node name="DeviceOption" type="OptionButton" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=732118265]
+[node name="DeviceOption" type="OptionButton" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=732118265]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=232516132]
+[node name="Label" type="Label" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=232516132]
 layout_mode = 2
 text = "Master Volume"
 
-[node name="MasterVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=2144496544]
+[node name="MasterVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=2144496544]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox" unique_id=825012807]
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox/MasterVolHBox" unique_id=825012807]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 value = 100.0
 
-[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox" unique_id=1944576474]
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox/MasterVolHBox" unique_id=1944576474]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "100%"
 
-[node name="MusicLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=2128757304]
+[node name="MusicLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=2128757304]
 layout_mode = 2
 text = "Music Volume"
 
-[node name="MusicVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=1884984502]
+[node name="MusicVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=1884984502]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox" unique_id=1465104433]
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox/MusicVolHBox" unique_id=1465104433]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 value = 100.0
 
-[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox" unique_id=1023391285]
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox/MusicVolHBox" unique_id=1023391285]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "100%"
 
-[node name="SfxLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=1286990959]
+[node name="SfxLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=1286990959]
 layout_mode = 2
 text = "SFX Volume"
 
-[node name="SfxVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/VBox" unique_id=645508624]
+[node name="SfxVolHBox" type="HBoxContainer" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox" unique_id=645508624]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox" unique_id=1580814425]
+[node name="Slider" type="HSlider" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox/SfxVolHBox" unique_id=1580814425]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 value = 100.0
 
-[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox" unique_id=1844135190]
+[node name="ValueLabel" type="Label" parent="VBox/TabContainer/Sound/Margin/Scroll/VBox/SfxVolHBox" unique_id=1844135190]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "100%"
@@ -331,24 +349,29 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Player/Margin"]
+[node name="Scroll" type="ScrollContainer" parent="VBox/TabContainer/Player/Margin"]
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VBox" type="VBoxContainer" parent="VBox/TabContainer/Player/Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="ResetTitle" type="Label" parent="VBox/TabContainer/Player/Margin/VBox"]
+[node name="ResetTitle" type="Label" parent="VBox/TabContainer/Player/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.93, 0.94, 1, 1)
 text = "Reset Game"
 
-[node name="ResetInfo" type="Label" parent="VBox/TabContainer/Player/Margin/VBox"]
+[node name="ResetInfo" type="Label" parent="VBox/TabContainer/Player/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
 theme_override_font_sizes/font_size = 12
-text = "Erases your callsign, level, XP, AstroCoin, planet, moons and ship program, returning you to a fresh profile. This cannot be undone."
+text = "Erases your callsign, rank, XP, AstroCoin, planet, moons, ship program and level progress, returning you to a fresh profile. This cannot be undone."
 autowrap_mode = 2
 
-[node name="ResetButton" type="Button" parent="VBox/TabContainer/Player/Margin/VBox"]
+[node name="ResetButton" type="Button" parent="VBox/TabContainer/Player/Margin/Scroll/VBox"]
 layout_mode = 2
 size_flags_horizontal = 0
 focus_mode = 0

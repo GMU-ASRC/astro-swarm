@@ -20,9 +20,11 @@ const ORBIT_MAX := 255.0
 @onready var find_btn: Button = $FindMatchButton
 @onready var game_mode_btn: Button = $GameModeButton
 @onready var moons_btn: Button = $HUD/Navbar/MoonsButton
+@onready var entries_btn: Button = $HUD/Navbar/EntriesButton
 @onready var shop_btn: Button = $HUD/Navbar/ShopButton
 @onready var modal: Control = $UsernameModal
 @onready var name_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/NameEdit
+@onready var planet_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/PlanetEdit
 @onready var confirm_btn: Button = $UsernameModal/Panel/Margin/VBox/Confirm
 
 const GAME_MODES := [
@@ -34,6 +36,9 @@ const GAME_MODES := [
 const MARKET_PANEL := preload("res://levels/components/MarketPanel.gd")
 
 const C_COIN := Color(1.0, 0.88, 0.40, 1.0)
+const USERNAME_HOVER_COLOR := Color(0.451, 0.616, 1.0, 1.0)
+const ASTRO_ID_SCENE := "res://levels/menus/AstroIDScene.tscn"
+const RANKS := preload("res://progression/Ranks.gd")
 
 var _planet: Control
 var _moons: Array = []
@@ -47,14 +52,18 @@ func _ready():
 	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn"))
 	find_btn.pressed.connect(_on_find_match)
 	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/MoonsScene.tscn"))
+	entries_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerEntriesScene.tscn"))
+	_make_username_open_astro_id()
 	shop_btn.disabled = true
 	game_mode_btn.pressed.connect(_on_game_mode_btn)
 	_setup_mode_popup()
 	_init_game_mode()
 
 	confirm_btn.pressed.connect(_on_confirm_username)
-	name_edit.text_changed.connect(func(t): confirm_btn.disabled = t.strip_edges() == "")
-	name_edit.text_submitted.connect(func(_t): _on_confirm_username())
+	name_edit.text_changed.connect(func(_t): _update_confirm_enabled())
+	planet_edit.text_changed.connect(func(_t): _update_confirm_enabled())
+	name_edit.text_submitted.connect(func(_t): planet_edit.grab_focus())
+	planet_edit.text_submitted.connect(func(_t): _on_confirm_username())
 
 	PlayerData.xp_changed.connect(_on_xp_changed)
 	PlayerData.level_changed.connect(_on_level_changed)
@@ -100,8 +109,9 @@ func _build_moons():
 	for m in _moons:
 		m["node"].queue_free()
 	_moons.clear()
-	for i in PlayerData.moon_seeds.size():
-		var sd: int = int(PlayerData.moon_seeds[i])
+	var orbiting_seeds: Array = [PlayerData.WORKSPACE_MOON_SEED] + PlayerData.moon_seeds
+	for moon_seed in orbiting_seeds:
+		var sd: int = int(moon_seed)
 		var moon := MOON.instantiate() as Control
 		planet_layer.add_child(moon)
 		moon.generate(sd, MOON_PIXELS)
@@ -152,7 +162,7 @@ func _disable_mouse(node: Node):
 
 func _refresh_hud():
 	username_label.text = PlayerData.username if PlayerData.has_profile() else "Commander"
-	level_label.text = "Level %d" % PlayerData.level
+	level_label.text = RANKS.rank_name(PlayerData.level)
 	coin_label.text = str(PlayerData.coins)
 	_update_xp()
 
@@ -166,7 +176,7 @@ func _on_xp_changed(_current: int, _needed: int):
 	_update_xp()
 
 func _on_level_changed(lvl: int):
-	level_label.text = "Level %d" % lvl
+	level_label.text = RANKS.rank_name(lvl)
 
 func _on_coins_changed(amount: int):
 	coin_label.text = str(amount)
@@ -174,10 +184,27 @@ func _on_coins_changed(amount: int):
 func _on_moons_changed():
 	_build_moons()
 
+func _update_confirm_enabled():
+	confirm_btn.disabled = name_edit.text.strip_edges() == "" or planet_edit.text.strip_edges() == ""
+
+func _make_username_open_astro_id():
+	var resting_color: Color = username_label.get_theme_color("font_color")
+	username_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	username_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	username_label.tooltip_text = "Open your Astro ID"
+	username_label.mouse_entered.connect(func(): username_label.add_theme_color_override("font_color", USERNAME_HOVER_COLOR))
+	username_label.mouse_exited.connect(func(): username_label.add_theme_color_override("font_color", resting_color))
+	username_label.gui_input.connect(func(event):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			get_tree().change_scene_to_file(ASTRO_ID_SCENE)
+	)
+
 func _on_confirm_username():
 	var n: String = name_edit.text.strip_edges()
-	if n == "":
+	var planet: String = planet_edit.text.strip_edges()
+	if n == "" or planet == "":
 		return
+	PlayerData.set_planet_name(planet)
 	PlayerData.set_username(n)
 	modal.visible = false
 	_refresh_hud()

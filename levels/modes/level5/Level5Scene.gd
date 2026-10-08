@@ -17,29 +17,6 @@ func _level_subtitle() -> String:
 func _launch_label() -> String:
 	return "LAUNCH SIEGE (S) >"
 
-func _walkthrough_lines() -> Array:
-	return [
-		"GOAL: stop all %d evaders before they reach the planet." % SIEGE_EVADERS,
-		"1.  %d defenders are dropped at random inside the blue placement ring, exactly as in Level 2." % RING_COUNT,
-		"2.  Open WORKSPACE and write the algorithm all of them run.",
-		"3.  Press LAUNCH SIEGE. There are no waves here: every evader spawns at once, spread around the arena edges.",
-		"4.  Each one drives straight at the planet from wherever it spawned, so they arrive at different times.",
-		"5.  A capture destroys BOTH ships, and there are as many evaders as defenders, so a perfect run trades one for one.",
-		"6.  The run plays out until every evader is destroyed or has reached the planet.",
-		"7.  The server benchmarks your algorithm over many sieges and reports the share of evaders destroyed and the defenders lost.",
-		"Scroll to zoom, middle-drag to pan.",
-	]
-
-func _hint_lines() -> Array:
-	return [
-		"The evaders spawn on the arena border, not a ring, so the ones on the long sides arrive noticeably later than the ones above and below.",
-		"Every defender that trades itself leaves a hole, and here there is no next wave to fill it. Spend them on the closest threat.",
-		"Several defenders converging on one evader is the fastest way to lose. WHEN SEES ALLY with a turn keeps them apart.",
-		"Holding an arc near the planet beats chasing far out: an evader you miss on the way out will be behind your line.",
-		"A wide FOV finds more of the %d at once, but the short range that comes with it may not reach them in time." % SIEGE_EVADERS,
-		"REROLL a few scatters before you settle. The server benchmarks the layout you launched with.",
-	]
-
 func _launch():
 	_start_active()
 	_reset_counters()
@@ -88,7 +65,7 @@ func _show_outcome(reason: String):
 		headline = "%d of the %d evaders reached the planet." % [_breached, SIEGE_EVADERS]
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if held else C_RED)
-	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
+	_show_result(held, title, headline)
 
 func _draw_level():
 	super()

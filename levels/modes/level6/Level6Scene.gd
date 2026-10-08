@@ -3,6 +3,7 @@ extends "res://levels/modes/FARPBase.gd"
 const SIM := preload("res://autoloads/SimulationManager.gd")
 
 const OPPONENT_LEVEL := "farp2"
+const OPPONENT_LEVEL_SCRIPT := preload("res://levels/modes/level2/Level2Scene.gd")
 const HOUSE_OPPONENT := "House Algorithm"
 
 const EVADER_PLAYER_SPEED := 150.0
@@ -43,32 +44,6 @@ func _time_limit() -> float:
 func _timer_text() -> String:
 	return _countdown_text()
 
-func _walkthrough_lines() -> Array:
-	return [
-		"GOAL: fly the evader to the center planet. Reaching it wins - reaching it without ever being seen is a clean run.",
-		"1.  The defenders run the best Level 2 algorithm submitted by another player, standing exactly where that entry placed them. Their name is shown in the top bar.",
-		"2.  Drag anywhere on the red ring to choose where your evader starts.",
-		"3.  Press LAUNCH EVADER, then fly it yourself. Forward and back drive, left and right turn (WASD or arrow keys, remappable in Settings).",
-		"You have %d minutes to reach the planet. The clock in the top right counts down." % int(TIME_LIMIT_SECONDS / 60.0),
-		"4.  DETECTION is logged the first time a defender sees you in its vision cone. Being seen does not end the run, but it costs you the clean run.",
-		"5.  CAPTURE is a defender physically touching you. That ends the run and you lose.",
-		"6.  The GOAL TIME is when you reach the planet. Reach it and you win, and the run pays out a large XP bonus.",
-		"Every run is rendered on the website with your times, detected or not.",
-		"7.  Your run is recorded and rendered on the website, with your detected, captured and goal times.",
-		"Scroll to zoom, middle-drag to pan.",
-	]
-
-func _hint_lines() -> Array:
-	return [
-		"Being seen is survivable - being touched is not. A defender that spots you will usually turn and charge.",
-		"Watch the cones before you commit. Ring defenders sweep, so gaps open and close on a rhythm.",
-		"Approach through a gap between two cones rather than straight down a defender's line of sight.",
-		"You turn faster than you accelerate away. Cutting a tight arc around a charging defender beats outrunning it.",
-		"The planet is the goal, not the exit. Once you are inside the ring, the shortest line in is usually the safest.",
-		"Getting in unseen is the real challenge. A detected run still counts, but a clean run is the one worth flying for.",
-		"If a defender locks on, break its line and force it to re-acquire you rather than driving straight ahead.",
-	]
-
 func _setup_level():
 	_rng.randomize()
 	_opponent_algorithm = SIM.normalize_to_scripts(HOUSE_DEFENDER_ALGORITHM)
@@ -100,13 +75,28 @@ func _on_best_fetched(success: bool, data):
 		return
 	_opponent_name = str(data.get("username", HOUSE_OPPONENT))
 	_opponent_algorithm = SIM.normalize_to_scripts(data["algorithm"])
-	_opponent_placements = _placements_from_payload(data.get("placements", []))
+	_opponent_placements = _centered_on_planet(_placements_from_payload(data.get("placements", [])))
 	_opponent_label.text = "OPPONENT: " + _opponent_name
 	if _phase == Phase.SETUP:
 		_clear_ships()
 		_placements.clear()
 		_place_defenders()
 		queue_redraw()
+
+func _centered_on_planet(placements: Array) -> Array:
+	if placements.is_empty():
+		return placements
+	var centroid := Vector2.ZERO
+	for placement in placements:
+		centroid += placement.pos
+	centroid /= float(placements.size())
+	var opponent_center: Vector2 = OPPONENT_LEVEL_SCRIPT.LEVEL_ARENA * 0.5
+	var source_center: Vector2 = opponent_center if centroid.distance_to(opponent_center) < centroid.distance_to(PLANET_CENTER) else PLANET_CENTER
+	var offset: Vector2 = _planet - source_center
+	var centered: Array = []
+	for placement in placements:
+		centered.append({"pos": placement.pos + offset, "rot": placement.rot})
+	return centered
 
 func _launch():
 	_start_active()
@@ -194,7 +184,7 @@ func _show_outcome(reason: String):
 			headline = "The clock ran out before you reached the planet."
 			_phase_label.text = title
 			_phase_label.add_theme_color_override("font_color", C_RED)
-	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
+	_show_result(reason == "goal", title, headline)
 
 func _outcome() -> String:
 	match _end_reason:

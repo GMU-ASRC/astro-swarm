@@ -1,24 +1,28 @@
 extends Control
 
-@onready var vsync_check = $VBox/TabContainer/Graphics/Margin/VBox/VSyncCheck
-@onready var fps_option = $VBox/TabContainer/Graphics/Margin/VBox/FpsOption
-@onready var msaa_option = $VBox/TabContainer/Graphics/Margin/VBox/MsaaOption
-@onready var window_mode_option = $VBox/TabContainer/Display/Margin/VBox/WindowModeOption
-@onready var resolution_option = $VBox/TabContainer/Display/Margin/VBox/ResolutionOption
-@onready var display_apply_btn = $VBox/TabContainer/Display/Margin/VBox/DisplayApply
-@onready var graphics_apply_btn = $VBox/TabContainer/Graphics/Margin/VBox/GraphicsApply
-@onready var player_vbox: VBoxContainer = $VBox/TabContainer/Player/Margin/VBox
-@onready var reset_game_btn = $VBox/TabContainer/Player/Margin/VBox/ResetButton
+signal closed
+
+var embedded: bool = false
+
+@onready var vsync_check = $VBox/TabContainer/Graphics/Margin/Scroll/VBox/VSyncCheck
+@onready var fps_option = $VBox/TabContainer/Graphics/Margin/Scroll/VBox/FpsOption
+@onready var msaa_option = $VBox/TabContainer/Graphics/Margin/Scroll/VBox/MsaaOption
+@onready var window_mode_option = $VBox/TabContainer/Display/Margin/Scroll/VBox/WindowModeOption
+@onready var resolution_option = $VBox/TabContainer/Display/Margin/Scroll/VBox/ResolutionOption
+@onready var display_apply_btn = $VBox/TabContainer/Display/Margin/Scroll/VBox/DisplayApply
+@onready var graphics_apply_btn = $VBox/TabContainer/Graphics/Margin/Scroll/VBox/GraphicsApply
+@onready var player_vbox: VBoxContainer = $VBox/TabContainer/Player/Margin/Scroll/VBox
+@onready var reset_game_btn = $VBox/TabContainer/Player/Margin/Scroll/VBox/ResetButton
 @onready var reset_modal: Control = $ResetModal
 @onready var reset_cancel_btn: Button = $ResetModal/Panel/VBox/Buttons/CancelButton
 @onready var reset_confirm_btn: Button = $ResetModal/Panel/VBox/Buttons/ConfirmButton
-@onready var device_option = $VBox/TabContainer/Sound/Margin/VBox/DeviceOption
-@onready var master_vol_slider = $VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox/Slider
-@onready var master_vol_label = $VBox/TabContainer/Sound/Margin/VBox/MasterVolHBox/ValueLabel
-@onready var music_vol_slider = $VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox/Slider
-@onready var music_vol_label = $VBox/TabContainer/Sound/Margin/VBox/MusicVolHBox/ValueLabel
-@onready var sfx_vol_slider = $VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox/Slider
-@onready var sfx_vol_label = $VBox/TabContainer/Sound/Margin/VBox/SfxVolHBox/ValueLabel
+@onready var device_option = $VBox/TabContainer/Sound/Margin/Scroll/VBox/DeviceOption
+@onready var master_vol_slider = $VBox/TabContainer/Sound/Margin/Scroll/VBox/MasterVolHBox/Slider
+@onready var master_vol_label = $VBox/TabContainer/Sound/Margin/Scroll/VBox/MasterVolHBox/ValueLabel
+@onready var music_vol_slider = $VBox/TabContainer/Sound/Margin/Scroll/VBox/MusicVolHBox/Slider
+@onready var music_vol_label = $VBox/TabContainer/Sound/Margin/Scroll/VBox/MusicVolHBox/ValueLabel
+@onready var sfx_vol_slider = $VBox/TabContainer/Sound/Margin/Scroll/VBox/SfxVolHBox/Slider
+@onready var sfx_vol_label = $VBox/TabContainer/Sound/Margin/Scroll/VBox/SfxVolHBox/ValueLabel
 @onready var bind_list: VBoxContainer = $VBox/TabContainer/Keybinds/Margin/VBox/Scroll/BindList
 @onready var reset_binds_btn: Button = $VBox/TabContainer/Keybinds/Margin/VBox/ResetButton
 @onready var back_btn = $VBox/TopBar/BackButton
@@ -28,10 +32,15 @@ var _capturing_btn: Button = null
 
 var _callsign_edit: LineEdit
 var _callsign_info: Label
+var _planet_edit: LineEdit
+var _planet_info: Label
 
 func _ready():
 	back_btn.pressed.connect(_on_back)
 	_build_callsign_ui()
+	_build_planet_name_ui()
+	_build_dev_mode_ui()
+	_build_text_size_ui()
 
 	window_mode_option.select(PlayerSettings.get_window_mode_idx())
 	window_mode_option.item_selected.connect(func(_idx): _update_resolution_enabled())
@@ -77,6 +86,28 @@ func _populate_resolutions():
 
 func _update_resolution_enabled():
 	resolution_option.disabled = window_mode_option.selected != 0
+
+func _build_text_size_ui():
+	var display_vbox: VBoxContainer = window_mode_option.get_parent()
+	var title := Label.new()
+	title.text = "Text Size"
+
+	var text_size_option := OptionButton.new()
+	for i in PlayerSettings.TEXT_SIZES.size():
+		text_size_option.add_item(PlayerSettings.TEXT_SIZES[i]["label"], i)
+	text_size_option.select(PlayerSettings.get_text_size_idx())
+	text_size_option.item_selected.connect(PlayerSettings.set_text_size)
+
+	var hint := Label.new()
+	hint.text = "Changes the size of text across the game. Applies right away."
+	hint.add_theme_color_override("font_color", Color(0.45, 0.45, 0.51, 1))
+	hint.add_theme_font_size_override("font_size", 11)
+
+	var insert_index: int = display_vbox.get_node("DisplaySpacer").get_index()
+	var nodes: Array = [title, text_size_option, hint]
+	for i in nodes.size():
+		display_vbox.add_child(nodes[i])
+		display_vbox.move_child(nodes[i], insert_index + i)
 
 func _on_display_apply():
 	PlayerSettings.set_window_mode(window_mode_option.selected)
@@ -124,6 +155,82 @@ func _build_callsign_ui():
 	for i in nodes.size():
 		player_vbox.add_child(nodes[i])
 		player_vbox.move_child(nodes[i], i)
+
+func _build_dev_mode_ui():
+	var title := Label.new()
+	title.text = "Developer"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.93, 0.94, 1, 1))
+
+	var info := Label.new()
+	info.text = "Dev mode unlocks every level. With it off, each level unlocks after you finish the one before it."
+	info.add_theme_font_size_override("font_size", 12)
+	info.add_theme_color_override("font_color", Color(0.6, 0.62, 0.74, 1))
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	var dev_mode_toggle := CheckButton.new()
+	dev_mode_toggle.text = "Dev mode"
+	dev_mode_toggle.focus_mode = Control.FOCUS_NONE
+	dev_mode_toggle.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	dev_mode_toggle.button_pressed = PlayerSettings.is_dev_mode()
+	dev_mode_toggle.toggled.connect(PlayerSettings.set_dev_mode)
+
+	var separator := HSeparator.new()
+
+	var first_index: int = player_vbox.get_node("ResetTitle").get_index()
+	var nodes: Array = [title, info, dev_mode_toggle, separator]
+	for i in nodes.size():
+		player_vbox.add_child(nodes[i])
+		player_vbox.move_child(nodes[i], first_index + i)
+
+func _build_planet_name_ui():
+	var title := Label.new()
+	title.text = "Planet Name"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.93, 0.94, 1, 1))
+
+	var info := Label.new()
+	info.text = "Name your home planet. Dr. Blob's voice lines use this name for your planet."
+	info.add_theme_font_size_override("font_size", 12)
+	info.add_theme_color_override("font_color", Color(0.6, 0.62, 0.74, 1))
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	_planet_edit = LineEdit.new()
+	_planet_edit.text = PlayerData.planet_name
+	_planet_edit.placeholder_text = "Enter planet name"
+	_planet_edit.max_length = PlayerData.PLANET_NAME_MAX_LENGTH
+	_planet_edit.custom_minimum_size = Vector2(260, 0)
+	_planet_edit.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_planet_edit.text_submitted.connect(func(_text): _on_save_planet_name())
+
+	var save_btn := Button.new()
+	save_btn.text = " Save Planet Name "
+	save_btn.focus_mode = Control.FOCUS_NONE
+	save_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	save_btn.pressed.connect(_on_save_planet_name)
+
+	_planet_info = Label.new()
+	_planet_info.add_theme_font_size_override("font_size", 11)
+	_planet_info.add_theme_color_override("font_color", Color(0.5, 0.52, 0.62, 1))
+
+	var separator := HSeparator.new()
+
+	var first_index: int = _callsign_info.get_index() + 2
+	var nodes: Array = [title, info, _planet_edit, save_btn, _planet_info, separator]
+	for i in nodes.size():
+		player_vbox.add_child(nodes[i])
+		player_vbox.move_child(nodes[i], first_index + i)
+
+func _on_save_planet_name():
+	var new_name: String = _planet_edit.text.strip_edges()
+	if new_name == "":
+		_planet_info.add_theme_color_override("font_color", Color(1, 0.55, 0.5, 1))
+		_planet_info.text = "Planet name cannot be empty."
+		return
+	PlayerData.set_planet_name(new_name)
+	_planet_edit.text = PlayerData.planet_name
+	_planet_info.add_theme_color_override("font_color", Color(0.4, 0.85, 0.45, 1))
+	_planet_info.text = "Saved as %s" % PlayerData.planet_name
 
 func _on_save_callsign():
 	var new_name: String = _callsign_edit.text.strip_edges()
@@ -201,4 +308,7 @@ func _on_reset_binds():
 	_build_keybind_rows()
 
 func _on_back():
+	if embedded:
+		closed.emit()
+		return
 	get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn")

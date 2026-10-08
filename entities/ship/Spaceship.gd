@@ -262,35 +262,23 @@ func _compare_var(params: Dictionary) -> bool:
 	return false
 
 func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
-	match block_type:
-		"set_var":
-			SimulationManager.set_var(params.get("var", ""), params.get("value", 0))
-			return BlockExecutor.DONE
-		"set_var_random":
-			var lo: int = int(params.get("min", 0))
-			var hi: int = int(params.get("max", 0))
-			if lo > hi:
-				var tmp := lo
-				lo = hi
-				hi = tmp
-			SimulationManager.set_var(params.get("var", ""), randi_range(lo, hi))
-			return BlockExecutor.DONE
 	if block_type.begins_with("set_"):
-		_apply_config(SimulationManager.config_entry(block_type, params))
+		if not SimulationManager.apply_variable_block(block_type, params):
+			_apply_config(SimulationManager.config_entry(block_type, params))
 		return BlockExecutor.DONE
-	match block_type.substr(3):
-		"forward":
+	match block_type:
+		"do_forward":
 			forward_input = _throttle_mult
 			return _step(state, delta)
-		"backward":
+		"do_backward":
 			forward_input = -_throttle_mult
 			return _step(state, delta)
-		"stop":
+		"do_stop":
 			forward_input = 0.0
 			turn_input = 0.0
 			_turn_cmd = 0.0
 			return BlockExecutor.DONE
-		"random_walk", "wander":
+		"do_random_walk", "do_wander":
 			_turn_cmd = 0.0
 			if not state.has("heading"):
 				state.heading = randf() * TAU
@@ -301,26 +289,26 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			if state.remaining <= 0.0:
 				return BlockExecutor.DONE
 			return BlockExecutor.RUNNING
-		"turn_left":
+		"do_turn_left":
 			_turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
 			return BlockExecutor.DONE
-		"turn_right":
+		"do_turn_right":
 			_turn_cmd = deg_to_rad(float(params.get("value", 90.0)))
 			return BlockExecutor.DONE
-		"turn_left_by":
+		"do_turn_left_by":
 			_turn_cmd = 0.0
 			return _turn_by(state, delta, -1.0, float(params.get("value", 180.0)))
-		"turn_right_by":
+		"do_turn_right_by":
 			_turn_cmd = 0.0
 			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
-		"face":
+		"do_face":
 			_turn_cmd = 0.0
 			_face_target(delta)
 			return _step(state, delta)
-		"throttle":
+		"do_throttle":
 			_throttle_mult = float(params.get("value", 1.0))
 			return BlockExecutor.DONE
-		"fire":
+		"do_fire":
 			_fire()
 			return BlockExecutor.DONE
 	return BlockExecutor.DONE
@@ -513,7 +501,7 @@ func _team_color() -> Color:
 
 func _draw():
 	var col: Color = _team_color()
-	if _cone_polygon.size() >= 3:
+	if _cone_polygon.size() >= 3 and not is_evader:
 		var fill := Color(col.r, col.g, col.b, 0.05)
 		draw_polygon(_cone_polygon, PackedColorArray([fill]))
 	if show_health and hp < max_hp:

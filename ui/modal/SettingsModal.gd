@@ -14,7 +14,7 @@ extends CanvasLayer
 const DEFAULTS := {
 	"speed": 3.75, "turn_speed": 2.0, "view_distance": 3.75,
 	"fov_degrees": 90.0, "time_scale": 1.0,
-	"arena_width": 1280.0, "arena_height": 720.0,
+	"arena_width": 3840.0, "arena_height": 2160.0,
 	"controller_mode": false, "multiplayer": false,
 }
 

@@ -68,24 +68,23 @@ func eval_condition(cond: String, params: Dictionary) -> bool:
 	return false
 
 func exec_action(block_type: String, params: Dictionary, delta: float, state: Dictionary) -> bool:
-	if SimulationManager.apply_variable_block(block_type, params):
-		return BlockExecutor.DONE
 	if block_type.begins_with("set_"):
-		robot.apply_config(SimulationManager.config_entry(block_type, params))
+		if not SimulationManager.apply_variable_block(block_type, params):
+			robot.apply_config(SimulationManager.config_entry(block_type, params))
 		return BlockExecutor.DONE
-	match block_type.substr(3):
-		"forward":
+	match block_type:
+		"do_forward":
 			robot.forward_input = _throttle_mult
 			return _step(state, delta)
-		"backward":
+		"do_backward":
 			robot.forward_input = -_throttle_mult
 			return _step(state, delta)
-		"stop":
+		"do_stop":
 			robot.forward_input = 0.0
 			robot.turn_input = 0.0
 			robot.turn_cmd = 0.0
 			return BlockExecutor.DONE
-		"random_walk", "wander":
+		"do_random_walk", "do_wander":
 			robot.turn_cmd = 0.0
 			if not state.has("heading"):
 				state.heading = randf() * TAU
@@ -96,30 +95,30 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			if state.remaining <= 0.0:
 				return BlockExecutor.DONE
 			return BlockExecutor.RUNNING
-		"turn_left":
+		"do_turn_left":
 			robot.turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
 			return BlockExecutor.DONE
-		"turn_right":
+		"do_turn_right":
 			robot.turn_cmd = deg_to_rad(float(params.get("value", 90.0)))
 			return BlockExecutor.DONE
-		"turn_left_by":
+		"do_turn_left_by":
 			robot.turn_cmd = 0.0
 			return _turn_by(state, delta, -1.0, float(params.get("value", 180.0)))
-		"turn_right_by":
+		"do_turn_right_by":
 			robot.turn_cmd = 0.0
 			return _turn_by(state, delta, 1.0, float(params.get("value", 180.0)))
-		"face":
+		"do_face":
 			robot.turn_cmd = 0.0
 			_face_target(delta)
 			return _step(state, delta)
-		"throttle":
+		"do_throttle":
 			_throttle_mult = float(params.get("value", 1.0))
 			return BlockExecutor.DONE
-		"stop_sim":
+		"do_stop_sim":
 			SimulationManager.has_started = false
 			get_tree().paused = true
 			return BlockExecutor.DONE
-		"pause_sim":
+		"do_pause_sim":
 			get_tree().paused = true
 			return BlockExecutor.DONE
 	return BlockExecutor.DONE

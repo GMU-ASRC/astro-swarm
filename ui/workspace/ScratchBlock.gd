@@ -6,6 +6,7 @@ signal block_deleted
 const BlockShape := preload("res://ui/workspace/BlockShape.gd")
 const BlockFactory := preload("res://ui/workspace/BlockFactory.gd")
 const BlockInputs := preload("res://ui/workspace/BlockInputs.gd")
+const BlockDeleteButton := preload("res://ui/workspace/BlockDeleteButton.gd")
 
 const CAT_COLORS := {
 	"config":    Color(0.275, 0.663, 0.322, 1.0),
@@ -33,6 +34,7 @@ const ERROR_GLOW := Color(1.0, 0.22, 0.18, 0.35)
 const MARKER_COLOR := Color(1, 1, 1, 0.95)
 const MARKER_THICKNESS := 4.0
 const FOOTER_HEIGHT := 14.0
+const PREVIEW_MOUTH_SIZE := Vector2(60, 10)
 
 var block_type: String = ""
 var block_params: Dictionary = {}
@@ -53,6 +55,7 @@ var _marker_below: bool = false
 
 func _ready():
 	delete_btn.pressed.connect(func(): block_deleted.emit())
+	BlockDeleteButton.setup(delete_btn)
 	inner_panel.item_rect_changed.connect(queue_redraw)
 	mouse_default_cursor_shape = Control.CURSOR_MOVE
 	_apply_block_def()
@@ -72,7 +75,7 @@ func setup_preview(btype: String, params: Dictionary = {}):
 	setup(btype, params)
 
 func is_container() -> bool:
-	return block_type.begins_with("when_") or block_type.begins_with("if_") or block_type == "else"
+	return block_type.begins_with("when_") or block_type.begins_with("if_") or block_type.begins_with("elif_") or block_type == "else"
 
 func is_hat() -> bool:
 	return block_type.begins_with("when_")
@@ -100,7 +103,11 @@ func _apply_block_def():
 	label_node.text = def.get("label", block_type)
 	inner_wrap.visible = is_container()
 	_apply_style()
-	BlockInputs.build(self, inputs_box, def)
+	if _palette:
+		BlockInputs.build_compact(self, inputs_box, def)
+		get_children_zone().custom_minimum_size = PREVIEW_MOUTH_SIZE
+	else:
+		BlockInputs.build(self, inputs_box, def)
 	delete_btn.visible = not _palette
 	if _palette:
 		_ignore_mouse_tree(self)
@@ -125,20 +132,7 @@ func _apply_style():
 	label_node.add_theme_font_size_override("font_size", 13)
 	drag_handle.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
 
-	delete_btn.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	delete_btn.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1.0))
-	var delete_normal := _margin_box(4.0, 2.0, 4.0, 2.0)
-	var delete_hover := StyleBoxFlat.new()
-	delete_hover.bg_color = Color(0, 0, 0, 0.2)
-	delete_hover.set_corner_radius_all(3)
-	delete_hover.content_margin_left = 4
-	delete_hover.content_margin_right = 4
-	delete_hover.content_margin_top = 2
-	delete_hover.content_margin_bottom = 2
-	delete_btn.add_theme_stylebox_override("normal", delete_normal)
-	delete_btn.add_theme_stylebox_override("focus", delete_normal)
-	delete_btn.add_theme_stylebox_override("hover", delete_hover)
-	delete_btn.add_theme_stylebox_override("pressed", delete_hover)
+	BlockDeleteButton.style(delete_btn, CAT_DARK.get(_category, CAT_DARK.action))
 
 func _margin_box(left: float, top: float, right: float, bottom: float) -> StyleBoxEmpty:
 	var box := StyleBoxEmpty.new()

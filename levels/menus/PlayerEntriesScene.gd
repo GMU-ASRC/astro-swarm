@@ -59,8 +59,8 @@ func _build_ui():
 	_list.add_theme_constant_override("separation", 10)
 	scroll.add_child(_list)
 
-	var back := _make_btn("← BACK TO LEVELS")
-	back.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/LevelsScene.tscn"))
+	var back := _make_btn("← BACK TO BASE")
+	back.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerBaseScene.tscn"))
 	vbox.add_child(back)
 
 func _fetch_entries():

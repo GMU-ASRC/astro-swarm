@@ -40,9 +40,6 @@ func _launch_label() -> String:
 func _can_reroll() -> bool:
 	return false
 
-func _shortcut_hint() -> String:
-	return "Shortcuts: S start  ·  P replay  ·  E call one in  ·  Q go dark"
-
 func _time_limit() -> float:
 	if STATE.stage == STATE.Stage.ALLOCATE:
 		return STATE.ALLOCATE_SECONDS
@@ -51,41 +48,10 @@ func _time_limit() -> float:
 func _timer_text() -> String:
 	return _countdown_text()
 
-func _walkthrough_lines() -> Array:
-	return [
-		"GOAL: hold both planets. Planet A and planet B each face %d evaders, and you only have %d defenders for the pair." % [STATE.EVADERS_PER_PLANET, STATE.TOTAL_DEFENDERS],
-		"1.  All %d defenders start parked around planet A. Planet B starts empty." % STATE.TOTAL_DEFENDERS,
-		"2.  Open WORKSPACE and write the algorithm every defender runs, on both planets.",
-		"3.  Press START DEPLOYMENT to open the window. You fly the gold shuttle: forward and back drive, left and right turn (WASD or arrow keys, remappable in Settings).",
-		"4.  Every defender runs your workspace algorithm here as well as in the fight, so they sweep on their own during the window.",
-		"5.  The shuttle reads to them as one of their own. Whatever your WHEN SEES ALLY rule does is how they react to you, and that is the only lever you have to steer them.",
-		"6.  Q takes the shuttle dark. A purple shuttle is off their sensors entirely, so they carry on as if you were not there and you can leave without pulling them after you. Q again brings it back to gold.",
-		"7.  Fly into the blue jump gate at the edge of the arena to cross to the other planet. The defenders stay behind.",
-		"8.  Sit inside the blue placement band and press E to call a defender across from the other planet. It leaves purple, flies in through the gate and settles on the marker you dropped, facing the way you were.",
-		"9.  The window lasts %d seconds, or press BEGIN ASSAULT to close it early. Anything still crossing when it closes lands where it was headed." % int(STATE.ALLOCATE_SECONDS),
-		"10. Planet A is attacked first, then planet B. Both fights play out with the split you chose, and a planet with nothing on it is lost.",
-		"11. The panel on the right tracks both planets at once: a pip for every evader each one faces, red when it lands and green when it is stopped, so you can read planet B's result while you are standing on planet A.",
-		"12. You keep flying through both assaults. E is done with, but the shuttle still reads as an ally, so you can pull defenders onto an evader they have not seen. Q still takes you dark when you would rather not disturb them.",
-		"The camera follows the shuttle. Scroll to zoom, middle-drag to pan.",
-	]
-
-func _hint_lines() -> Array:
-	return [
-		"An even split is the obvious answer, and it is not always the right one. Both planets face the same %d evaders, so anything you leave standing idle on A is wasted." % STATE.EVADERS_PER_PLANET,
-		"Calling one across is the fast way to move a defender. Nudging it with the shuttle is the precise way to place it once it has landed.",
-		"An algorithm with no WHEN SEES ALLY rule ignores the shuttle completely, and then the marker is the only placement tool you have.",
-		"Go dark before you fly off, or the half of the line that can see you keeps reacting to you and drifts off the arc it was covering.",
-		"Drop your markers spread around the band. Every defender that lands on the same spot is watching the same sky.",
-		"The same algorithm runs on both planets, so write one that works with a thin line as well as a thick one.",
-		"Close the window early once the split looks right. The leftover time buys you nothing.",
-		"The shuttle cannot catch anything, in the window or in the fight. All it ever does is move the ships that can.",
-		"Flying into a fight cuts both ways: you can pull a defender onto an evader it never saw, or drag it off the arc that was covering the one behind you.",
-	]
-
 func _setup_level():
 	_rng.randomize()
 	_launch_btn.text = _launch_label()
-	_commit_btn = _make_compact_btn("BEGIN ASSAULT")
+	_commit_btn = HUD_BUTTONS.make("BEGIN ASSAULT", HUD_BUTTONS.Kind.PRIMARY, 9)
 	_commit_btn.pressed.connect(_commit)
 	_commit_btn.visible = false
 	_top_bar.add_child(_commit_btn)
@@ -161,9 +127,9 @@ func _restart_level():
 	if _commit_btn != null:
 		_commit_btn.visible = false
 
-func _leave():
+func _exit_level(scene_path: String):
 	STATE.running = false
-	super()
+	super(scene_path)
 
 # Going to the workspace reloads this scene, so the live line is written back
 # before the level is torn down.
@@ -398,7 +364,7 @@ func _show_outcome(_reason: String):
 		headline = "%d of %d evaders reached a planet." % [STATE.breached_total(), STATE.evaders_total()]
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if held else C_RED)
-	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
+	_show_result(held, title, headline)
 
 func _outcome() -> String:
 	if STATE.both_held():

@@ -78,8 +78,8 @@ var settings: Dictionary = {
 	"view_distance":  3.75,
 	"fov_degrees":    90.0,
 	"time_scale":     1.0,
-	"arena_width":    1280.0,
-	"arena_height":   720.0,
+	"arena_width":    3840.0,
+	"arena_height":   2160.0,
 	"controller_mode": false,
 	"multiplayer":    false,
 }
@@ -128,6 +128,26 @@ const BLOCK_DEFS := {
 		{"type": "number", "key": "value", "min": -99999.0, "max": 99999.0, "step": 1.0, "default": 0.0},
 	]},
 	"if_zone_count":     {"category": "logic", "label": "If", "inputs": [
+		{"type": "dropdown", "key": "zone", "provider": "zones"},
+		{"type": "label", "text": "has"},
+		{"type": "dropdown", "key": "op", "provider": "operators"},
+		{"type": "number", "key": "value", "min": 0.0, "max": 9999.0, "step": 1.0, "default": 0.0},
+		{"type": "label", "text": "robots"},
+	]},
+	"elif_see":          {"category": "logic", "label": "Else if I see", "inputs": [
+		{"type": "dropdown", "key": "target", "provider": "targets"},
+	]},
+	"elif_not_see":      {"category": "logic", "label": "Else if I don't see", "inputs": [
+		{"type": "dropdown", "key": "target", "provider": "targets"},
+	]},
+	"elif_near_wall":     {"category": "logic", "label": "Else if I touch a wall",       "input": null},
+	"elif_not_near_wall": {"category": "logic", "label": "Else if I don't touch a wall", "input": null},
+	"elif_compare":      {"category": "logic", "label": "Else if", "inputs": [
+		{"type": "dropdown", "key": "var", "provider": "variables"},
+		{"type": "dropdown", "key": "op", "provider": "operators"},
+		{"type": "number", "key": "value", "min": -99999.0, "max": 99999.0, "step": 1.0, "default": 0.0},
+	]},
+	"elif_zone_count":   {"category": "logic", "label": "Else if", "inputs": [
 		{"type": "dropdown", "key": "zone", "provider": "zones"},
 		{"type": "label", "text": "has"},
 		{"type": "dropdown", "key": "op", "provider": "operators"},
@@ -185,14 +205,14 @@ const REMOVED_BLOCK_TYPES := ["if_within", "if_beyond", "do_flee"]
 const PALETTE_ORDER := {
 	"config":    ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
 	"condition": ["when_start", "when_always", "when_every", "when_sees", "when_alone", "when_near_wall", "when_not_near_wall", "when_sees_wall", "when_sees_species", "when_no_sees_species", "when_not_see"],
-	"logic":     ["if_see", "if_not_see", "if_near_wall", "if_not_near_wall", "if_compare", "else"],
+	"logic":     ["if_see", "if_not_see", "if_near_wall", "if_not_near_wall", "if_compare", "elif_see", "elif_not_see", "elif_near_wall", "elif_not_near_wall", "elif_compare", "else"],
 	"variable":  ["set_var", "set_var_random"],
 	"action":    ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_throttle", "do_stop_sim", "do_pause_sim"],
 }
 
 const ARENA_PALETTE_ORDER := {
 	"condition": ["when_start", "when_always", "when_every"],
-	"logic":     ["if_zone_count", "if_compare", "else"],
+	"logic":     ["if_zone_count", "if_compare", "elif_zone_count", "elif_compare", "else"],
 	"variable":  ["set_var", "set_var_random"],
 	"spawn":     ["do_spawn", "do_zone_species", "do_zone_toggle"],
 	"action":    ["do_stop_sim", "do_pause_sim"],
@@ -295,7 +315,13 @@ static func is_event_block(block_type: String) -> bool:
 	return block_type.begins_with("when_")
 
 static func is_conditional_block(block_type: String) -> bool:
-	return block_type.begins_with("if_") or block_type == "else"
+	return block_type.begins_with("if_") or is_else_branch(block_type)
+
+static func is_else_if_block(block_type: String) -> bool:
+	return block_type.begins_with("elif_")
+
+static func is_else_branch(block_type: String) -> bool:
+	return block_type == "else" or is_else_if_block(block_type)
 
 func _normalize_all_behaviors():
 	for id in behaviors.keys():

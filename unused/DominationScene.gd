@@ -139,7 +139,7 @@ func _ready():
 	_build_home_planet()
 	_spawn_initial_defenders()
 
-	var stream := load("res://assets/music/domination challenge music.mp3") as AudioStreamMP3
+	var stream := load("res://assets/music/RIDLEY_4.mp3") as AudioStreamMP3
 	if stream:
 		stream.loop = true
 		_music = AudioStreamPlayer.new()

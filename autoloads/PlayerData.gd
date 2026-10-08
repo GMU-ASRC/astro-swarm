@@ -1,9 +1,13 @@
 extends Node
 
 const SIM := preload("res://autoloads/SimulationManager.gd")
+const ACHIEVEMENTS := preload("res://achievements/Achievements.gd")
 
 const SAVE_PATH := "user://player.cfg"
 const MAX_MOONS := 5
+const WORKSPACE_MOON_SEED := 424242
+const DEFAULT_PLANET_REFERENCE := "your planet"
+const PLANET_NAME_MAX_LENGTH := 24
 const MOON_LEVEL_STEP := 2
 
 const DEFAULT_SHIP_BLOCKS := [
@@ -14,6 +18,8 @@ const DEFAULT_SHIP_BLOCKS := [
 ]
 
 signal username_changed(new_name: String)
+signal planet_name_changed(new_name: String)
+signal achievement_unlocked(achievement_id: String)
 signal xp_changed(current: int, needed: int)
 signal level_changed(new_level: int)
 signal coins_changed(amount: int)
@@ -21,6 +27,7 @@ signal moons_changed()
 signal ship_program_changed()
 
 var username: String = ""
+var planet_name: String = ""
 var player_id: String = ""
 var level: int = 1
 var xp: int = 0
@@ -34,6 +41,8 @@ var active_algorithm: String = ""
 var game_mode: String = "levels"
 var farp_placements: Array = []
 var farp_layouts: Dictionary = {}
+var completed_levels: Array = []
+var achievements: Array = []
 
 var _rng := RandomNumberGenerator.new()
 
@@ -44,6 +53,14 @@ func _ready():
 	_sync_moons()
 	_ensure_ship_program()
 	_ensure_player_id()
+	call_deferred("_catch_up_achievements")
+
+func _catch_up_achievements():
+	ACHIEVEMENTS.check_commander_level(level)
+	if is_level_completed(ACHIEVEMENTS.FIRST_LEVEL_ID):
+		ACHIEVEMENTS.check_level_completed(ACHIEVEMENTS.FIRST_LEVEL_ID)
+	if not ship_algorithms.is_empty():
+		unlock_achievement(ACHIEVEMENTS.HIVEMIND)
 
 func has_profile() -> bool:
 	return username.strip_edges() != ""
@@ -56,6 +73,14 @@ func xp_needed() -> int:
 
 func moons_for_level(lvl: int) -> int:
 	return clampi(floori(float(lvl) / float(MOON_LEVEL_STEP)), 0, MAX_MOONS)
+
+func set_planet_name(value: String):
+	planet_name = value.strip_edges()
+	_save()
+	planet_name_changed.emit(planet_name)
+
+func planet_display_name() -> String:
+	return planet_name if planet_name != "" else DEFAULT_PLANET_REFERENCE
 
 func set_username(value: String):
 	username = value.strip_edges()
@@ -80,6 +105,7 @@ func add_xp(amount: int):
 	if leveled:
 		level_changed.emit(level)
 		moons_changed.emit()
+		ACHIEVEMENTS.check_commander_level(level)
 
 func add_coins(amount: int):
 	if amount <= 0:
@@ -138,6 +164,7 @@ func save_algorithm(algo_name: String, scripts: Array):
 	ship_algorithms[key] = SIM.normalize_to_scripts(scripts)
 	active_algorithm = key
 	_save()
+	unlock_achievement(ACHIEVEMENTS.HIVEMIND)
 
 func get_algorithm(algo_name: String) -> Array:
 	return SIM.normalize_to_scripts(ship_algorithms.get(algo_name, []))
@@ -173,8 +200,28 @@ func set_level_placements(level_id: String, placements: Array):
 func get_level_placements(level_id: String) -> Array:
 	return farp_layouts.get(level_id, [])
 
+func complete_level(level_id: String):
+	if completed_levels.has(level_id):
+		return
+	completed_levels.append(level_id)
+	_save()
+
+func is_level_completed(level_id: String) -> bool:
+	return completed_levels.has(level_id)
+
+func unlock_achievement(achievement_id: String):
+	if achievements.has(achievement_id):
+		return
+	achievements.append(achievement_id)
+	_save()
+	achievement_unlocked.emit(achievement_id)
+
+func has_achievement(achievement_id: String) -> bool:
+	return achievements.has(achievement_id)
+
 func reset_game():
 	username = ""
+	planet_name = ""
 	player_id = ""
 	level = 1
 	xp = 0
@@ -188,11 +235,14 @@ func reset_game():
 	game_mode = "levels"
 	farp_placements = []
 	farp_layouts = {}
+	completed_levels = []
+	achievements = []
 	_ensure_planet()
 	_sync_moons()
 	_ensure_ship_program()
 	_save()
 	username_changed.emit(username)
+	planet_name_changed.emit(planet_name)
 	level_changed.emit(level)
 	xp_changed.emit(xp, xp_for_level(level))
 	coins_changed.emit(coins)
@@ -214,6 +264,7 @@ func _new_seed() -> int:
 func _save():
 	var cfg := ConfigFile.new()
 	cfg.set_value("player", "username", username)
+	cfg.set_value("planet", "name", planet_name)
 	cfg.set_value("player", "player_id", player_id)
 	cfg.set_value("player", "level", level)
 	cfg.set_value("player", "xp", xp)
@@ -227,6 +278,8 @@ func _save():
 	cfg.set_value("match", "game_mode", game_mode)
 	cfg.set_value("farp", "placements", farp_placements)
 	cfg.set_value("farp", "layouts", farp_layouts)
+	cfg.set_value("progress", "completed_levels", completed_levels)
+	cfg.set_value("progress", "achievements", achievements)
 	cfg.save(SAVE_PATH)
 
 func _load():
@@ -234,6 +287,7 @@ func _load():
 	if cfg.load(SAVE_PATH) != OK:
 		return
 	username = cfg.get_value("player", "username", "")
+	planet_name = cfg.get_value("planet", "name", "")
 	player_id = cfg.get_value("player", "player_id", "")
 	level = cfg.get_value("player", "level", 1)
 	xp = cfg.get_value("player", "xp", 0)
@@ -247,3 +301,5 @@ func _load():
 	game_mode = cfg.get_value("match", "game_mode", "levels")
 	farp_placements = cfg.get_value("farp", "placements", [])
 	farp_layouts = cfg.get_value("farp", "layouts", {})
+	completed_levels = cfg.get_value("progress", "completed_levels", [])
+	achievements = cfg.get_value("progress", "achievements", [])

@@ -70,13 +70,6 @@ text = "SPACESHIP ALGORITHM"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ShipName" type="Label" parent="TopBar/HBox"]
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.451, 0.616, 1, 1)
-text = "INTERCEPTOR"
-
 [node name="Body" type="HSplitContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -131,18 +124,21 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_right")
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Header" type="HBoxContainer" parent="Body/Right/RightVBox"]
+[node name="HeaderBar" type="PanelContainer" parent="Body/Right/RightVBox"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="Body/Right/RightVBox/HeaderBar"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HeaderLabel" type="Label" parent="Body/Right/RightVBox/Header"]
+[node name="HeaderLabel" type="Label" parent="Body/Right/RightVBox/HeaderBar/Header"]
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.85, 0.86, 0.96, 1)
 text = "Flight program"
 
-[node name="HintLabel" type="Label" parent="Body/Right/RightVBox/Header"]
+[node name="HintLabel" type="Label" parent="Body/Right/RightVBox/HeaderBar/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10

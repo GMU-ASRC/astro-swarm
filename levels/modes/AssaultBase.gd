@@ -124,30 +124,6 @@ func _live_defenders() -> int:
 			count += 1
 	return count
 
-func _any_defender_sees(evader: Node2D) -> bool:
-	var target: Vector2 = evader.global_position
-	for ship in _defender_ships:
-		if not is_instance_valid(ship):
-			continue
-		var to_evader: Vector2 = target - ship.global_position
-		if to_evader.length() > ship.view_distance:
-			continue
-		if absf(angle_difference(ship.rotation, to_evader.angle())) <= deg_to_rad(ship.fov_degrees * 0.5):
-			return true
-	return false
-
-func _defender_touching(evader: Node2D) -> Node2D:
-	var target: Vector2 = evader.global_position
-	for ship in _defender_ships:
-		if not is_instance_valid(ship):
-			continue
-		if ship.global_position.distance_to(target) <= ship.hull_radius + evader.hull_radius:
-			return ship
-	return null
-
-func _evader_reached_goal(evader: Node2D) -> bool:
-	return evader.global_position.distance_to(_planet) <= PLANET_RADIUS + GOAL_MARGIN
-
 func _capture_rate() -> float:
 	if _launched < 1:
 		return 0.0

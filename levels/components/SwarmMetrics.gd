@@ -44,3 +44,42 @@ static func circliness(positions: Array, headings: Array) -> float:
 
 static func loss(goal_distance: float, circliness_value: float) -> float:
 	return goal_distance + 1.0 - circliness_value
+
+static func mills(positions: Array, link_distance: float) -> Array:
+	var groups: Array = []
+	var assigned := {}
+	for start in positions.size():
+		if assigned.has(start):
+			continue
+		var members: Array = [start]
+		assigned[start] = true
+		var frontier: Array = [start]
+		while not frontier.is_empty():
+			var index: int = frontier.pop_back()
+			for other in positions.size():
+				if assigned.has(other):
+					continue
+				if positions[index].distance_to(positions[other]) <= link_distance:
+					assigned[other] = true
+					members.append(other)
+					frontier.append(other)
+		groups.append(members)
+	return groups
+
+static func mill_circliness(positions: Array, headings: Array, link_distance: float, minimum_size: int) -> Dictionary:
+	var scores: Array = []
+	for members in mills(positions, link_distance):
+		if members.size() < minimum_size:
+			continue
+		var mill_positions: Array = []
+		var mill_headings: Array = []
+		for index in members:
+			mill_positions.append(positions[index])
+			mill_headings.append(headings[index])
+		scores.append(circliness(mill_positions, mill_headings))
+	if scores.is_empty():
+		return {"average": -1.0, "mills": 0}
+	var total := 0.0
+	for score in scores:
+		total += score
+	return {"average": total / float(scores.size()), "mills": scores.size()}

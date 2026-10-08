@@ -5,6 +5,9 @@ Record one audio file per line and drop it in this folder as `line_01.mp3`,
 that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
+In game, {planet} is replaced with the name the player gave their home planet.
+When recording, say "your planet" in its place.
+
 [Line:1]
 Back on defense, Commander, and this time they are not sending one ship and going home. They keep coming.
 
@@ -24,4 +27,4 @@ Every bearing gets used eventually, so an arc you left uncovered will be found. 
 A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home.
 
 [Line:7]
-Hold all five and nothing touches the planet. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander.
+Hold all five and nothing touches {planet}. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander.

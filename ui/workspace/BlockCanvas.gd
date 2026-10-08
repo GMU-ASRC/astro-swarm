@@ -8,11 +8,23 @@ const SIM := preload("res://autoloads/SimulationManager.gd")
 const SNAP_DISTANCE_X := 60.0
 const SNAP_DISTANCE_Y := 36.0
 const STACK_GAP := 18.0
+const GRID_SPACING := 24.0
+const GRID_DOT := 2.0
 
-const ERROR_NOT_IN_EVENT := "If and Else blocks must be placed inside an event block (On start, Always, When ...)."
-const ERROR_ELSE_WITHOUT_IF := "An Else block needs an If block directly above it."
+const ERROR_NOT_IN_EVENT := "If, Else if and Else blocks must be placed inside an event block (On start, Always, When ...)."
+const ERROR_ELSE_WITHOUT_IF := "Else and Else if blocks need an If or Else if block directly above them."
 
 var _panning: bool = false
+var grid_color: Color = Color(0, 0, 0, 0)
+
+func _draw():
+	if grid_color.a <= 0.0:
+		return
+	var columns: int = int(size.x / GRID_SPACING)
+	var rows: int = int(size.y / GRID_SPACING)
+	for column in columns:
+		for row in rows:
+			draw_rect(Rect2(column * GRID_SPACING, row * GRID_SPACING, GRID_DOT, GRID_DOT), grid_color)
 
 func _gui_input(event: InputEvent):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -73,7 +85,7 @@ func _check_blocks(zone: Node, inside_event: bool, messages: Array):
 		var message: String = ""
 		if SIM.is_conditional_block(block_type) and not inside_event:
 			message = ERROR_NOT_IN_EVENT
-		elif block_type == "else" and not previous_type.begins_with("if_"):
+		elif SIM.is_else_branch(block_type) and not (previous_type.begins_with("if_") or SIM.is_else_if_block(previous_type)):
 			message = ERROR_ELSE_WITHOUT_IF
 		block.set_error(message)
 		if message != "" and not messages.has(message):

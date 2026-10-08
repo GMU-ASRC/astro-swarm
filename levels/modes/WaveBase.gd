@@ -88,7 +88,7 @@ func _show_outcome(reason: String):
 		headline = "%d of the %d evaders sent reached the planet." % [_breached, _launched]
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if held else C_RED)
-	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
+	_show_result(held, title, headline)
 
 func _draw_level():
 	super()

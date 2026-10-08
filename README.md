@@ -5,14 +5,14 @@
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macOS-lightgrey)](#building-from-source)
 [![Video Export](https://img.shields.io/badge/video%20export-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
-[![Version](https://img.shields.io/badge/version-0.0.8-blue)](#)
+[![Version](https://img.shields.io/badge/version-0.0.9-blue)](#)
 
 AstroSwarm is a 2D pixel-art **tower-defense game (in development)** built in Godot 4. It also includes a full **swarm-behavior simulator** sandbox: design species, program their behavior with a drag-and-drop block editor, then record, replay, and export sessions to video. The pixel-art game shell is themed separately from the simulator.
 
 ## Features
 
 - **Player base & progression.** A procedurally generated home planet, moons that orbit it and unlock as you level up, an XP bar, and AstroCoin currency — all saved to a local profile.
-- **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Workspace Moon's block editor.
+- **Timed Local battles.** Deploy a squad from your base to destroy the swarm guarding a central star, then program your ship's flight logic in the Hivemind moon's block editor.
 - **Benchmarked levels.** Eight FARP levels: program the defenders for levels 1 to 5 and have your algorithm graded headlessly by the evaluation service, fly the evader yourself in level 6 against the best algorithm other players have submitted, or split one force across two planets in level 8. Every entry is published to the companion website and browsable in-game from My Entries.
 - **Visual block editor.** Build per-species behavior by stacking condition and action blocks — no coding required.
 - **Custom species.** Tune speed, turn rate, vision range, and field of view, or start from the Hunter, Scout, and Worker presets.
@@ -123,10 +123,10 @@ Behavior is built from four block types:
 
 - **Config** — set a physical parameter (speed, turn rate, vision range, FOV, size). Config blocks apply whenever they run, so they can be placed under any event or If block, not only On start.
 - **Condition** — start a rule (On start; Always; Every [N] seconds; When I see anyone / nobody; When I don't see [a target]; When I touch / don't touch / see a wall). The simulator adds *When I see / don't see a [species]*; the ship workspace instead adds *When I see an enemy / ally*.
-- **Logic** — branch inside a rule (If I see / don't see anyone / an enemy / an ally / an object / a wall / a [species]; If I touch / don't touch a wall; Else).
+- **Logic** — branch inside a rule (If I see / don't see anyone / an enemy / an ally / an object / a wall / a [species]; If I touch / don't touch a wall; Else if versions of each; Else).
 - **Action** — run while the condition holds (move, stop, random walk, turn, face target, throttle, and — in the ship workspace — fire).
 
-Actions placed before any condition run under `Always`. **Every [N] seconds** runs its blocks through once each time N seconds of simulation time pass; if the blocks are still running when the next interval is due, that run starts as soon as they finish. **Random walk** steers on a Lévy-flight pattern: mostly short hops with the occasional long straight run. For branching, place an **Else** block directly after its **If** at the same level — the `Else` runs when that `If`'s condition was false.
+Actions placed before any condition run under `Always`. **Every [N] seconds** runs its blocks through once each time N seconds of simulation time pass; if the blocks are still running when the next interval is due, that run starts as soon as they finish. **Random walk** steers on a Lévy-flight pattern: mostly short hops with the occasional long straight run. For branching, place an **Else** block directly after its **If** at the same level — the `Else` runs when that `If`'s condition was false. **Else if** blocks go between them: each one is checked only when every `If` / `Else if` above it in the chain was false, and the first one that matches skips the rest of the chain.
 
 The FARP ship workspace shares the simulator's block set (minus the variable blocks): it swaps the species conditions for **enemy/ally** detection, and hides the **Fire**, **Throttle**, and **Set size** blocks, since a FARP defender stops the evader by intercepting it rather than shooting it. Sliders also accept keyboard arrow keys once focused.
 

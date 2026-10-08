@@ -30,17 +30,17 @@ func _place_saved_layout():
 	_update_count()
 
 func _roll_layout():
-	for placement in _random_ring_placements(RING_COUNT, _rng):
+	for placement in _random_ring_placements(_scatter_count(), _rng):
 		_placements.append(placement)
 		_spawn_defender(placement, PlayerData.ship_blocks)
 	_update_count()
 	PlayerData.set_level_placements(_level_id(), _placements_payload())
 
+func _scatter_count() -> int:
+	return RING_COUNT
+
 func _can_reroll() -> bool:
 	return _phase == Phase.SETUP
-
-func _shortcut_hint() -> String:
-	return "Shortcuts: S start  ·  P replay  ·  R reroll"
 
 func _reroll_level():
 	if _phase != Phase.SETUP:
@@ -54,6 +54,6 @@ func _reroll_level():
 func _draw_level():
 	if _phase != Phase.SETUP:
 		return
-	draw_circle(_planet, SCATTER_MAX, ZONE_FILL)
-	_draw_dashed_circle(_planet, SCATTER_MAX, Color(0.451, 0.616, 1.0, 0.35), 1.5)
+	draw_circle(_planet, _scatter_max_radius(), ZONE_FILL)
+	_draw_dashed_circle(_planet, _scatter_max_radius(), Color(0.451, 0.616, 1.0, 0.35), 1.5)
 	_draw_dashed_circle(_planet, PLACE_MIN, Color(0.6, 0.62, 0.74, 0.25), 1.0)

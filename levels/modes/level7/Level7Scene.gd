@@ -97,31 +97,6 @@ func _time_limit() -> float:
 func _timer_text() -> String:
 	return _countdown_text()
 
-func _walkthrough_lines() -> Array:
-	return [
-		"GOAL: merge the two milling swarms into one, bring that swarm to the center planet, then leave it milling without you.",
-		"1.  Every agent follows one rule: turn one way when it can see another ship, the other way when it sees nothing. That rule alone is what makes them mill in a circle.",
-		"2.  You fly the gold leader. The agents cannot tell you apart from one of their own, so wherever you go you bend their turning.",
-		"3.  Press LAUNCH, then fly the leader. Forward and back drive, left and right turn (WASD or arrow keys, remappable in Settings).",
-		"4.  MERGE: the swarm counts as one when every agent is within %d meters of the group through its neighbours. Two center markers become one gold marker." % int(MERGE_DISTANCE / SimulationManager.PX_PER_METER),
-		"5.  DELIVER: walk the merged mill until its gold center marker sits inside the white ring around the planet.",
-		"6.  ESCAPE: fly at least %d meters clear and hold it for %d seconds while the swarm stays merged, stays on the planet and keeps milling." % [int(ESCAPE_DISTANCE / SimulationManager.PX_PER_METER), int(HOLD_SECONDS)],
-		"The panel on the right tracks the loss: distance from the swarm center to the planet plus how far the mill is from a clean circle. Lower is better, and the minimum you reached is kept.",
-		"You have %d minutes. The clock in the top right counts down." % int(TIME_LIMIT_SECONDS / 60.0),
-		"Scroll to zoom, middle-drag to pan.",
-	]
-
-func _hint_lines() -> Array:
-	return [
-		"Do not charge into a mill. Sitting just outside it turns the whole ring toward you.",
-		"Lead from in front. Agents follow what they can see, so back away slowly and the mill drifts after you.",
-		"Merge first, move second. Dragging one group across the arena usually strings it out and loses the other.",
-		"A mill that is stretched into an oval scores badly. Give it a few seconds to round out before you leave.",
-		"Circliness drops the moment agents stop moving tangentially. If it dives, you are pulling too hard.",
-		"Your escape only counts if the swarm holds together while you are away. Leave along a line that does not drag the ring with you.",
-		"The clock is generous. A slow, patient nudge beats a fast pass every time.",
-	]
-
 func _setup_level():
 	_build_metrics_panel()
 	_spawn_scenario()
@@ -458,7 +433,7 @@ func _show_outcome(reason: String):
 		headline = _timeout_headline()
 		_phase_label.add_theme_color_override("font_color", C_RED)
 	_phase_label.text = title
-	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
+	_show_result(reason == "delivered", title, headline)
 
 func _timeout_headline() -> String:
 	match _objective:

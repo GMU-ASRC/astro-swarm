@@ -18,6 +18,8 @@ const STAR_COLORS := [
 ]
 
 var STAR_SEED := randi_range(0, 9999999)
+var animated: bool = true
+var star_count_scale: float = 1.0
 const PIXEL := 2.0
 const MAX_SHIFT := 28.0
 const EASE := 9.0
@@ -28,6 +30,7 @@ var _mouse_norm: Vector2 = Vector2.ZERO
 var _mouse_target: Vector2 = Vector2.ZERO
 
 func _ready():
+	set_process(animated)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	resized.connect(_regenerate)
@@ -42,7 +45,7 @@ func _regenerate():
 		area = get_viewport_rect().size
 	for cfg in LAYERS:
 		var stars: Array = []
-		var n: int = int(cfg["count"])
+		var n: int = int(round(float(cfg["count"]) * star_count_scale))
 		for i in n:
 			stars.append({
 				"x": rng.randf() * area.x,

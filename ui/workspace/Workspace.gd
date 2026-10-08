@@ -11,6 +11,7 @@ extends Control
 
 const BlockFactory := preload("res://ui/workspace/BlockFactory.gd")
 const ERROR_BANNER := preload("res://ui/workspace/WorkspaceErrorBanner.gd")
+const WorkspaceStyle := preload("res://ui/workspace/WorkspaceStyle.gd")
 const ARENA_TAB_COLOR := Color(0.788, 0.310, 0.502, 1.0)
 const ARENA_HINT := "Runs once for the whole arena · Controls spawn zones"
 const PALETTE_CATEGORIES := ["config", "condition", "logic", "variable", "spawn", "action"]
@@ -33,6 +34,7 @@ func _ready():
 	SimulationManager.species_list_changed.connect(_on_species_list_changed)
 	SimulationManager.variables_changed.connect(_on_variables_changed)
 	_style_color_picker()
+	WorkspaceStyle.apply(self, WorkspaceStyle.SIMULATOR)
 	_build_error_banner()
 	_build_tabs()
 	_build_palette()
@@ -219,7 +221,7 @@ func _build_palette():
 			_build_palette_category(category, palette_order[category])
 
 func _build_variable_section():
-	BlockFactory.add_palette_header(palette_list, "VARIABLES")
+	var section: VBoxContainer = WorkspaceStyle.add_palette_section(palette_list, "VARIABLES", "variable", WorkspaceStyle.SIMULATOR)
 	for v in SimulationManager.variables:
 		var row := HBoxContainer.new()
 		var name_label := Label.new()
@@ -233,17 +235,16 @@ func _build_variable_section():
 		var vname: String = v.get("name", "")
 		del.pressed.connect(func(): SimulationManager.remove_variable(vname))
 		row.add_child(del)
-		palette_list.add_child(row)
+		section.add_child(row)
 	var new_btn := Button.new()
 	new_btn.text = "  + New variable"
 	new_btn.focus_mode = Control.FOCUS_NONE
 	new_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	new_btn.custom_minimum_size = Vector2(0, 28)
 	new_btn.pressed.connect(_open_new_variable_dialog)
-	palette_list.add_child(new_btn)
+	section.add_child(new_btn)
 	for block_id in SimulationManager.PALETTE_ORDER.get("variable", []):
-		BlockFactory.add_palette_item(palette_list, block_id, _add_block)
-	BlockFactory.add_palette_spacer(palette_list)
+		BlockFactory.add_palette_item(section, block_id, _add_block)
 
 func _open_new_variable_dialog():
 	var dialog := AcceptDialog.new()
@@ -273,10 +274,9 @@ func _open_new_variable_dialog():
 	name_edit.grab_focus()
 
 func _build_palette_category(category: String, ids: Array):
-	BlockFactory.add_palette_header(palette_list, _category_label(category))
+	var section: VBoxContainer = WorkspaceStyle.add_palette_section(palette_list, _category_label(category), category, WorkspaceStyle.SIMULATOR)
 	for block_id in ids:
-		BlockFactory.add_palette_item(palette_list, block_id, _add_block)
-	BlockFactory.add_palette_spacer(palette_list)
+		BlockFactory.add_palette_item(section, block_id, _add_block)
 
 func _category_label(category: String) -> String:
 	match category:

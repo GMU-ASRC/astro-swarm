@@ -2,7 +2,6 @@ extends RefCounted
 
 const BLOCK_SCENE_PATH := "res://ui/workspace/ScratchBlock.tscn"
 const PREVIEW_OPACITY := 0.8
-const HEADER_COLOR := Color(0.435, 0.435, 0.498, 1.0)
 
 static func create_block(data: Dictionary, parent_zone: Control, on_changed: Callable):
 	var block = load(BLOCK_SCENE_PATH).instantiate()
@@ -37,18 +36,6 @@ static func build_drag_preview(blocks: Array, grab_offset: Vector2) -> Control:
 		if is_instance_valid(block):
 			create_preview(block.get_block_data(), column)
 	return holder
-
-static func add_palette_header(palette_list: Control, text: String):
-	var header := Label.new()
-	header.text = text
-	header.add_theme_font_size_override("font_size", 10)
-	header.add_theme_color_override("font_color", HEADER_COLOR)
-	palette_list.add_child(header)
-
-static func add_palette_spacer(palette_list: Control):
-	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 8)
-	palette_list.add_child(spacer)
 
 static func add_palette_item(palette_list: Control, block_id: String, on_pressed: Callable):
 	var item := MarginContainer.new()

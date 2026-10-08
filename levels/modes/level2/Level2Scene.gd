@@ -1,43 +1,73 @@
 extends "res://levels/modes/ScatterBase.gd"
 
+const EVADER_COUNT := 10
+const SPAWN_INTERVAL := 3.0
+const FIRST_EVADER_DELAY := 10.0
+const DEFENDER_OPTIONS := [5, 25, 50, 100]
+const SPACING_FILL := 0.8
+const SCENE_SCALE := 1.5
+const LEVEL_ARENA := ARENA * SCENE_SCALE
+
+var _defender_count: int = DEFENDER_OPTIONS[0]
+var _count_picker: OptionButton
+
 func _level_id() -> String:
 	return "farp2"
 
+func _arena_size() -> Vector2:
+	return LEVEL_ARENA
+
+func _planet_center() -> Vector2:
+	return LEVEL_ARENA * 0.5
+
 func _level_title() -> String:
-	return "LEVEL 2 - PROGRAM THE RING"
+	return "LEVEL 2 - PROGRAM THE SCATTER"
 
 func _level_subtitle() -> String:
-	return "%d defenders are scattered at random inside the blue placement ring, facing random directions. You cannot move them - only your algorithm decides the outcome. Press REROLL for a different scatter. The layout on screen when you launch is the one the server benchmarks." % RING_COUNT
+	return "Your defenders are dropped at random inside the blue ring, facing random directions. You cannot move them - only your algorithm decides the outcome. Pick how many defenders to field, press REROLL for a new scatter, then LAUNCH."
 
-func _walkthrough_lines() -> Array:
-	return [
-		"GOAL: keep the red evader from reaching the center planet, using your algorithm alone.",
-		"1.  %d defenders are dropped at random positions inside the blue placement ring, each facing a random direction." % RING_COUNT,
-		"2.  You cannot place or move them. Open WORKSPACE and write the algorithm they all run.",
-		"3.  Press REROLL for a different scatter and check your algorithm is not just lucky on one layout.",
-		"4.  Press LAUNCH EVADER. A red evader spawns on the outer ring and drives straight at the planet.",
-		"5.  DETECTION is logged the first time any defender sees the evader in its vision cone.",
-		"6.  CAPTURE is the first time a defender physically touches the evader. Capture ends the run and you win.",
-		"7.  The GOAL TIME is when the evader reaches the planet. If that happens first, the planet is breached.",
-		"8.  The server benchmarks your algorithm on the layout you launched with, over many enemy approach angles.",
-		"9.  The best submitted entry becomes the opponent in Level 6 - your algorithm and your layout.",
-		"Scroll to zoom, middle-drag to pan.",
-	]
+func _setup_level():
+	_defender_count = _saved_defender_count()
+	_use_evader_stream(EVADER_COUNT, SPAWN_INTERVAL, FIRST_EVADER_DELAY)
+	_stream.wins_by_capture = true
+	super()
+	_build_count_picker()
 
-func _hint_lines() -> Array:
-	return [
-		"REROLL until you get a scatter you like - the layout on screen when you launch is the one you are graded on, and the one Level 6 pilots will face if you win.",
-		"An algorithm that only works from one lucky layout will fall apart on the next reroll. Check a few before you launch.",
-		"Make the defenders sweep: turning while moving forward covers far more angles than driving straight.",
-		"Detection alone does not win. Add WHEN SEES ENEMY then DO FACE and DO FORWARD so a defender closes in and touches the evader.",
-		"WHEN SEES ALLY plus a turn keeps defenders from bunching up and watching the same slice of sky.",
-		"Widening FOV costs vision range. A short wide cone catches late, a long narrow cone catches early but misses often.",
-		"Test with REROLL several times - the benchmark runs many random trials.",
-	]
+func _shows_hint_text() -> bool:
+	return false
+
+func _launch_label() -> String:
+	return "LAUNCH EVADERS (S) >"
 
 func _launch():
 	_start_active()
-	var angle: float = _rng.randf() * TAU
-	_spawn_scripted_evader(_planet + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(angle))
-	_phase_label.text = "EVADER INBOUND"
-	_hint_label.text = "Your algorithm is driving every defender. Touch the evader to capture it before it reaches the planet."
+	_stream.start()
+	_phase_label.text = "EVADERS INCOMING"
+
+func _scatter_count() -> int:
+	return _defender_count
+
+func _scatter_spacing() -> float:
+	var band_area: float = PI * (SCATTER_MAX * SCATTER_MAX - PLACE_MIN * PLACE_MIN)
+	return minf(SCATTER_SPACING, sqrt(band_area / float(_defender_count)) * SPACING_FILL)
+
+func _saved_defender_count() -> int:
+	var saved_size: int = PlayerData.get_level_placements(_level_id()).size()
+	return saved_size if DEFENDER_OPTIONS.has(saved_size) else DEFENDER_OPTIONS[0]
+
+func _build_count_picker():
+	_count_picker = OptionButton.new()
+	_count_picker.focus_mode = Control.FOCUS_NONE
+	HUD_BUTTONS.apply(_count_picker, HUD_BUTTONS.Kind.NEUTRAL, 9)
+	for option in DEFENDER_OPTIONS:
+		_count_picker.add_item("%d DEFENDERS" % option)
+	_count_picker.select(DEFENDER_OPTIONS.find(_defender_count))
+	_count_picker.item_selected.connect(_on_count_selected)
+	_top_bar.add_child(_count_picker)
+
+func _on_count_selected(index: int):
+	if _phase != Phase.SETUP:
+		_count_picker.select(DEFENDER_OPTIONS.find(_defender_count))
+		return
+	_defender_count = DEFENDER_OPTIONS[index]
+	_reroll_level()

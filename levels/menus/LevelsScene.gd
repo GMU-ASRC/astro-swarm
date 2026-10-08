@@ -11,29 +11,20 @@ const C_TEXT          := Color(0.93, 0.94, 1.0, 1.0)
 const C_TEXT_HOVER    := Color(1.0, 1.0, 1.0, 1.0)
 const C_LOCKED        := Color(0.35, 0.35, 0.45, 1.0)
 
-const TILE_SIZE     := Vector2(560, 56)
+const TILE_WIDTH    := 560.0
 const ROW_SEPARATION := 10
+const SCREEN_MARGIN := 40
 
 const BAR_WIDTH       := 4.0
 const BAR_WIDTH_HOVER := 7.0
-const PAD_LEFT        := 16.0
-const PAD_RIGHT       := 14.0
-const PAD_Y           := 8.0
+const PAD_LEFT        := 16
+const PAD_RIGHT       := 14
+const PAD_Y           := 10
 
 const GHOST_SIZE  := 40
 const GHOST_ALPHA := 0.13
 const BORDER_ALPHA := 0.5
 
-const LEVELS := [
-	{"name": "DEFENSE",   "color": Color(0.451, 0.616, 1.0, 1.0),  "scene": "res://levels/modes/level1/Level1Scene.tscn",      "locked": false},
-	{"name": "RING",      "color": Color(0.400, 0.780, 0.95, 1.0), "scene": "res://levels/modes/level2/Level2Scene.tscn",      "locked": false},
-	{"name": "WAVES",     "color": Color(0.400, 0.850, 0.45, 1.0), "scene": "res://levels/modes/level3/Level3Scene.tscn",      "locked": false},
-	{"name": "ATTRITION", "color": Color(1.000, 0.700, 0.20, 1.0), "scene": "res://levels/modes/level4/Level4Scene.tscn",      "locked": false},
-	{"name": "SIEGE",     "color": Color(1.000, 0.420, 0.32, 1.0), "scene": "res://levels/modes/level5/Level5Scene.tscn",      "locked": false},
-	{"name": "PILOT",     "color": Color(0.780, 0.520, 1.0, 1.0),  "scene": "res://levels/modes/level6/Level6Scene.tscn",      "locked": false},
-	{"name": "SWARM",     "color": Color(1.000, 0.840, 0.20, 1.0), "scene": "res://levels/modes/level7/Level7Scene.tscn",      "locked": false},
-	{"name": "SUPPLY",    "color": Color(0.350, 0.880, 0.80, 1.0), "scene": "res://levels/modes/level8/Level8PlanetA.tscn",    "locked": false},
-]
 
 func _ready():
 	theme = GAME_THEME
@@ -45,24 +36,34 @@ func _build_ui():
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
-	var outer := CenterContainer.new()
-	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var outer := MarginContainer.new()
+	outer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	outer.add_theme_constant_override("margin_top", SCREEN_MARGIN)
+	outer.add_theme_constant_override("margin_bottom", SCREEN_MARGIN)
 	add_child(outer)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 20)
+	vbox.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	outer.add_child(vbox)
 
 	var title := _lbl("LEVELS", 32, C_TEXT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
+	var list_scroll := ScrollContainer.new()
+	list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	list_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(list_scroll)
+
 	var level_list := VBoxContainer.new()
 	level_list.add_theme_constant_override("separation", ROW_SEPARATION)
-	vbox.add_child(level_list)
+	level_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_scroll.add_child(level_list)
 
-	for i in LEVELS.size():
-		level_list.add_child(_make_tile(i + 1, LEVELS[i]))
+	level_list.add_child(_make_tile(0, LevelInfo.TRAINING_LEVEL, false))
+	for i in LevelInfo.LEVELS.size():
+		level_list.add_child(_make_tile(i + 1, LevelInfo.LEVELS[i], _is_locked(i)))
 
 	var buttons := HBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -73,55 +74,63 @@ func _build_ui():
 	back.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerBaseScene.tscn"))
 	buttons.add_child(back)
 
-	var entries_btn := _make_btn("MY ENTRIES")
-	entries_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerEntriesScene.tscn"))
-	buttons.add_child(entries_btn)
+func _is_locked(level_index: int) -> bool:
+	if PlayerSettings.is_dev_mode() or level_index == 0:
+		return false
+	return not PlayerData.is_level_completed(LevelInfo.LEVELS[level_index - 1]["id"])
 
-func _make_tile(number: int, level: Dictionary) -> Control:
-	var locked: bool = level["locked"]
+func _make_tile(number: int, level: Dictionary, locked: bool) -> Control:
 	var accent: Color = C_LOCKED if locked else level["color"]
 
 	var tile := PanelContainer.new()
-	tile.custom_minimum_size = TILE_SIZE
+	tile.custom_minimum_size = Vector2(TILE_WIDTH, 0)
 	tile.add_theme_stylebox_override("panel", _tile_style(accent, locked, false))
 
-	var layers := Control.new()
-	layers.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tile.add_child(layers)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 0)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_child(row)
 
 	var bar := ColorRect.new()
 	bar.color = accent
-	bar.set_anchors_preset(Control.PRESET_LEFT_WIDE)
-	bar.offset_right = BAR_WIDTH
+	bar.custom_minimum_size = Vector2(BAR_WIDTH, 0)
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layers.add_child(bar)
+	row.add_child(bar)
 
-	var ghost := _lbl("%02d" % number, GHOST_SIZE, Color(accent.r, accent.g, accent.b, GHOST_ALPHA))
-	ghost.set_anchors_preset(Control.PRESET_FULL_RECT)
-	ghost.offset_right = -PAD_RIGHT
-	ghost.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ghost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layers.add_child(ghost)
+	var padding := MarginContainer.new()
+	padding.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	padding.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	padding.add_theme_constant_override("margin_left", PAD_LEFT)
+	padding.add_theme_constant_override("margin_right", PAD_RIGHT)
+	padding.add_theme_constant_override("margin_top", PAD_Y)
+	padding.add_theme_constant_override("margin_bottom", PAD_Y)
+	row.add_child(padding)
+
+	var content := HBoxContainer.new()
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	padding.add_child(content)
 
 	var text := VBoxContainer.new()
 	text.add_theme_constant_override("separation", 4)
 	text.alignment = BoxContainer.ALIGNMENT_CENTER
-	text.set_anchors_preset(Control.PRESET_FULL_RECT)
-	text.offset_left = BAR_WIDTH + PAD_LEFT
-	text.offset_top = PAD_Y
-	text.offset_right = -PAD_RIGHT
-	text.offset_bottom = -PAD_Y
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layers.add_child(text)
+	content.add_child(text)
 
-	var tag := _lbl("LEVEL %d" % number, 10, accent)
+	var ghost := _lbl("%02d" % number, GHOST_SIZE, Color(accent.r, accent.g, accent.b, GHOST_ALPHA))
+	ghost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ghost.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(ghost)
+
+	var tag := _lbl("LEVEL %d - LOCKED" % number if locked else "LEVEL %d" % number, 10, accent)
 	text.add_child(tag)
 
-	var name_lbl := _lbl(level["name"] if not locked else "LOCKED", 17, C_TEXT if not locked else C_LOCKED)
+	var name_lbl := _lbl(level["name"], 17, C_LOCKED if locked else C_TEXT)
 	text.add_child(name_lbl)
 
 	if locked:
+		tile.tooltip_text = "Finish level %d to unlock this level." % (number - 1)
 		return tile
 
 	var scene_path: String = level["scene"]
@@ -136,7 +145,7 @@ func _make_tile(number: int, level: Dictionary) -> Control:
 
 func _set_hover(tile: PanelContainer, bar: ColorRect, name_lbl: Label, accent: Color, hovered: bool):
 	tile.add_theme_stylebox_override("panel", _tile_style(accent, false, hovered))
-	bar.offset_right = BAR_WIDTH_HOVER if hovered else BAR_WIDTH
+	bar.custom_minimum_size.x = BAR_WIDTH_HOVER if hovered else BAR_WIDTH
 	name_lbl.add_theme_color_override("font_color", C_TEXT_HOVER if hovered else C_TEXT)
 
 func _tile_style(accent: Color, locked: bool, hovered: bool) -> StyleBoxFlat:

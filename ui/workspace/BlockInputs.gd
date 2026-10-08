@@ -10,6 +10,15 @@ static func build(block, inputs_box: HBoxContainer, def: Dictionary):
 	for spec in input_specs(def):
 		_add_input_widget(block, inputs_box, spec)
 
+static func build_compact(block, inputs_box: HBoxContainer, def: Dictionary):
+	for c in inputs_box.get_children():
+		c.queue_free()
+	for spec in input_specs(def):
+		if spec.get("type", "slider") == "label":
+			inputs_box.add_child(_make_label(spec.get("text", "")))
+		else:
+			inputs_box.add_child(_make_chip(_compact_text(block, spec)))
+
 static func input_specs(def: Dictionary) -> Array:
 	if def.has("inputs"):
 		return def.inputs
@@ -141,10 +150,32 @@ static func _make_slider(block, spec: Dictionary) -> HBoxContainer:
 	return row
 
 static func _update_slider_label(lbl: Label, val: float, suffix: String, step: float):
+	lbl.text = _format_number(val, suffix, step)
+
+static func _format_number(val: float, suffix: String, step: float) -> String:
 	if step >= 1.0:
-		lbl.text = "%d%s" % [int(val), suffix]
-	else:
-		lbl.text = "%.1f%s" % [val, suffix]
+		return "%d%s" % [int(val), suffix]
+	return "%.1f%s" % [val, suffix]
+
+static func _compact_text(block, spec: Dictionary) -> String:
+	var value = block.block_params.get(spec.get("key", "value"), spec.get("default", null))
+	match spec.get("type", "slider"):
+		"slider", "number":
+			return _format_number(float(value if value != null else 0.0), spec.get("suffix", ""), spec.get("step", 1.0))
+		"species", "dropdown":
+			var provider: String = "species" if spec.get("type") == "species" else spec.get("provider", "")
+			var options: Array = SimulationManager.dropdown_options(provider)
+			for option in options:
+				if str(option.value) == str(value):
+					return option.text
+			return options[0].text if not options.is_empty() else "(none)"
+	return str(value if value != null else "")
+
+static func _make_chip(text: String) -> Label:
+	var chip := _make_label(text)
+	chip.add_theme_color_override("font_color", TEXT_COLOR)
+	chip.add_theme_stylebox_override("normal", _slot_box(8, 8))
+	return chip
 
 static func _slot_box(left: float, right: float) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()

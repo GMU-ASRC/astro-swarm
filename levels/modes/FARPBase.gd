@@ -9,6 +9,14 @@ const TUTORIAL       := preload("res://ui/tutorial/BlobTutorial.gd")
 const TUTORIAL_LINES := preload("res://ui/tutorial/LevelTutorialLines.gd")
 const FONT_REG       := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const GAME_THEME     := preload("res://ui/GameTheme.tres")
+const HUD_BUTTONS    := preload("res://ui/hud/HudButtons.gd")
+const STARFIELD      := preload("res://ui/game/Starfield.gd")
+const RESULT_PANEL   := preload("res://levels/components/LevelResultPanel.gd")
+const PAUSE_MENU     := preload("res://levels/components/PauseMenu.gd")
+const ACHIEVEMENTS   := preload("res://achievements/Achievements.gd")
+const EVADER_STREAM  := preload("res://levels/components/EvaderStream.gd")
+const LEVELS_MENU_SCENE := "res://levels/menus/LevelsScene.tscn"
+const STREAM_SPAWN_RADIUS := 750.0
 
 # Distances are pixels, durations are seconds and rotations are radians. The
 # block editor shows meters, at 40 pixels per meter.
@@ -49,6 +57,7 @@ const ZOOM_MIN := 0.4        # camera zoom factor
 const ZOOM_MAX := 2.5        # camera zoom factor
 
 const BG_COLOR    := Color(0.04, 0.04, 0.07, 1.0)
+const LEVEL_STAR_COUNT_SCALE := 0.45
 const ZONE_FILL   := Color(0.451, 0.616, 1.0, 0.05)
 const ACCENT      := Color(0.451, 0.616, 1.0, 1.0)
 const C_TEXT      := Color(0.93, 0.94, 1.0, 1.0)
@@ -98,7 +107,6 @@ var _submitted: bool = false
 
 var _camera: Camera2D
 var _panning: bool = false
-var _bg_stars: Array = []
 var _drag_indicator: Node2D
 var _music: AudioStreamPlayer = null
 
@@ -117,12 +125,8 @@ var _hint_label: Label
 var _event_label: Label
 var _launch_btn: Button
 var _result_panel: Control
-var _result_title: Label
-var _result_detail: Label
-var _guide_panel: Control
-var _guide_body: VBoxContainer
-var _guide_tab_hints: Button
-var _guide_tab_walkthrough: Button
+var _new_badges: Array = []
+var _stream = null
 
 func _ready():
 	get_tree().paused = false
@@ -130,10 +134,10 @@ func _ready():
 	_planet = _planet_center()
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_edge_tex_top = load("res://assets/space_edge_top.png")
-	_edge_tex_bottom = load("res://assets/space_edge_bottom.png")
-	_edge_tex_left = load("res://assets/space_edge_left.png")
-	_edge_tex_right = load("res://assets/space_edge_right.png")
+	_edge_tex_top = load("res://assets/edges/space_edge_top.png")
+	_edge_tex_bottom = load("res://assets/edges/space_edge_bottom.png")
+	_edge_tex_left = load("res://assets/edges/space_edge_left.png")
+	_edge_tex_right = load("res://assets/edges/space_edge_right.png")
 
 	_camera = Camera2D.new()
 	add_child(_camera)
@@ -142,7 +146,7 @@ func _ready():
 	_camera.make_current()
 	_clamp_camera()
 
-	_make_bg_stars()
+	_build_starfield()
 	_build_planet()
 	_start_music()
 
@@ -152,6 +156,7 @@ func _ready():
 	_drag_indicator.update_drag(false)
 
 	_build_hud()
+	PlayerData.achievement_unlocked.connect(_on_achievement_unlocked)
 	_setup_level()
 	_update_count()
 	queue_redraw()
@@ -183,12 +188,6 @@ func _level_title() -> String:
 
 func _level_subtitle() -> String:
 	return ""
-
-func _hint_lines() -> Array:
-	return []
-
-func _walkthrough_lines() -> Array:
-	return []
 
 func _submits_algorithm() -> bool:
 	return true
@@ -264,21 +263,34 @@ func _show_tutorial():
 		return
 	var lines: Array = _tutorial_lines()
 	if lines.is_empty():
-		_show_guide()
 		return
 	var tutorial := TUTORIAL.new()
 	_tutorial = tutorial
 	tutorial.lines = lines
 	tutorial.voice_dir = _voice_dir()
 	tutorial.show_visuals = false
-	tutorial.final_hint = "CLICK TO CLOSE"
+	tutorial.final_hint = _tutorial_final_hint()
+	tutorial.finished.connect(_after_tutorial)
 	add_child(tutorial)
+
+func _tutorial_final_hint() -> String:
+	return "CLICK TO CLOSE"
+
+func _after_tutorial():
+	pass
+
+func _shows_hint_text() -> bool:
+	return true
+
+func _shows_run_controls() -> bool:
+	return true
 
 func _process(delta: float):
 	if _phase == Phase.ACTIVE:
 		_elapsed += delta
 		_timer_label.text = _timer_text()
 		_update_level(delta)
+		_update_stream(delta)
 		_track_events()
 		_update_event_label()
 		if _phase == Phase.ACTIVE and _elapsed >= _time_limit():
@@ -304,7 +316,12 @@ func _evader_position() -> Vector2:
 	return Vector2(-99999.0, -99999.0)
 
 func _defender_sees_evader() -> bool:
-	var target: Vector2 = _evader_position()
+	return _any_defender_sees_point(_evader_position())
+
+func _any_defender_sees(evader: Node2D) -> bool:
+	return _any_defender_sees_point(evader.global_position)
+
+func _any_defender_sees_point(target: Vector2) -> bool:
 	for ship in _defender_ships:
 		if not is_instance_valid(ship):
 			continue
@@ -328,6 +345,18 @@ func _defender_touches_evader() -> bool:
 
 func _evader_at_goal() -> bool:
 	return _evader_position().distance_to(_planet) <= PLANET_RADIUS + GOAL_MARGIN
+
+func _defender_touching(evader: Node2D) -> Node2D:
+	var target: Vector2 = evader.global_position
+	for ship in _defender_ships:
+		if not is_instance_valid(ship):
+			continue
+		if ship.global_position.distance_to(target) <= ship.hull_radius + evader.hull_radius:
+			return ship
+	return null
+
+func _evader_reached_goal(evader: Node2D) -> bool:
+	return evader.global_position.distance_to(_planet) <= PLANET_RADIUS + GOAL_MARGIN
 
 func _spawn_defender(placement: Dictionary, program: Array):
 	var ship := _make_ship(program, DEFENDER_HP, C_DEFENDER)
@@ -388,12 +417,18 @@ func _random_ring_placements(count: int, rng: RandomNumberGenerator) -> Array:
 
 func _scatter_point(rng: RandomNumberGenerator) -> Vector2:
 	var angle: float = rng.randf() * TAU
-	var radius: float = rng.randf_range(PLACE_MIN, SCATTER_MAX)
+	var radius: float = rng.randf_range(PLACE_MIN, _scatter_max_radius())
 	return _planet + Vector2(radius, 0.0).rotated(angle)
+
+func _scatter_max_radius() -> float:
+	return SCATTER_MAX
+
+func _scatter_spacing() -> float:
+	return SCATTER_SPACING
 
 func _is_clear_of(pos: Vector2, placements: Array) -> bool:
 	for placement in placements:
-		if pos.distance_to(placement.pos) < SCATTER_SPACING:
+		if pos.distance_to(placement.pos) < _scatter_spacing():
 			return false
 	return true
 
@@ -419,6 +454,8 @@ func _house_ring_placements(count: int) -> Array:
 	return out
 
 func _clear_ships():
+	if _stream != null:
+		_stream.clear()
 	for ship in _defender_ships:
 		if is_instance_valid(ship):
 			ship.queue_free()
@@ -439,8 +476,12 @@ func _start_active():
 			ship.set_physics_process(true)
 
 func _finish(reason: String):
+	if _stream != null:
+		_stream.freeze()
 	_phase = Phase.DONE
 	_end_reason = reason
+	PlayerData.complete_level(_level_id())
+	ACHIEVEMENTS.check_level_completed(_level_id())
 	for ship in _defender_ships:
 		if is_instance_valid(ship):
 			ship.set_physics_process(false)
@@ -455,7 +496,31 @@ func _auto_submit():
 		return
 	_submit_entry()
 
+func _use_evader_stream(total: int, interval: float, start_delay: float):
+	_stream = EVADER_STREAM.new(self)
+	_stream.total = total
+	_stream.interval = interval
+	_stream.start_delay = start_delay
+	_stream.spawn_distance = STREAM_SPAWN_RADIUS
+
+func _update_stream(delta: float):
+	if _stream == null or _phase != Phase.ACTIVE:
+		return
+	_stream.update(delta)
+	if _stream.is_finished():
+		_finish("cleared")
+
+func _on_stream_result(_held: bool):
+	pass
+
 func _show_outcome(reason: String):
+	if _stream != null:
+		var result: Dictionary = _stream.outcome(reason)
+		_phase_label.text = result.title
+		_phase_label.add_theme_color_override("font_color", C_GREEN if result.held else C_RED)
+		_on_stream_result(result.held)
+		_show_result(result.held, result.title, result.headline)
+		return
 	var defender_won: bool = reason == "capture"
 	var title: String
 	var headline: String
@@ -473,12 +538,14 @@ func _show_outcome(reason: String):
 			headline = "The evader was neither captured nor reached the planet."
 	_phase_label.text = title
 	_phase_label.add_theme_color_override("font_color", C_GREEN if (defender_won != _is_evader_role()) else C_RED)
-	_show_result(title, "%s\n\n%s" % [headline, _event_summary()])
+	_show_result(defender_won != _is_evader_role(), title, headline)
 
 func _is_evader_role() -> bool:
 	return false
 
 func _event_summary() -> String:
+	if _stream != null:
+		return _stream.summary_text(_time_text(_detect_time), _time_text(_capture_time))
 	return "Detected: %s\nCaptured: %s\nReached planet: %s" % [_time_text(_detect_time), _time_text(_capture_time), _time_text(_goal_time)]
 
 func _time_text(value: float) -> String:
@@ -487,6 +554,9 @@ func _time_text(value: float) -> String:
 	return "%.2fs" % value
 
 func _update_event_label():
+	if _stream != null:
+		_event_label.text = _stream.event_label_text()
+		return
 	_event_label.text = "DETECTED %s   CAPTURED %s   REACHED PLANET %s" % [_time_text(_detect_time), _time_text(_capture_time), _time_text(_goal_time)]
 
 func _placements_payload() -> Array:
@@ -506,7 +576,7 @@ func _submit_entry():
 func _on_submit_finished(success: bool, code: int, _response):
 	if success or code == 409:
 		return
-	_result_detail.text += "\n\n" + _submit_error(code)
+	_result_panel.add_note(_submit_error(code))
 
 func _submit_error(code: int) -> String:
 	if code == 426:
@@ -526,6 +596,8 @@ func _restart():
 	_timer_label.text = _timer_text()
 	_timer_label.add_theme_color_override("font_color", C_TEXT)
 	_result_panel.visible = false
+	if _stream != null:
+		_stream.reset()
 	_launch_btn.visible = true
 	_phase_label.add_theme_color_override("font_color", ACCENT)
 	_update_event_label()
@@ -534,9 +606,21 @@ func _restart():
 	queue_redraw()
 
 func _leave():
+	_exit_level(LEVELS_MENU_SCENE)
+
+func _leave_paused(scene_path: String):
+	get_tree().paused = false
+	_exit_level(scene_path)
+
+func _go_to_next_level():
+	var next: Dictionary = LevelInfo.next_level(_level_id())
+	if not next.is_empty():
+		_exit_level(next["scene"])
+
+func _exit_level(scene_path: String):
 	if is_instance_valid(_music):
 		_music.stop()
-	get_tree().change_scene_to_file("res://levels/menus/LevelsScene.tscn")
+	get_tree().change_scene_to_file(scene_path)
 
 func _open_workspace():
 	SHIP_WORKSPACE.return_scene = scene_file_path
@@ -572,19 +656,19 @@ func _unhandled_input(event: InputEvent):
 	_level_input(event)
 
 func _handle_shortcut(event: InputEvent) -> bool:
-	# The evader is steered with these same keys, so shortcuts are only live
-	# while a run is not in progress.
-	if _phase == Phase.ACTIVE or _guide_panel == null or _guide_panel.visible:
-		return false
 	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return false
+	if event.keycode == KEY_P:
+		_restart()
+		return true
+	# The evader is steered with these same keys, so the setup shortcuts are only
+	# live while a run is not in progress.
+	if _phase == Phase.ACTIVE:
 		return false
 	match event.keycode:
 		KEY_S:
 			if _phase == Phase.SETUP:
 				_launch()
-			return true
-		KEY_P:
-			_restart()
 			return true
 		KEY_R:
 			if _can_reroll():
@@ -597,9 +681,6 @@ func _can_reroll() -> bool:
 
 func _reroll_level():
 	pass
-
-func _shortcut_hint() -> String:
-	return "Shortcuts: S start  ·  P replay"
 
 func _zoom_by(factor: float):
 	var z: float = clampf(_camera.zoom.x * factor, ZOOM_MIN, ZOOM_MAX)
@@ -618,7 +699,7 @@ func _clamp_camera():
 		_camera.position.y = clampf(_camera.position.y, half.y, _arena.y - half.y)
 
 func _start_music():
-	var stream := load("res://assets/music/domination challenge music.mp3") as AudioStreamMP3
+	var stream := load("res://assets/music/RIDLEY_4.mp3") as AudioStreamMP3
 	if stream == null:
 		return
 	stream.loop = true
@@ -628,15 +709,21 @@ func _start_music():
 	add_child(_music)
 	_music.play()
 
-func _make_bg_stars():
-	var rng := RandomNumberGenerator.new()
-	rng.seed = _star_seed()
-	for _i in 500:
-		_bg_stars.append({
-			"pos": Vector2(rng.randf_range(0.0, _arena.x), rng.randf_range(0.0, _arena.y)),
-			"sz":  rng.randf_range(1.0, 2.2),
-			"a":   rng.randf_range(0.12, 0.55),
-		})
+func _build_starfield():
+	var background := CanvasLayer.new()
+	background.layer = -10
+	add_child(background)
+	var fill := ColorRect.new()
+	fill.color = BG_COLOR
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fill.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.add_child(fill)
+	var starfield := Control.new()
+	starfield.set_script(STARFIELD)
+	starfield.STAR_SEED = _star_seed()
+	starfield.animated = false
+	starfield.star_count_scale = LEVEL_STAR_COUNT_SCALE
+	background.add_child(starfield)
 
 func _build_planet():
 	var planet := TERRAN.instantiate() as Control
@@ -649,9 +736,6 @@ func _build_planet():
 	_disable_mouse(planet)
 
 func _draw():
-	draw_rect(Rect2(Vector2.ZERO, _arena), BG_COLOR)
-	for s in _bg_stars:
-		draw_rect(Rect2(s["pos"], Vector2(s["sz"], s["sz"])), Color(1, 1, 1, s["a"]))
 	_draw_level()
 	_draw_edges()
 
@@ -701,20 +785,19 @@ func _build_hud():
 	_top_bar.offset_bottom = 40
 	root.add_child(_top_bar)
 
-	_add_top_button("< LEAVE", _leave)
 	if _uses_workspace():
-		_add_top_button("WORKSPACE", _open_workspace)
-	_add_top_button("RESTART (P)", _restart)
-	_add_top_button("TUTORIAL", _show_tutorial)
-	_add_top_button("? GUIDE", _show_guide)
+		_add_top_button("WORKSPACE", _open_workspace, HUD_BUTTONS.Kind.PRIMARY)
+	if _shows_run_controls():
+		_add_top_button("RESTART (P)", _restart)
+		_add_top_button("TUTORIAL", _show_tutorial)
 
 	if _uses_collisions_toggle():
 		var collisions_btn := CheckButton.new()
 		collisions_btn.text = "COLLISIONS"
 		collisions_btn.button_pressed = _collisions_on
 		collisions_btn.focus_mode = Control.FOCUS_NONE
-		collisions_btn.add_theme_font_override("font", FONT_REG)
-		collisions_btn.add_theme_font_size_override("font_size", 9)
+		collisions_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		HUD_BUTTONS.apply(collisions_btn, HUD_BUTTONS.Kind.NEUTRAL, 9)
 		collisions_btn.toggled.connect(_on_collisions_toggled)
 		_top_bar.add_child(collisions_btn)
 
@@ -742,13 +825,16 @@ func _build_hud():
 	left.add_child(_event_label)
 	_update_event_label()
 
-	_launch_btn = _make_btn("LAUNCH >", 11)
+	_launch_btn = HUD_BUTTONS.make("LAUNCH >", HUD_BUTTONS.Kind.PRIMARY, 13)
 	_launch_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_launch_btn.offset_left = -210
-	_launch_btn.offset_top = -54
+	_launch_btn.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_launch_btn.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_launch_btn.offset_left = -260
+	_launch_btn.offset_top = -64
 	_launch_btn.offset_right = -16
 	_launch_btn.offset_bottom = -16
 	_launch_btn.pressed.connect(_launch)
+	_launch_btn.visible = _shows_run_controls()
 	root.add_child(_launch_btn)
 
 	_hint_label = _lbl(_level_subtitle(), 10, C_DIM)
@@ -760,170 +846,49 @@ func _build_hud():
 	_hint_label.offset_top = -120
 	_hint_label.offset_right = 340
 	_hint_label.offset_bottom = -14
+	_hint_label.visible = _shows_hint_text()
 	root.add_child(_hint_label)
 
 	_build_result_panel(root)
-	_build_guide_panel(root)
+	var pause_menu := PAUSE_MENU.new()
+	pause_menu.leave_requested.connect(_leave_paused)
+	add_child(pause_menu)
 
 func _launch():
 	pass
 
-func _add_top_button(text: String, handler: Callable):
-	var b := _make_compact_btn(text)
+func _add_top_button(text: String, handler: Callable, kind: int = HUD_BUTTONS.Kind.NEUTRAL):
+	var b := HUD_BUTTONS.make(text, kind, 9)
 	b.pressed.connect(handler)
 	_top_bar.add_child(b)
 
 func _build_result_panel(root: Control):
-	_result_panel = Control.new()
-	_result_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_result_panel.visible = false
-	_result_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_result_panel = RESULT_PANEL.new()
 	root.add_child(_result_panel)
+	_result_panel.retry_requested.connect(_restart)
+	_result_panel.next_requested.connect(_go_to_next_level)
+	_result_panel.levels_requested.connect(_leave)
 
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_result_panel.add_child(dim)
+func _show_result(passed: bool, title: String, headline: String):
+	var status: String = "LEVEL %d %s" % [LevelInfo.number(_level_id()), "COMPLETE" if passed else "FAILED"]
+	var has_next: bool = not LevelInfo.next_level(_level_id()).is_empty()
+	_result_panel.show_result(passed, status, title, headline, _summary_rows(), has_next)
+	for achievement_id in _new_badges:
+		_result_panel.add_note("BADGE UNLOCKED: %s" % ACHIEVEMENTS.find(achievement_id).get("title", achievement_id))
+	_new_badges.clear()
 
-	var card := _panel(C_PANEL, C_BORDER, 2, 8)
-	card.set_anchors_preset(Control.PRESET_CENTER)
-	card.offset_left = -240
-	card.offset_top = -170
-	card.offset_right = 240
-	card.offset_bottom = 170
-	_result_panel.add_child(card)
+func _on_achievement_unlocked(achievement_id: String):
+	_new_badges.append(achievement_id)
 
-	var margin := MarginContainer.new()
-	for s in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + s, 28)
-	card.add_child(margin)
-
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 14)
-	margin.add_child(box)
-
-	_result_title = _lbl("", 24, C_TEXT)
-	_result_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(_result_title)
-
-	_result_detail = _lbl("", 11, C_DIM)
-	_result_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_result_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_result_detail.custom_minimum_size = Vector2(400, 0)
-	box.add_child(_result_detail)
-
-	var sep := ColorRect.new()
-	sep.color = C_BORDER
-	sep.custom_minimum_size = Vector2(0, 1)
-	box.add_child(sep)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_child(row)
-
-	var retry := _make_btn("TRY AGAIN", 11)
-	retry.pressed.connect(_restart)
-	row.add_child(retry)
-
-	var levels := _make_btn("LEVELS", 11)
-	levels.pressed.connect(_leave)
-	row.add_child(levels)
-
-func _show_result(title: String, detail: String):
-	_result_title.text = title
-	_result_detail.text = detail
-	_result_panel.visible = true
-
-func _build_guide_panel(root: Control):
-	_guide_panel = Control.new()
-	_guide_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_guide_panel.visible = false
-	root.add_child(_guide_panel)
-
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.78)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	_guide_panel.add_child(dim)
-
-	var holder := VBoxContainer.new()
-	holder.set_anchors_preset(Control.PRESET_FULL_RECT)
-	holder.offset_top = 32
-	holder.offset_bottom = -32
-	holder.alignment = BoxContainer.ALIGNMENT_BEGIN
-	_guide_panel.add_child(holder)
-
-	var card := _panel(C_PANEL, C_BORDER, 2, 8)
-	card.custom_minimum_size = Vector2(660, 0)
-	card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	holder.add_child(card)
-
-	var margin := MarginContainer.new()
-	for s in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + s, 28)
-	card.add_child(margin)
-
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	margin.add_child(box)
-
-	var title := _lbl("HOW TO PLAY - " + _level_title(), 18, C_TEXT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(title)
-
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 10)
-	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_child(tabs)
-
-	_guide_tab_walkthrough = _make_btn("WALKTHROUGH", 10)
-	_guide_tab_walkthrough.pressed.connect(func(): _fill_guide(false))
-	tabs.add_child(_guide_tab_walkthrough)
-
-	_guide_tab_hints = _make_btn("HINTS", 10)
-	_guide_tab_hints.pressed.connect(func(): _fill_guide(true))
-	tabs.add_child(_guide_tab_hints)
-
-	var sep := ColorRect.new()
-	sep.color = C_BORDER
-	sep.custom_minimum_size = Vector2(0, 1)
-	box.add_child(sep)
-
-	_guide_body = VBoxContainer.new()
-	_guide_body.add_theme_constant_override("separation", 9)
-	box.add_child(_guide_body)
-
-	var row := HBoxContainer.new()
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_child(row)
-
-	var close := _make_btn("GOT IT", 11)
-	close.pressed.connect(_hide_guide)
-	row.add_child(close)
-
-func _fill_guide(hints: bool):
-	for child in _guide_body.get_children():
-		child.queue_free()
-	var lines: Array = _hint_lines() if hints else _walkthrough_lines() + [_shortcut_hint()]
-	for line in lines:
-		var l := _lbl(line, 11, C_DIM)
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.custom_minimum_size = Vector2(600, 0)
-		_guide_body.add_child(l)
-	_guide_tab_hints.disabled = hints
-	_guide_tab_walkthrough.disabled = not hints
-
-func _show_guide():
-	if _guide_panel == null:
-		return
-	_fill_guide(false)
-	_guide_panel.visible = true
-
-func _hide_guide():
-	if _guide_panel != null:
-		_guide_panel.visible = false
+func _summary_rows() -> Array:
+	var rows: Array = [["Run time", "%.1fs" % _elapsed]]
+	for line in _event_summary().split("\n", false):
+		var split_at: int = line.find(":")
+		if split_at < 0:
+			rows.append([line.strip_edges(), ""])
+		else:
+			rows.append([line.substr(0, split_at).strip_edges(), line.substr(split_at + 1).strip_edges()])
+	return rows
 
 func _lbl(text: String, size: int, color: Color) -> Label:
 	var l := Label.new()
@@ -934,39 +899,10 @@ func _lbl(text: String, size: int, color: Color) -> Label:
 	return l
 
 func _make_btn(text: String, size: int = 12) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.add_theme_font_override("font", FONT_REG)
-	b.add_theme_font_size_override("font_size", size)
-	b.focus_mode = Control.FOCUS_NONE
-	return b
+	return HUD_BUTTONS.make(text, HUD_BUTTONS.Kind.NEUTRAL, size)
 
 func _make_compact_btn(text: String) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.add_theme_font_override("font", FONT_REG)
-	b.add_theme_font_size_override("font_size", 9)
-	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_stylebox_override("normal", _compact_btn_style(C_PANEL, C_BORDER))
-	b.add_theme_stylebox_override("hover", _compact_btn_style(Color(0.18, 0.17, 0.27, 1.0), ACCENT))
-	b.add_theme_stylebox_override("pressed", _compact_btn_style(Color(0.1, 0.095, 0.155, 1.0), ACCENT))
-	b.add_theme_stylebox_override("focus", _compact_btn_style(C_PANEL, C_BORDER))
-	b.add_theme_color_override("font_color", C_TEXT)
-	b.add_theme_color_override("font_hover_color", C_TEXT)
-	b.add_theme_color_override("font_pressed_color", ACCENT)
-	return b
-
-func _compact_btn_style(bg: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg
-	style.border_color = border
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(0)
-	style.content_margin_left = 9
-	style.content_margin_right = 9
-	style.content_margin_top = 5
-	style.content_margin_bottom = 5
-	return style
+	return HUD_BUTTONS.make(text, HUD_BUTTONS.Kind.NEUTRAL, 9)
 
 func _panel(bg: Color, border: Color, bw: int, radius: int) -> PanelContainer:
 	var pc := PanelContainer.new()

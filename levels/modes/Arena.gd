@@ -13,9 +13,10 @@ var arena_camera: Camera2D
 const BG_COLOR   := Color(0.835, 0.835, 0.859, 1.0)
 const GRID_COLOR := Color(0.741, 0.741, 0.769, 1.0)
 const GRID_STEP  := 40.0 # pixels between grid lines, one meter
-const RULER_COLOR := Color(0.420, 0.420, 0.475, 1.0)
-const RULER_TEXT  := Color(0.320, 0.320, 0.400, 1.0)
 const PX_PER_M   := 40.0 # pixels per meter, the conversion used everywhere in the sim
+const MAX_ZOOM_FACTOR := 10.0
+const GRID_STEP_METERS := [1.0, 2.0, 5.0, 10.0, 20.0]
+const MIN_GRID_SPACING := 12.0
 
 const WALL_FILL := Color(0.45, 0.45, 0.52, 1.0)
 const WALL_BORDER := Color(0.22, 0.22, 0.28, 1.0)
@@ -28,6 +29,7 @@ const SETTINGS_MODAL_SCENE = preload("res://ui/modal/SettingsModal.tscn")
 const EXPORT_MODAL_SCRIPT = preload("res://ui/modal/ExportProgressModal.gd")
 const SPAWN_ZONE_LAYER_SCRIPT = preload("res://levels/components/SpawnZoneLayer.gd")
 const ARENA_PROGRAM_SCRIPT = preload("res://levels/components/ArenaProgram.gd")
+const SCALE_BAR = preload("res://ui/hud/ScaleBar.gd")
 var settings_modal: CanvasLayer
 var spawn_zone_layer: Node2D
 
@@ -40,6 +42,9 @@ func _ready():
 	arena_camera = Camera2D.new()
 	add_child(arena_camera)
 	arena_camera.make_current()
+	var scale_bar := SCALE_BAR.new()
+	scale_bar.camera = arena_camera
+	add_child(scale_bar)
 
 	drag_indicator.update_drag(false)
 
@@ -122,18 +127,18 @@ func _draw():
 	var s: Vector2 = Vector2(SimulationManager.settings.arena_width, SimulationManager.settings.arena_height)
 	draw_rect(Rect2(Vector2.ZERO, s), BG_COLOR)
 
-	var line_width: float = 1.0
-	if arena_camera and arena_camera.zoom.x > 0.0:
-		line_width = max(1.0, 1.0 / arena_camera.zoom.x)
+	var zoom_level: float = arena_camera.zoom.x if arena_camera and arena_camera.zoom.x > 0.0 else 1.0
+	var line_width: float = 1.0 / zoom_level
+	var grid_step: float = _grid_step(zoom_level)
 
 	var x: float = 0.0
 	while x <= s.x:
-		draw_line(Vector2(x, 0.0), Vector2(x, s.y), GRID_COLOR, line_width)
-		x += GRID_STEP
+		draw_line(Vector2(x, 0.0), Vector2(x, s.y), GRID_COLOR, line_width, true)
+		x += grid_step
 	var y: float = 0.0
 	while y <= s.y:
-		draw_line(Vector2(0.0, y), Vector2(s.x, y), GRID_COLOR, line_width)
-		y += GRID_STEP
+		draw_line(Vector2(0.0, y), Vector2(s.x, y), GRID_COLOR, line_width, true)
+		y += grid_step
 
 	for ob in SimulationManager.obstacles:
 		_draw_obstacle(ob)
@@ -143,8 +148,12 @@ func _draw():
 
 	var border_width: float = 4.0 * line_width
 	draw_rect(Rect2(Vector2.ZERO, s), Color(0.9, 0.2, 0.2, 1.0), false, border_width)
-	_draw_ruler_h(s)
-	_draw_ruler_v(s)
+
+func _grid_step(zoom_level: float) -> float:
+	for meters in GRID_STEP_METERS:
+		if meters * GRID_STEP * zoom_level >= MIN_GRID_SPACING:
+			return meters * GRID_STEP
+	return GRID_STEP_METERS[GRID_STEP_METERS.size() - 1] * GRID_STEP
 
 func _draw_obstacle(ob: Dictionary):
 	if ob.get("type", "") == "wall":
@@ -173,25 +182,36 @@ func _draw_measure_marks(p1: Vector2, p2: Vector2, line_width: float):
 	draw_rect(bg_rect, MEASURE_COLOR, false, 1.0)
 	draw_string(font, mid + Vector2(-size.x * 0.5, size.y * 0.3), txt, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(0.137, 0.137, 0.196, 1.0))
 
-func _draw_ruler_h(s: Vector2):
-	var ruler_y: float = s.y - 18.0
-	var max_m: int = int(s.x / PX_PER_M)
-	for m in range(0, max_m + 1):
-		var px: float = m * PX_PER_M
-		var tick_h: float = 6.0 if m % 5 != 0 else 10.0
-		draw_line(Vector2(px, ruler_y), Vector2(px, ruler_y + tick_h), RULER_COLOR, 1.0)
-		if m % 5 == 0:
-			draw_string(ThemeDB.fallback_font, Vector2(px + 2, ruler_y - 2), "%dm" % m, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, RULER_TEXT)
+func _arena_size() -> Vector2:
+	return Vector2(SimulationManager.settings.arena_width, SimulationManager.settings.arena_height)
 
-func _draw_ruler_v(s: Vector2):
-	var ruler_x: float = 6.0
-	var max_m: int = int(s.y / PX_PER_M)
-	for m in range(0, max_m + 1):
-		var py: float = s.y - m * PX_PER_M
-		var tick_w: float = 6.0 if m % 5 != 0 else 10.0
-		draw_line(Vector2(ruler_x, py), Vector2(ruler_x + tick_w, py), RULER_COLOR, 1.0)
-		if m % 5 == 0 and m > 0:
-			draw_string(ThemeDB.fallback_font, Vector2(ruler_x + tick_w + 2, py + 4), "%dm" % m, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, RULER_TEXT)
+func _cover_zoom() -> float:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var arena_size: Vector2 = _arena_size()
+	return maxf(viewport_size.x / arena_size.x, viewport_size.y / arena_size.y)
+
+func _zoom_camera(factor: float):
+	if arena_camera == null:
+		return
+	var fit: float = _cover_zoom()
+	var zoom_level: float = clampf(arena_camera.zoom.x * factor, fit, fit * MAX_ZOOM_FACTOR)
+	arena_camera.zoom = Vector2(zoom_level, zoom_level)
+	_clamp_camera()
+	queue_redraw()
+
+func _clamp_camera():
+	if arena_camera == null:
+		return
+	var arena_size: Vector2 = _arena_size()
+	var half: Vector2 = get_viewport_rect().size * 0.5 / arena_camera.zoom
+	if half.x * 2.0 >= arena_size.x:
+		arena_camera.position.x = arena_size.x * 0.5
+	else:
+		arena_camera.position.x = clampf(arena_camera.position.x, half.x, arena_size.x - half.x)
+	if half.y * 2.0 >= arena_size.y:
+		arena_camera.position.y = arena_size.y * 0.5
+	else:
+		arena_camera.position.y = clampf(arena_camera.position.y, half.y, arena_size.y - half.y)
 
 func _fit_to_viewport():
 	var w: float = SimulationManager.settings.arena_width
@@ -201,10 +221,7 @@ func _fit_to_viewport():
 
 	if arena_camera:
 		arena_camera.position = s / 2.0
-		var vp: Vector2 = get_viewport_rect().size
-		var zoom_x: float = vp.x / w
-		var zoom_y: float = vp.y / h
-		var zoom_min: float = min(zoom_x, zoom_y)
+		var zoom_min: float = _cover_zoom()
 		arena_camera.zoom = Vector2(zoom_min, zoom_min)
 
 	$Walls.collision_layer = 1
@@ -335,14 +352,10 @@ func _unhandled_input(event):
 
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-			if arena_camera:
-				arena_camera.zoom *= 1.1
-				queue_redraw()
+			_zoom_camera(1.1)
 			return
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-			if arena_camera:
-				arena_camera.zoom *= 0.9
-				queue_redraw()
+			_zoom_camera(0.9)
 			return
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
 			is_panning = event.pressed
@@ -350,6 +363,7 @@ func _unhandled_input(event):
 	elif event is InputEventMouseMotion and is_panning:
 		if arena_camera:
 			arena_camera.position -= event.relative / arena_camera.zoom.x
+			_clamp_camera()
 			queue_redraw()
 		return
 

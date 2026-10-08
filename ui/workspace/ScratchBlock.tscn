@@ -45,7 +45,6 @@ size_flags_horizontal = 3
 [node name="DeleteButton" type="Button" parent="Outer/HBox"]
 layout_mode = 2
 focus_mode = 0
-text = "✕"
 
 [node name="InnerWrap" type="MarginContainer" parent="Outer"]
 layout_mode = 2

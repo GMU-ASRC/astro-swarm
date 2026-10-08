@@ -8,7 +8,6 @@ var _is_running: bool = false
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_executor = BlockExecutor.new(self)
-	_executor.single_pass = true
 	_rebuild_program()
 	SimulationManager.behavior_changed.connect(_on_behavior_changed)
 

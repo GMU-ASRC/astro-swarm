@@ -18,11 +18,12 @@ var _error_banner: PanelContainer
 
 const BlockFactory := preload("res://ui/workspace/BlockFactory.gd")
 const ERROR_BANNER := preload("res://ui/workspace/WorkspaceErrorBanner.gd")
+const WorkspaceStyle := preload("res://ui/workspace/WorkspaceStyle.gd")
 
 const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
 	"condition": ["when_start", "when_always", "when_sees", "when_sees_enemy", "when_sees_ally", "when_alone", "when_not_see", "when_near_wall", "when_not_near_wall", "when_sees_wall"],
-	"logic": ["if_see", "if_not_see", "if_near_wall", "if_not_near_wall", "else"],
+	"logic": ["if_see", "if_not_see", "if_near_wall", "if_not_near_wall", "elif_see", "elif_not_see", "elif_near_wall", "elif_not_near_wall", "else"],
 	"action": ["do_forward", "do_backward", "do_stop", "do_random_walk", "do_turn_left", "do_turn_right", "do_turn_left_by", "do_turn_right_by", "do_face", "do_throttle"],
 }
 
@@ -40,6 +41,7 @@ func _ready():
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
 	_build_save_load_ui()
+	WorkspaceStyle.apply(self, WorkspaceStyle.GAME)
 	_build_error_banner()
 	_build_palette()
 	_load_blocks()
@@ -159,10 +161,9 @@ func _allowed_blocks(ids: Array) -> Array:
 func _build_palette_category(category: String, ids: Array):
 	if ids.is_empty():
 		return
-	BlockFactory.add_palette_header(palette_list, _category_label(category))
+	var section: VBoxContainer = WorkspaceStyle.add_palette_section(palette_list, _category_label(category), category, WorkspaceStyle.GAME)
 	for block_id in ids:
-		BlockFactory.add_palette_item(palette_list, block_id, _add_block)
-	BlockFactory.add_palette_spacer(palette_list)
+		BlockFactory.add_palette_item(section, block_id, _add_block)
 
 func _category_label(category: String) -> String:
 	match category:

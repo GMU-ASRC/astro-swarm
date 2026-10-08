@@ -9,6 +9,7 @@ const LASER      := preload("res://entities/ship/LaserBeam.gd")
 const TUTORIAL   := preload("res://ui/tutorial/BlobTutorial.gd")
 const FONT_REG   := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const GAME_THEME := preload("res://ui/GameTheme.tres")
+const HUD_BUTTONS := preload("res://ui/hud/HudButtons.gd")
 
 const FREEZE_ICON_PATH := "res://assets/sprites/effects/freeze.png"
 
@@ -849,7 +850,7 @@ func _build_hud():
 	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(divider)
 
-	var leave := _make_compact_btn("< LEAVE")
+	var leave := HUD_BUTTONS.make("< LEAVE", HUD_BUTTONS.Kind.BACK, 9)
 	leave.pressed.connect(_leave)
 	leave.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	leave.offset_left = 12
@@ -1108,11 +1109,11 @@ func _build_result_panel(root: Control):
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(row)
 
-	var again := _make_btn("PLAY AGAIN", 11)
+	var again := HUD_BUTTONS.make("PLAY AGAIN", HUD_BUTTONS.Kind.PRIMARY, 11)
 	again.pressed.connect(_restart)
 	row.add_child(again)
 
-	var back := _make_btn("BACK TO BASE", 11)
+	var back := HUD_BUTTONS.make("BACK TO BASE", HUD_BUTTONS.Kind.NEUTRAL, 11)
 	back.pressed.connect(_leave)
 	row.add_child(back)
 
@@ -1124,35 +1125,6 @@ func _lbl(text: String, size: int, color: Color) -> Label:
 	l.add_theme_color_override("font_color", color)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
-
-func _make_btn(text: String, size: int = 12) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.add_theme_font_override("font", FONT_REG)
-	b.add_theme_font_size_override("font_size", size)
-	b.focus_mode = Control.FOCUS_NONE
-	return b
-
-func _make_compact_btn(text: String) -> Button:
-	var b := _make_btn(text, 9)
-	b.add_theme_stylebox_override("normal", _compact_btn_style(C_PANEL, C_BORDER))
-	b.add_theme_stylebox_override("hover", _compact_btn_style(Color(0.18, 0.17, 0.27, 1.0), C_ACCENT))
-	b.add_theme_stylebox_override("pressed", _compact_btn_style(Color(0.1, 0.095, 0.155, 1.0), C_ACCENT))
-	b.add_theme_stylebox_override("focus", _compact_btn_style(C_PANEL, C_BORDER))
-	b.add_theme_color_override("font_color", C_TEXT)
-	return b
-
-func _compact_btn_style(bg: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg
-	style.border_color = border
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(0)
-	style.content_margin_left = 9
-	style.content_margin_right = 9
-	style.content_margin_top = 5
-	style.content_margin_bottom = 5
-	return style
 
 func _panel(bg: Color, border: Color, bw: int, radius: int) -> PanelContainer:
 	var pc := PanelContainer.new()

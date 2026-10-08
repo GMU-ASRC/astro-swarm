@@ -116,6 +116,11 @@ layout_mode = 2
 focus_mode = 0
 text = "Moons"
 
+[node name="EntriesButton" type="Button" parent="HUD/Navbar"]
+layout_mode = 2
+focus_mode = 0
+text = "My Entries"
+
 [node name="ShopButton" type="Button" parent="HUD/Navbar"]
 layout_mode = 2
 focus_mode = 0
@@ -243,7 +248,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.62, 0.74, 1)
 theme_override_font_sizes/font_size = 12
-text = "Name your commander to claim your home planet."
+text = "Name your commander and your home planet to claim it."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -251,6 +256,11 @@ autowrap_mode = 2
 layout_mode = 2
 placeholder_text = "Callsign"
 max_length = 16
+
+[node name="PlanetEdit" type="LineEdit" parent="UsernameModal/Panel/Margin/VBox"]
+layout_mode = 2
+placeholder_text = "Planet name"
+max_length = 24
 
 [node name="Confirm" type="Button" parent="UsernameModal/Panel/Margin/VBox" unique_id=1346856195]
 layout_mode = 2

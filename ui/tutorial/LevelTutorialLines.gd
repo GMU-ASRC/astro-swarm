@@ -22,23 +22,23 @@ static func for_level(level_id: String) -> Array:
 
 static func _level_one() -> Array:
 	return [
-		{"id": 1, "text": "Dr. Blob at your service, Commander. That planet in the middle is a forward arming and refuelling point, and today it is yours to keep."},
-		{"id": 2, "text": "One red evader will come in off the outer ring and drive straight at the planet. Everything you do here is about stopping it."},
+		{"id": 1, "text": "Dr. Blob at your service, Commander. That planet in the middle is {planet}, your forward arming and refuelling point, and today it is yours to keep."},
+		{"id": 2, "text": "Ten red evaders will come in one after another from random points far out around {planet}, each driving straight at it. Everything you do here is about stopping them."},
 		{"id": 3, "text": "Drag inside the blue ring to drop a defender. The direction you drag is the way it ends up facing, so aim it as you place it. You get up to six, and a right click takes one away again."},
-		{"id": 4, "text": "Every defender runs the same program, and you write it in the workspace. Blocks decide how they move, how far they see and how wide they look. Wide eyes find the evader sooner, long eyes find it further out, and you cannot have both."},
-		{"id": 5, "text": "Detection is the first moment any defender gets the evader inside its vision cone. That is a sighting and nothing more. It does not stop anything."},
-		{"id": 6, "text": "Capture is a defender actually touching the evader, and that is what ends the run in your favour. So give them a reason to charge once they see something."},
-		{"id": 7, "text": "When the layout looks right, press launch and watch it play out. My machines then run it a hundred times over on the server. Good luck, Commander."},
+		{"id": 4, "text": "Every defender runs the same program, and you write it in the workspace. Blocks decide how they move, how far they see and how wide they look. Wide eyes spot evaders sooner, long eyes spot them further out, and you cannot have both."},
+		{"id": 5, "text": "Here, spotting is enough. The moment any defender gets an evader inside its vision cone, that evader vanishes. Any evader nobody spots reaches {planet}."},
+		{"id": 6, "text": "I am also watching how your defenders move as a group. Their circliness, how well they hold a ring and circle together, is measured the whole time. If they split into smaller mills, I score every mill and average them, and you get that average at the end."},
+		{"id": 7, "text": "I will open the workspace for you now. Write your program, come back, place your defenders and press launch. Keep {planet} clean and keep that circle tight. Good luck, Commander."},
 	]
 
 static func _level_two() -> Array:
 	return [
-		{"id": 1, "text": "Same planet, Commander, but this time you do not get to place anything. I have scattered the defenders for you."},
-		{"id": 2, "text": "Five of them, dropped at random inside the blue ring and facing whichever way they landed. Press reroll for a different scatter as often as you like."},
+		{"id": 1, "text": "Back at {planet}, Commander, but this time you do not get to place anything. I have scattered the defenders for you."},
+		{"id": 2, "text": "Field five, twenty five, fifty or a hundred of them. They drop at random inside the blue ring, facing whichever way they landed. Press reroll for a different scatter as often as you like."},
 		{"id": 3, "text": "Whatever is on screen when you launch is the layout the server benchmarks, so pick a scatter you are willing to be graded on."},
 		{"id": 4, "text": "That leaves the algorithm, and only the algorithm. Open the workspace and make them sweep. Turning while moving forward covers far more sky than driving in a straight line."},
-		{"id": 5, "text": "Seeing the evader still does not stop it. Add a rule that turns a sighting into a chase, or you will watch it sail past a defender that spotted it."},
-		{"id": 6, "text": "An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit."},
+		{"id": 5, "text": "Ten evaders, one after another, but this time spotting one is not enough. A defender has to touch an evader to capture it, and only then does it disappear. You get a ten second head start before the first one shows up, so use it to get your swarm moving."},
+		{"id": 6, "text": "An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit. I am scoring circliness here too, mill by mill, so a swarm that breaks into tidy little circles still scores well."},
 		{"id": 7, "text": "The best entry submitted here becomes the opponent in level six, layout and all. Beat everyone and other commanders will be flying against your work."},
 	]
 
@@ -50,7 +50,7 @@ static func _level_three() -> Array:
 		{"id": 4, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the next wave."},
 		{"id": 5, "text": "Every bearing gets used eventually, so an arc you left uncovered will be found. There is no lucky angle to hide behind over a whole run."},
 		{"id": 6, "text": "A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home."},
-		{"id": 7, "text": "Hold all five and nothing touches the planet. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander."},
+		{"id": 7, "text": "Hold all five and nothing touches {planet}. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander."},
 	]
 
 static func _level_four() -> Array:
@@ -66,13 +66,13 @@ static func _level_four() -> Array:
 
 static func _level_five() -> Array:
 	return [
-		{"id": 1, "text": "No waves today, Commander. They are done trickling in one at a time. Five evaders, all at once, all aimed at your planet."},
+		{"id": 1, "text": "No waves today, Commander. They are done trickling in one at a time. Five evaders, all at once, all aimed at {planet}."},
 		{"id": 2, "text": "They do not come off the ring either. They come off the edges of the arena, spread right around it, so the ones on the long sides arrive well after the ones above and below."},
 		{"id": 3, "text": "Your five defenders are scattered for you, same as always, and they run whatever you write in the workspace."},
 		{"id": 4, "text": "Attrition is still on. A capture takes both ships, so five defenders against five evaders only works if every single trade is a clean one."},
 		{"id": 5, "text": "Chasing far out is how you lose this. An evader you miss on the way out is behind your line, and the body you spent chasing is not coming back."},
-		{"id": 6, "text": "Watch the timing instead. They arrive in a stagger, so a line that holds its arcs near the planet gets to meet them one at a time anyway."},
-		{"id": 7, "text": "The run plays out until every one of them is destroyed or has touched the planet. I count both, and the defenders it cost you. Good luck, Commander."},
+		{"id": 6, "text": "Watch the timing instead. They arrive in a stagger, so a line that holds its arcs near {planet} gets to meet them one at a time anyway."},
+		{"id": 7, "text": "The run plays out until every one of them is destroyed or has touched {planet}. I count both, and the defenders it cost you. Good luck, Commander."},
 	]
 
 static func _level_six() -> Array:

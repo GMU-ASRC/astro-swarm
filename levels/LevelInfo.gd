@@ -7,6 +7,25 @@ const ATTRITION_LEVELS := [4, 5]
 const MULTI_EVADER_LEVELS := [5]
 const SUPPLY_LEVELS := [8]
 
+const TRAINING_LEVEL := {"id": "farp0", "name": "TRAINING", "color": Color(0.85, 0.86, 0.96, 1.0), "scene": "res://levels/modes/level0/Level0Scene.tscn"}
+
+const LEVELS := [
+	{"id": "farp1", "name": "DEFENSE",   "color": Color(0.451, 0.616, 1.0, 1.0),  "scene": "res://levels/modes/level1/Level1Scene.tscn"},
+	{"id": "farp2", "name": "SCATTER",   "color": Color(0.400, 0.780, 0.95, 1.0), "scene": "res://levels/modes/level2/Level2Scene.tscn"},
+	{"id": "farp3", "name": "WAVES",     "color": Color(0.400, 0.850, 0.45, 1.0), "scene": "res://levels/modes/level3/Level3Scene.tscn"},
+	{"id": "farp4", "name": "ATTRITION", "color": Color(1.000, 0.700, 0.20, 1.0), "scene": "res://levels/modes/level4/Level4Scene.tscn"},
+	{"id": "farp5", "name": "SIEGE",     "color": Color(1.000, 0.420, 0.32, 1.0), "scene": "res://levels/modes/level5/Level5Scene.tscn"},
+	{"id": "farp6", "name": "PILOT",     "color": Color(0.780, 0.520, 1.0, 1.0),  "scene": "res://levels/modes/level6/Level6Scene.tscn"},
+	{"id": "farp7", "name": "SWARM",     "color": Color(1.000, 0.840, 0.20, 1.0), "scene": "res://levels/modes/level7/Level7Scene.tscn"},
+	{"id": "farp8", "name": "SUPPLY",    "color": Color(0.350, 0.880, 0.80, 1.0), "scene": "res://levels/modes/level8/Level8PlanetA.tscn"},
+]
+
+static func next_level(level_id: String) -> Dictionary:
+	for i in LEVELS.size() - 1:
+		if LEVELS[i]["id"] == level_id:
+			return LEVELS[i + 1]
+	return {}
+
 static func number(level_id: String) -> int:
 	var digits: String = ""
 	for ch in level_id:
@@ -33,7 +52,7 @@ static func is_supply(level_id: String) -> bool:
 
 static func display_name(level_id: String) -> String:
 	match number(level_id):
-		2: return "LEVEL 2 - RING"
+		2: return "LEVEL 2 - SCATTER"
 		3: return "LEVEL 3 - WAVES"
 		4: return "LEVEL 4 - ATTRITION"
 		5: return "LEVEL 5 - SIEGE"

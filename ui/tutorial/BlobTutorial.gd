@@ -2,6 +2,8 @@ extends CanvasLayer
 
 signal finished
 
+const PLANET_PLACEHOLDER := "{planet}"
+
 const FONT_REG := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const STAGE := preload("res://ui/tutorial/TutorialStage.gd")
 const BLOB_PATH := "res://assets/sprites/dr_blob/dr_blob.png"
@@ -154,11 +156,14 @@ func _advance():
 		_close()
 		return
 	var entry: Dictionary = lines[_index]
-	_text_label.text = str(entry.get("text", ""))
+	_text_label.text = _line_text(entry)
 	_hint_label.text = final_hint if _index == lines.size() - 1 else "CLICK TO CONTINUE  (%d / %d)" % [_index + 1, lines.size()]
 	if _stage != null:
 		_stage.show_visual(str(entry.get("visual", "swarm")))
 	_play_voice(int(entry.get("id", _index + 1)))
+
+func _line_text(entry: Dictionary) -> String:
+	return str(entry.get("text", "")).replace(PLANET_PLACEHOLDER, PlayerData.planet_display_name())
 
 func _play_voice(line_id: int):
 	_voice.stop()

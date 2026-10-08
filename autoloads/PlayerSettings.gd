@@ -16,13 +16,25 @@ const RESOLUTIONS := [
 	Vector2i(2560, 1440),
 ]
 
+const TEXT_SIZES := [
+	{"label": "Small", "scale": 1.0},
+	{"label": "Normal", "scale": 1.25},
+	{"label": "Large", "scale": 1.5},
+]
+const DEFAULT_TEXT_SIZE_IDX := 1
+
+const FONT_SCALER := preload("res://ui/FontScaler.gd")
+
 var _cfg: ConfigFile = ConfigFile.new()
 var _loaded: bool = false
+var _font_scaler: Node
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_cfg.load(SETTINGS_PATH)
 	_loaded = true
+	_font_scaler = FONT_SCALER.new()
+	add_child(_font_scaler)
 	_apply_all()
 
 func _apply_all():
@@ -47,6 +59,7 @@ func _apply_all():
 		apply_bus_volume(bus_name, get_bus_volume(bus_name))
 
 	_apply_keybinds()
+	apply_text_size(get_text_size_idx())
 
 func _apply_keybinds():
 	var actions = DEFAULT_KEYBINDS.keys()
@@ -85,6 +98,17 @@ func get_window_mode_idx() -> int:
 
 func get_resolution_idx() -> int:
 	return _cfg.get_value("display", "resolution_idx", 0)
+
+func get_text_size_idx() -> int:
+	return clampi(_cfg.get_value("display", "text_size_idx", DEFAULT_TEXT_SIZE_IDX), 0, TEXT_SIZES.size() - 1)
+
+func set_text_size(idx: int):
+	_cfg.set_value("display", "text_size_idx", idx)
+	apply_text_size(idx)
+	_save()
+
+func apply_text_size(idx: int):
+	_font_scaler.set_text_scale(TEXT_SIZES[clampi(idx, 0, TEXT_SIZES.size() - 1)]["scale"])
 
 func get_vsync() -> bool:
 	return _cfg.get_value("graphics", "vsync", true)
@@ -212,6 +236,13 @@ func apply_bus_volume(bus_name: String, val: float):
 	else:
 		AudioServer.set_bus_mute(bus_idx, false)
 		AudioServer.set_bus_volume_db(bus_idx, linear_to_db(val / 100.0))
+
+func is_dev_mode() -> bool:
+	return _cfg.get_value("developer", "dev_mode", false)
+
+func set_dev_mode(on: bool):
+	_cfg.set_value("developer", "dev_mode", on)
+	_save()
 
 func get_flag(key: String, default_value: bool = false) -> bool:
 	return _cfg.get_value("progress", key, default_value)
