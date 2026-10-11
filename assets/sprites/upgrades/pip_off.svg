@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 8 8" shape-rendering="crispEdges">
+  <g id="pip-edge" fill="#514e76">
+    <rect x="1" y="0" width="6" height="8"/>
+    <rect x="0" y="1" width="8" height="6"/>
+  </g>
+  <rect id="pip-fill" x="1" y="1" width="6" height="6" fill="#131220"/>
+</svg>

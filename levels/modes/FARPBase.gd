@@ -15,6 +15,7 @@ const RESULT_PANEL   := preload("res://levels/components/LevelResultPanel.gd")
 const PAUSE_MENU     := preload("res://levels/components/PauseMenu.gd")
 const ACHIEVEMENTS   := preload("res://achievements/Achievements.gd")
 const EVADER_STREAM  := preload("res://levels/components/EvaderStream.gd")
+const LEVEL_REWARDS  := preload("res://progression/LevelRewards.gd")
 const LEVELS_MENU_SCENE := "res://levels/menus/LevelsScene.tscn"
 const STREAM_SPAWN_RADIUS := 750.0
 
@@ -126,6 +127,7 @@ var _event_label: Label
 var _launch_btn: Button
 var _result_panel: Control
 var _new_badges: Array = []
+var _flawless_run: bool = false
 var _stream = null
 
 func _ready():
@@ -519,6 +521,7 @@ func _show_outcome(reason: String):
 		_phase_label.text = result.title
 		_phase_label.add_theme_color_override("font_color", C_GREEN if result.held else C_RED)
 		_on_stream_result(result.held)
+		_flawless_run = result.get("flawless", false)
 		_show_result(result.held, result.title, result.headline)
 		return
 	var defender_won: bool = reason == "capture"
@@ -872,7 +875,13 @@ func _build_result_panel(root: Control):
 func _show_result(passed: bool, title: String, headline: String):
 	var status: String = "LEVEL %d %s" % [LevelInfo.number(_level_id()), "COMPLETE" if passed else "FAILED"]
 	var has_next: bool = not LevelInfo.next_level(_level_id()).is_empty()
+	var reward: Dictionary = LEVEL_REWARDS.grant(_level_id(), _flawless_run) if passed else {}
+	_flawless_run = false
 	_result_panel.show_result(passed, status, title, headline, _summary_rows(), has_next)
+	if not reward.is_empty():
+		_result_panel.add_note("REWARD: +%d ASTRO COIN   +%d XP" % [reward["coins"], reward["xp"]])
+	if reward.get("bonus_coins", 0) > 0:
+		_result_panel.add_note("ALL EVADERS CAPTURED BONUS: +%d ASTRO COIN   +%d XP" % [reward["bonus_coins"], reward["bonus_xp"]])
 	for achievement_id in _new_badges:
 		_result_panel.add_note("BADGE UNLOCKED: %s" % ACHIEVEMENTS.find(achievement_id).get("title", achievement_id))
 	_new_badges.clear()

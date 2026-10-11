@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <g id="coin-edge" fill="#73520d">
+    <rect x="5" y="0" width="6" height="16"/>
+    <rect x="3" y="1" width="10" height="14"/>
+    <rect x="2" y="2" width="12" height="12"/>
+    <rect x="1" y="3" width="14" height="10"/>
+    <rect x="0" y="5" width="16" height="6"/>
+  </g>
+  <g id="coin-rim" fill="#ffc733">
+    <rect x="5" y="1" width="6" height="14"/>
+    <rect x="3" y="2" width="10" height="12"/>
+    <rect x="2" y="3" width="12" height="10"/>
+    <rect x="1" y="5" width="14" height="6"/>
+  </g>
+  <g id="coin-face" fill="#ffe066">
+    <rect x="5" y="3" width="6" height="10"/>
+    <rect x="4" y="4" width="8" height="8"/>
+    <rect x="3" y="5" width="10" height="6"/>
+  </g>
+  <g id="coin-letter" fill="#a8760f">
+    <rect x="7" y="4" width="2" height="1"/>
+    <rect x="6" y="5" width="1" height="7"/>
+    <rect x="9" y="5" width="1" height="7"/>
+    <rect x="7" y="8" width="2" height="1"/>
+  </g>
+  <g id="coin-shine" fill="#fff7d1">
+    <rect x="3" y="3" width="2" height="1"/>
+    <rect x="3" y="4" width="1" height="1"/>
+  </g>
+</svg>

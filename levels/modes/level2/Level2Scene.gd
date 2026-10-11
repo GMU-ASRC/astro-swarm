@@ -30,6 +30,7 @@ func _setup_level():
 	_defender_count = _saved_defender_count()
 	_use_evader_stream(EVADER_COUNT, SPAWN_INTERVAL, FIRST_EVADER_DELAY)
 	_stream.wins_by_capture = true
+	_stream.wins_by_majority = true
 	super()
 	_build_count_picker()
 

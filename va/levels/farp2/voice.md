@@ -21,7 +21,7 @@ Whatever is on screen when you launch is the layout the server benchmarks, so pi
 That leaves the algorithm, and only the algorithm. Open the workspace and make them sweep. Turning while moving forward covers far more sky than driving in a straight line.
 
 [Line:5]
-Ten evaders, one after another, but this time spotting one is not enough. A defender has to touch an evader to capture it, and only then does it disappear. You get a ten second head start before the first one shows up, so use it to get your swarm moving.
+Ten evaders, one after another, but this time spotting one is not enough. A defender has to touch an evader to capture it, and only then does it disappear. You get a ten second head start before the first one shows up, so use it to get your swarm moving. Capture more than half of them and {planet} holds. Capture all ten and there is a bonus in it for you.
 
 [Line:6]
 An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit. I am scoring circliness here too, mill by mill, so a swarm that breaks into tidy little circles still scores well.

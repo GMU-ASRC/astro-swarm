@@ -19,6 +19,8 @@ var _error_banner: PanelContainer
 const BlockFactory := preload("res://ui/workspace/BlockFactory.gd")
 const ERROR_BANNER := preload("res://ui/workspace/WorkspaceErrorBanner.gd")
 const WorkspaceStyle := preload("res://ui/workspace/WorkspaceStyle.gd")
+const SHIP_UPGRADES := preload("res://progression/ShipUpgrades.gd")
+const SHIP_ADDONS := preload("res://progression/ShipAddons.gd")
 
 const GAME_PALETTE := {
 	"config": ["set_speed", "set_turn", "set_view", "set_fov", "set_size"],
@@ -32,7 +34,13 @@ const FARP_SCENES := [
 	"res://levels/modes/level2/Level2Scene.tscn",
 	"res://levels/modes/level6/Level6Scene.tscn",
 ]
-const FARP_DISABLED_BLOCKS := ["do_throttle", "set_size"]
+const FARP_DISABLED_BLOCKS := ["set_size"]
+
+func _enter_tree():
+	SHIP_UPGRADES.editing_ship = true
+
+func _exit_tree():
+	SHIP_UPGRADES.editing_ship = false
 
 func _ready():
 	if not embedded:
@@ -150,12 +158,14 @@ func _build_palette():
 		_build_palette_category(category, _allowed_blocks(GAME_PALETTE.get(category, [])))
 
 func _allowed_blocks(ids: Array) -> Array:
-	if embedded or not FARP_SCENES.has(return_scene):
-		return ids
+	var level_restricted: bool = not embedded and FARP_SCENES.has(return_scene)
 	var allowed: Array = []
 	for block_id in ids:
-		if not FARP_DISABLED_BLOCKS.has(block_id):
-			allowed.append(block_id)
+		if SHIP_ADDONS.is_block_locked(block_id):
+			continue
+		if level_restricted and FARP_DISABLED_BLOCKS.has(block_id):
+			continue
+		allowed.append(block_id)
 	return allowed
 
 func _build_palette_category(category: String, ids: Array):

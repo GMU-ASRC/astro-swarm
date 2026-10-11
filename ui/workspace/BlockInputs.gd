@@ -1,5 +1,7 @@
 extends RefCounted
 
+const SHIP_UPGRADES := preload("res://progression/ShipUpgrades.gd")
+
 const SLOT_COLOR := Color(0, 0, 0, 0.25)
 const TEXT_COLOR := Color(1, 1, 1, 1)
 const FONT_SIZE := 12
@@ -85,8 +87,8 @@ static func _make_number(block, spec: Dictionary) -> SpinBox:
 	var key: String = spec.get("key", "value")
 	var box := SpinBox.new()
 	box.min_value = spec.get("min", 0.0)
-	box.max_value = spec.get("max", 100.0)
 	box.step = spec.get("step", 1.0)
+	box.max_value = SHIP_UPGRADES.editor_max(block.block_type, spec.get("max", 100.0))
 	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	box.custom_minimum_size = Vector2(70, 0)
 	box.value = float(block.block_params.get(key, spec.get("default", 0.0)))
@@ -123,7 +125,7 @@ static func _make_slider(block, spec: Dictionary) -> HBoxContainer:
 	slider.custom_minimum_size = Vector2(100, 0)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.min_value = spec.get("min", 0.0)
-	slider.max_value = spec.get("max", 100.0)
+	slider.max_value = SHIP_UPGRADES.editor_max(block.block_type, spec.get("max", 100.0))
 	slider.step = step
 	slider.focus_mode = Control.FOCUS_ALL
 	slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND

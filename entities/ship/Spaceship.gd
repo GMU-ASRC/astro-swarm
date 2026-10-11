@@ -22,6 +22,7 @@ const SPRITE_PX := 30.0         # pixels, drawn sprite width at HULL_RADIUS
 const SHIP_SPRITE_PATH := "res://assets/sprites/spaceship/spaceship.svg"
 
 const PROJECTILE := preload("res://entities/ship/Projectile.tscn")
+const THRUSTER_FLAME := preload("res://entities/ship/ThrusterFlame.gd")
 
 var team: int = TEAM_PLAYER                  # TEAM_PLAYER or TEAM_PROTECTOR
 var hp: float = 3.0                          # hit points
@@ -57,6 +58,7 @@ var _executor
 var _visible: Array = []
 var _fire_cooldown: float = 0.0 # seconds left before the ship can fire again
 var _throttle_mult: float = 1.0 # multiplier applied to forward_input
+var _throttle_engaged: bool = false
 var _enemies_cache: Array = []
 
 var _orbit: bool = false
@@ -75,6 +77,7 @@ var _hull_sprite: Sprite2D
 func _ready():
 	z_index = 5
 	_setup_collision()
+	add_child(THRUSTER_FLAME.new())
 	_build_hull_sprite()
 	_generate_cone()
 	_hull.add_to_group("ship_hull")
@@ -168,6 +171,11 @@ func _process_orbit(delta: float):
 func _process_program(delta: float):
 	_enemies_cache = _live_enemies()
 	_executor.process(delta)
+
+func thruster_level() -> float:
+	if not _throttle_engaged or not is_physics_processing():
+		return 0.0
+	return maxf(forward_input, 0.0)
 
 func reset_inputs():
 	forward_input = 0.0
@@ -307,6 +315,7 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 			return _step(state, delta)
 		"do_throttle":
 			_throttle_mult = float(params.get("value", 1.0))
+			_throttle_engaged = true
 			return BlockExecutor.DONE
 		"do_fire":
 			_fire()

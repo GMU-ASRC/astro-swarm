@@ -22,6 +22,7 @@ const ORBIT_MAX := 255.0
 @onready var moons_btn: Button = $HUD/Navbar/MoonsButton
 @onready var entries_btn: Button = $HUD/Navbar/EntriesButton
 @onready var shop_btn: Button = $HUD/Navbar/ShopButton
+@onready var tutorial_btn: Button = $HUD/Navbar/TutorialButton
 @onready var modal: Control = $UsernameModal
 @onready var name_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/NameEdit
 @onready var planet_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/PlanetEdit
@@ -39,11 +40,14 @@ const C_COIN := Color(1.0, 0.88, 0.40, 1.0)
 const USERNAME_HOVER_COLOR := Color(0.451, 0.616, 1.0, 1.0)
 const ASTRO_ID_SCENE := "res://levels/menus/AstroIDScene.tscn"
 const RANKS := preload("res://progression/Ranks.gd")
+const TUTORIAL := preload("res://ui/tutorial/BlobTutorial.gd")
+const TUTORIAL_LINES := preload("res://ui/tutorial/PlayerBaseTutorialLines.gd")
 
 var _planet: Control
 var _moons: Array = []
 var _orbit_time: float = 0.0
 var _mode_index: int = 0
+var _tutorial: CanvasLayer
 
 func _ready():
 	get_tree().paused = false
@@ -51,10 +55,11 @@ func _ready():
 
 	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/HomeScene.tscn"))
 	find_btn.pressed.connect(_on_find_match)
-	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/MoonsScene.tscn"))
+	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/moons/MoonsScene.tscn"))
 	entries_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerEntriesScene.tscn"))
 	_make_username_open_astro_id()
 	shop_btn.disabled = true
+	tutorial_btn.pressed.connect(_show_tutorial)
 	game_mode_btn.pressed.connect(_on_game_mode_btn)
 	_setup_mode_popup()
 	_init_game_mode()
@@ -79,6 +84,8 @@ func _ready():
 	if not PlayerData.has_profile():
 		modal.visible = true
 		name_edit.grab_focus()
+	else:
+		_show_tutorial_once()
 
 func _process(delta: float):
 	_orbit_time += delta
@@ -208,6 +215,24 @@ func _on_confirm_username():
 	PlayerData.set_username(n)
 	modal.visible = false
 	_refresh_hud()
+	_show_tutorial_once()
+
+func _show_tutorial_once():
+	if PlayerSettings.get_flag(TUTORIAL_LINES.SEEN_FLAG):
+		return
+	PlayerSettings.set_flag(TUTORIAL_LINES.SEEN_FLAG, true)
+	_show_tutorial()
+
+func _show_tutorial():
+	if is_instance_valid(_tutorial):
+		return
+	var tutorial := TUTORIAL.new()
+	_tutorial = tutorial
+	tutorial.lines = TUTORIAL_LINES.LINES
+	tutorial.voice_dir = TUTORIAL_LINES.VOICE_DIR
+	tutorial.show_visuals = false
+	tutorial.final_hint = TUTORIAL_LINES.FINAL_HINT
+	add_child(tutorial)
 
 func _init_game_mode():
 	# Migrate old "domination"/"timed_local" saves to "levels"

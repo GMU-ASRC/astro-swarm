@@ -2,6 +2,8 @@ extends Node
 
 const SIM := preload("res://autoloads/SimulationManager.gd")
 const ACHIEVEMENTS := preload("res://achievements/Achievements.gd")
+const SHIP_UPGRADES := preload("res://progression/ShipUpgrades.gd")
+const SHIP_ADDONS := preload("res://progression/ShipAddons.gd")
 
 const SAVE_PATH := "user://player.cfg"
 const MAX_MOONS := 5
@@ -25,6 +27,8 @@ signal level_changed(new_level: int)
 signal coins_changed(amount: int)
 signal moons_changed()
 signal ship_program_changed()
+signal ship_upgrades_changed()
+signal ship_addons_changed()
 
 var username: String = ""
 var planet_name: String = ""
@@ -38,6 +42,8 @@ var moon_seeds: Array = []
 var ship_blocks: Array = []
 var ship_algorithms: Dictionary = {}
 var active_algorithm: String = ""
+var ship_upgrades: Dictionary = {}
+var ship_addons: Array = []
 var game_mode: String = "levels"
 var farp_placements: Array = []
 var farp_layouts: Dictionary = {}
@@ -52,6 +58,7 @@ func _ready():
 	_ensure_planet()
 	_sync_moons()
 	_ensure_ship_program()
+	ship_blocks = _within_ship_rules(ship_blocks)
 	_ensure_player_id()
 	call_deferred("_catch_up_achievements")
 
@@ -153,7 +160,7 @@ func get_ship_algorithm() -> Array:
 	return SIM.normalize_to_scripts(ship_blocks)
 
 func set_ship_blocks(blocks: Array):
-	ship_blocks = SIM.normalize_to_scripts(blocks)
+	ship_blocks = _within_ship_rules(SIM.normalize_to_scripts(blocks))
 	_save()
 	ship_program_changed.emit()
 
@@ -181,6 +188,27 @@ func set_active_algorithm(algo_name: String):
 
 func algorithm_names() -> Array:
 	return ship_algorithms.keys()
+
+func ship_upgrade_level(upgrade_id: String) -> int:
+	return int(ship_upgrades.get(upgrade_id, 0))
+
+func raise_ship_upgrade(upgrade_id: String):
+	ship_upgrades[upgrade_id] = ship_upgrade_level(upgrade_id) + 1
+	_save()
+	ship_upgrades_changed.emit()
+
+func has_ship_addon(addon_id: String) -> bool:
+	return ship_addons.has(addon_id)
+
+func add_ship_addon(addon_id: String):
+	if ship_addons.has(addon_id):
+		return
+	ship_addons.append(addon_id)
+	_save()
+	ship_addons_changed.emit()
+
+func _within_ship_rules(scripts: Array) -> Array:
+	return SHIP_ADDONS.strip_locked_blocks(SHIP_UPGRADES.clamp_scripts(scripts))
 
 func set_game_mode(mode: String):
 	game_mode = mode
@@ -232,6 +260,8 @@ func reset_game():
 	ship_blocks = []
 	ship_algorithms = {}
 	active_algorithm = ""
+	ship_upgrades = {}
+	ship_addons = []
 	game_mode = "levels"
 	farp_placements = []
 	farp_layouts = {}
@@ -248,6 +278,8 @@ func reset_game():
 	coins_changed.emit(coins)
 	moons_changed.emit()
 	ship_program_changed.emit()
+	ship_upgrades_changed.emit()
+	ship_addons_changed.emit()
 
 func _sync_moons():
 	var target: int = moons_for_level(level)
@@ -275,6 +307,8 @@ func _save():
 	cfg.set_value("ship", "blocks", ship_blocks)
 	cfg.set_value("ship", "algorithms", ship_algorithms)
 	cfg.set_value("ship", "active_algorithm", active_algorithm)
+	cfg.set_value("ship", "upgrades", ship_upgrades)
+	cfg.set_value("ship", "addons", ship_addons)
 	cfg.set_value("match", "game_mode", game_mode)
 	cfg.set_value("farp", "placements", farp_placements)
 	cfg.set_value("farp", "layouts", farp_layouts)
@@ -298,6 +332,8 @@ func _load():
 	ship_blocks = SIM.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
 	ship_algorithms = cfg.get_value("ship", "algorithms", {})
 	active_algorithm = cfg.get_value("ship", "active_algorithm", "")
+	ship_upgrades = cfg.get_value("ship", "upgrades", {})
+	ship_addons = cfg.get_value("ship", "addons", [])
 	game_mode = cfg.get_value("match", "game_mode", "levels")
 	farp_placements = cfg.get_value("farp", "placements", [])
 	farp_layouts = cfg.get_value("farp", "layouts", {})

@@ -3,6 +3,9 @@ extends Control
 const MOON := preload("res://entities/planet/PlanetMoon.tscn")
 const SHIP_WORKSPACE := preload("res://ui/workspace/ShipWorkspace.gd")
 
+const UPGRADE_MOON_SCENE := "res://levels/menus/moons/UpgradeMoonScene.tscn"
+const UPGRADE_MOON_INDEX := 0
+
 const MOON_VIS_PIXELS := 52.0
 const MOON_DISP := 300.0
 const SLOT_WIDTH := 360.0
@@ -36,8 +39,12 @@ func _build_moons():
 	for c in moon_row.get_children():
 		c.queue_free()
 	_add_moon(PlayerData.WORKSPACE_MOON_SEED, "Hivemind", "Program your spaceship", _open_workspace)
-	for sd in PlayerData.moon_seeds:
-		_add_moon(int(sd), "Outpost Moon", "Coming soon", Callable())
+	for index in PlayerData.moon_seeds.size():
+		var moon_seed: int = int(PlayerData.moon_seeds[index])
+		if index == UPGRADE_MOON_INDEX:
+			_add_moon(moon_seed, "Shipyard", "Upgrade your spaceship", _open_upgrade_moon)
+		else:
+			_add_moon(moon_seed, "Outpost Moon", "Coming soon", Callable())
 
 func _relayout():
 	await get_tree().process_frame
@@ -104,6 +111,9 @@ func _set_moon_hover(moon_visual: Control, tag: PanelContainer, hovered: bool):
 func _open_workspace():
 	SHIP_WORKSPACE.return_scene = "res://levels/menus/PlayerBaseScene.tscn"
 	get_tree().change_scene_to_file("res://ui/workspace/ShipWorkspace.tscn")
+
+func _open_upgrade_moon():
+	get_tree().change_scene_to_file(UPGRADE_MOON_SCENE)
 
 func _tag_style(hovered: bool, openable: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

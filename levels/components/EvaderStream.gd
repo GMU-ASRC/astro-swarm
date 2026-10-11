@@ -8,6 +8,7 @@ var spawn_distance: float = 1000.0
 var start_delay: float = 0.0
 var tracks_circliness: bool = true
 var wins_by_capture: bool = false
+var wins_by_majority: bool = false
 
 var spawned: int = 0
 var detected: int = 0
@@ -100,6 +101,8 @@ func _resolve():
 	_evaders = remaining
 
 func outcome(reason: String) -> Dictionary:
+	if wins_by_majority:
+		return _majority_outcome(reason)
 	var held: bool = breached == 0 and reason == "cleared"
 	var title: String = "PLANET DEFENDED" if held else "PLANET BREACHED"
 	var headline: String = "Your defenders %s all %d evaders before they reached the planet." % ["captured" if wins_by_capture else "spotted", total]
@@ -109,6 +112,17 @@ func outcome(reason: String) -> Dictionary:
 	elif not held:
 		headline = "%d of the %d evaders reached the planet%s." % [breached, total, "" if wins_by_capture else " without being spotted"]
 	return {"held": held, "title": title, "headline": headline}
+
+func _majority_outcome(reason: String) -> Dictionary:
+	if reason == "timeout":
+		return {"held": false, "flawless": false, "title": "OUT OF TIME", "headline": "The clock ran out with %d evaders still inbound." % (_evaders.size() + total - spawned)}
+	var held: bool = captured * 2 > total
+	var flawless: bool = captured == total
+	var title: String = "PLANET DEFENDED" if held else "PLANET BREACHED"
+	var headline: String = "Your defenders captured %d of the %d evaders, %s." % [captured, total, "most of them" if held else "not enough to hold the planet"]
+	if flawless:
+		headline = "Your defenders captured all %d evaders before they reached the planet." % total
+	return {"held": held, "flawless": flawless, "title": title, "headline": headline}
 
 func summary_text(first_detection: String, first_capture: String) -> String:
 	var text: String = "Evaders detected: %d of %d" % [detected, total]
