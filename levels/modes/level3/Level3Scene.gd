@@ -1,7 +1,6 @@
 extends "res://levels/modes/WaveBase.gd"
 
 const GROUP_WAVES := 2
-const DEFENDER_OPTIONS := [5, 10, 15, 20, 25, 250, 500]
 const SPAWN_JITTER := 0.35
 
 func _level_id() -> String:
@@ -11,7 +10,7 @@ func _level_title() -> String:
 	return "LEVEL 3 - HOLD THE WAVES"
 
 func _defender_options() -> Array:
-	return DEFENDER_OPTIONS
+	return DEFENDER_COUNT_OPTIONS
 
 func _wave_total() -> int:
 	return GROUP_WAVES

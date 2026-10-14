@@ -3,7 +3,7 @@
 ## Updates
 
 - Level 2 sends two evaders per defender, `E = 2 * D`, one every `15 / D` seconds after the head start, so the stream lasts about 30 seconds at any line size
-- Level 3 plays two waves of one evader per defender at once, `E = 2 * D`, with a defender picker of 5, 10, 15, 20, 25, 250 or 500
+- Level 3 plays two waves of one evader per defender at once, `E = 2 * D`, with a defender picker of 5, 25, 50, 100, 250 or 500
 - Level 2 offers 250 and 500 defenders
 - Removed the bottom-left hint text and the tutorial button from every level
 - Restyled the entries screens to match the website entry page, with links to open each entry and your profile on the website

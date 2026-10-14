@@ -4,7 +4,6 @@ const EVADERS_PER_DEFENDER := 2
 const BASE_DEFENDERS := 5
 const BASE_SPAWN_INTERVAL := 3.0
 const FIRST_EVADER_DELAY := 10.0
-const DEFENDER_OPTIONS := [5, 25, 50, 100, 250, 500]
 const SCENE_SCALE := 1.5
 const LEVEL_ARENA := ARENA * SCENE_SCALE
 
@@ -21,7 +20,7 @@ func _level_title() -> String:
 	return "LEVEL 2 - PROGRAM THE SCATTER"
 
 func _defender_options() -> Array:
-	return DEFENDER_OPTIONS
+	return DEFENDER_COUNT_OPTIONS
 
 func _setup_level():
 	_use_evader_stream(_evader_total(), _spawn_interval(), FIRST_EVADER_DELAY)
