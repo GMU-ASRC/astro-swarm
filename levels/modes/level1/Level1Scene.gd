@@ -16,12 +16,6 @@ func _level_id() -> String:
 func _level_title() -> String:
 	return "LEVEL 1 - PLACE YOUR DEFENDERS"
 
-func _level_subtitle() -> String:
-	return "Drag inside the blue ring to place a defender and aim it. Place %d to %d. Right-click a defender to remove it. Program them in WORKSPACE, then LAUNCH." % [MIN_DEFENDERS, MAX_DEFENDERS]
-
-func _shows_hint_text() -> bool:
-	return false
-
 func _tutorial_final_hint() -> String:
 	return "CLICK TO OPEN THE WORKSPACE"
 

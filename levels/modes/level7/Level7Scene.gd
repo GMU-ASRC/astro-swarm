@@ -85,9 +85,6 @@ func _planet_center() -> Vector2:
 func _level_title() -> String:
 	return "LEVEL 7 - MERGE THE SWARMS"
 
-func _level_subtitle() -> String:
-	return "Two swarms are milling on their own. Press LAUNCH, then fly the gold leader between them, pull them into one mill, walk that mill onto the planet and slip away without breaking it."
-
 func _uses_workspace() -> bool:
 	return false
 
@@ -104,7 +101,6 @@ func _setup_level():
 func _restart_level():
 	_spawn_scenario()
 	_phase_label.text = _level_title()
-	_hint_label.text = _level_subtitle()
 
 func _spawn_scenario():
 	_placements.clear()
@@ -211,7 +207,6 @@ func _launch():
 	_frames = [_snapshot()]
 	_record_accum = 0.0
 	_phase_label.text = "MERGE THE TWO SWARMS"
-	_hint_label.text = "Fly the gold leader between the two mills and pull them together."
 
 func _update_level(delta: float):
 	if is_instance_valid(_leader):
@@ -300,30 +295,25 @@ func _advance_objective(delta: float):
 			if _merged:
 				if _merge_time < 0.0:
 					_merge_time = _elapsed
-				_set_objective(Objective.DELIVER, "WALK THE SWARM TO THE PLANET",
-					"The swarm is one mill. Lead it into the white ring around the planet.")
+				_set_objective(Objective.DELIVER, "WALK THE SWARM TO THE PLANET")
 		Objective.DELIVER:
 			if not _merged:
-				_set_objective(Objective.MERGE, "MERGE THE TWO SWARMS",
-					"The swarm broke apart. Pull the groups back into one mill.")
+				_set_objective(Objective.MERGE, "MERGE THE TWO SWARMS")
 			elif _swarm_at_goal():
 				if _deliver_time < 0.0:
 					_deliver_time = _elapsed
-				_set_objective(Objective.ESCAPE, "SLIP AWAY FROM THE SWARM",
-					"Now leave. Get clear of the mill without dragging it off the planet.")
+				_set_objective(Objective.ESCAPE, "SLIP AWAY FROM THE SWARM")
 		Objective.ESCAPE:
 			_update_escape(delta)
 
 func _update_escape(delta: float):
 	if not _merged:
 		_hold_elapsed = 0.0
-		_set_objective(Objective.MERGE, "MERGE THE TWO SWARMS",
-			"The swarm broke apart. Pull the groups back into one mill.")
+		_set_objective(Objective.MERGE, "MERGE THE TWO SWARMS")
 		return
 	if not _swarm_at_goal():
 		_hold_elapsed = 0.0
-		_set_objective(Objective.DELIVER, "WALK THE SWARM TO THE PLANET",
-			"The mill drifted off the planet. Bring it back into the white ring.")
+		_set_objective(Objective.DELIVER, "WALK THE SWARM TO THE PLANET")
 		return
 	if _circliness < MILL_MINIMUM or not _leader_is_clear():
 		_hold_elapsed = 0.0
@@ -334,11 +324,10 @@ func _update_escape(delta: float):
 		_escape_time = _elapsed
 		_finish("delivered")
 
-func _set_objective(objective: int, title: String, hint: String):
+func _set_objective(objective: int, title: String):
 	_objective = objective
 	_hold_elapsed = 0.0
 	_phase_label.text = title
-	_hint_label.text = hint
 
 func _objective_text() -> String:
 	if _objective == Objective.COMPLETE:

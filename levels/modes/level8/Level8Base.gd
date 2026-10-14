@@ -31,9 +31,6 @@ func _star_seed() -> int:
 func _level_title() -> String:
 	return "LEVEL 8 - PLANET %s" % _planet_letter()
 
-func _level_subtitle() -> String:
-	return "Planet A starts with every defender and planet B has none. Lead them around with the shuttle and call them across between the two planets, then both planets are attacked in turn."
-
 func _launch_label() -> String:
 	return "START DEPLOYMENT (S) >"
 
@@ -123,7 +120,6 @@ func _restart_level():
 	_spawn_garrison()
 	_launch_btn.text = _launch_label()
 	_phase_label.text = _level_title()
-	_hint_label.text = _level_subtitle()
 	if _commit_btn != null:
 		_commit_btn.visible = false
 
@@ -176,7 +172,6 @@ func _begin_allocation():
 	_launch_shuttle()
 	_commit_btn.visible = true
 	_phase_label.text = "DEPLOYMENT WINDOW - PLANET %s" % _planet_letter()
-	_hint_label.text = "The defenders run your algorithm and read the gold shuttle as an ally. Q goes dark, E calls one across onto a marker."
 	_update_count()
 
 func _cross_to_other_planet():
@@ -216,7 +211,6 @@ func _start_assault():
 	_evader_slots = _evaders.duplicate()
 	STATE.frames.append(_snapshot())
 	_phase_label.text = "PLANET %s UNDER ATTACK" % _planet_letter()
-	_hint_label.text = "%d evaders inbound, %d defenders holding. You keep flying: lead them onto the threat, or go dark and stay out of it." % [STATE.EVADERS_PER_PLANET, _defender_ships.size()]
 	_update_count()
 
 func _track_events():
@@ -269,29 +263,21 @@ func _finish(reason: String):
 	})
 	if _planet_index() == STATE.PLANET_A:
 		STATE.stage = STATE.Stage.ASSAULT_B
-		_hand_over(reason)
+		_hand_over()
 		return
 	STATE.stage = STATE.Stage.DONE
 	super(reason)
 
-func _hand_over(reason: String):
+func _hand_over():
 	_phase = Phase.DONE
 	_stop_ships()
 	var held: bool = _breached == 0
 	_phase_label.text = "PLANET A HELD" if held else "PLANET A BREACHED"
 	_phase_label.add_theme_color_override("font_color", C_GREEN if held else C_RED)
-	_hint_label.text = "%s Moving to planet B." % _planet_summary(reason)
 	_update_event_label()
 	await get_tree().create_timer(HANDOVER_DELAY).timeout
 	if is_inside_tree():
 		_change_scene(PLANET_B_SCENE)
-
-func _planet_summary(reason: String) -> String:
-	if reason == "timeout":
-		return "The clock ran out with %d evaders still inbound." % _evaders.size()
-	if _breached == 0:
-		return "All %d evaders were stopped." % STATE.EVADERS_PER_PLANET
-	return "%d of %d evaders got through." % [_breached, STATE.EVADERS_PER_PLANET]
 
 func _stop_ships():
 	for ship in _defender_ships:

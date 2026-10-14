@@ -22,7 +22,6 @@ const ORBIT_MAX := 255.0
 @onready var moons_btn: Button = $HUD/Navbar/MoonsButton
 @onready var entries_btn: Button = $HUD/Navbar/EntriesButton
 @onready var shop_btn: Button = $HUD/Navbar/ShopButton
-@onready var tutorial_btn: Button = $HUD/Navbar/TutorialButton
 @onready var modal: Control = $UsernameModal
 @onready var name_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/NameEdit
 @onready var planet_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/PlanetEdit
@@ -59,7 +58,6 @@ func _ready():
 	entries_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerEntriesScene.tscn"))
 	_make_username_open_astro_id()
 	shop_btn.disabled = true
-	tutorial_btn.pressed.connect(_show_tutorial)
 	game_mode_btn.pressed.connect(_on_game_mode_btn)
 	_setup_mode_popup()
 	_init_game_mode()
@@ -220,8 +218,8 @@ func _on_confirm_username():
 func _show_tutorial_once():
 	if PlayerSettings.get_flag(TUTORIAL_LINES.SEEN_FLAG):
 		return
-	PlayerSettings.set_flag(TUTORIAL_LINES.SEEN_FLAG, true)
 	_show_tutorial()
+	_tutorial.finished.connect(func(): PlayerSettings.set_flag(TUTORIAL_LINES.SEEN_FLAG, true))
 
 func _show_tutorial():
 	if is_instance_valid(_tutorial):

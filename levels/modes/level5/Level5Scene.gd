@@ -11,9 +11,6 @@ func _level_id() -> String:
 func _level_title() -> String:
 	return "LEVEL 5 - BREAK THE SIEGE"
 
-func _level_subtitle() -> String:
-	return "%d evaders come in at once off the arena edges, all driving at the planet. A capture destroys the defender that made it, so your %d bodies have to be spent well. REROLL for a new scatter." % [SIEGE_EVADERS, RING_COUNT]
-
 func _launch_label() -> String:
 	return "LAUNCH SIEGE (S) >"
 
@@ -22,7 +19,6 @@ func _launch():
 	_reset_counters()
 	_spawn_edge_wave(SIEGE_EVADERS)
 	_phase_label.text = "SIEGE INBOUND"
-	_hint_label.text = "All %d are on their way in. Every capture costs you the defender that made it." % SIEGE_EVADERS
 	_update_count()
 
 func _track_events():

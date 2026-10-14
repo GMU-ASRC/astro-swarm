@@ -122,7 +122,6 @@ var _top_bar: HBoxContainer
 var _phase_label: Label
 var _timer_label: Label
 var _count_label: Label
-var _hint_label: Label
 var _event_label: Label
 var _launch_btn: Button
 var _result_panel: Control
@@ -187,9 +186,6 @@ func _level_id() -> String:
 
 func _level_title() -> String:
 	return "FARP"
-
-func _level_subtitle() -> String:
-	return ""
 
 func _submits_algorithm() -> bool:
 	return true
@@ -280,9 +276,6 @@ func _tutorial_final_hint() -> String:
 
 func _after_tutorial():
 	pass
-
-func _shows_hint_text() -> bool:
-	return true
 
 func _shows_run_controls() -> bool:
 	return true
@@ -576,15 +569,20 @@ func _submit_entry():
 		EvalUploader.submit_finished.connect(_on_submit_finished)
 	EvalUploader.submit(PlayerData.ship_blocks, _placements_payload(), _level_id(), _collisions_on)
 
-func _on_submit_finished(success: bool, code: int, _response):
+func _on_submit_finished(success: bool, code: int, response):
 	if success or code == 409:
 		return
-	_result_panel.add_note(_submit_error(code))
+	_result_panel.add_note(_submit_error(code, response))
 
-func _submit_error(code: int) -> String:
+func _submit_error(code: int, response) -> String:
 	if code == 426:
 		return "This build is out of date, so the server would not take the entry."
-	return "The server could not be reached, so the entry was not recorded."
+	if code == 0:
+		return "The server at %s could not be reached, so the entry was not recorded." % PlayerSettings.server_url()
+	var reason: String = str(response.get("error", "")) if response is Dictionary else ""
+	if reason == "":
+		return "The server refused the entry (HTTP %d), so it was not recorded." % code
+	return "The server refused the entry (HTTP %d: %s), so it was not recorded." % [code, reason]
 
 func _restart():
 	_clear_ships()
@@ -792,7 +790,6 @@ func _build_hud():
 		_add_top_button("WORKSPACE", _open_workspace, HUD_BUTTONS.Kind.PRIMARY)
 	if _shows_run_controls():
 		_add_top_button("RESTART (P)", _restart)
-		_add_top_button("TUTORIAL", _show_tutorial)
 
 	if _uses_collisions_toggle():
 		var collisions_btn := CheckButton.new()
@@ -839,18 +836,6 @@ func _build_hud():
 	_launch_btn.pressed.connect(_launch)
 	_launch_btn.visible = _shows_run_controls()
 	root.add_child(_launch_btn)
-
-	_hint_label = _lbl(_level_subtitle(), 10, C_DIM)
-	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_hint_label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_hint_label.offset_left = 16
-	_hint_label.offset_top = -120
-	_hint_label.offset_right = 340
-	_hint_label.offset_bottom = -14
-	_hint_label.visible = _shows_hint_text()
-	root.add_child(_hint_label)
 
 	_build_result_panel(root)
 	var pause_menu := PAUSE_MENU.new()

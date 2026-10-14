@@ -29,9 +29,6 @@ func _level_id() -> String:
 func _level_title() -> String:
 	return "LEVEL 6 - FLY THE EVADER"
 
-func _level_subtitle() -> String:
-	return "Drag on the red ring to pick your start point, then LAUNCH and fly the evader to the planet yourself. The defenders run the best submitted Level 2 algorithm."
-
 func _is_evader_role() -> bool:
 	return true
 
@@ -59,7 +56,6 @@ func _setup_level():
 func _restart_level():
 	_place_defenders()
 	_phase_label.text = _level_title()
-	_hint_label.text = _level_subtitle()
 	_launch_btn.text = "LAUNCH EVADER (S) >"
 
 func _place_defenders():
@@ -105,7 +101,6 @@ func _launch():
 	_record_accum = 0.0
 	_frames.append(_snapshot())
 	_phase_label.text = "FLY TO THE PLANET"
-	_hint_label.text = "Forward and back drive, left and right turn. Stay out of reach of the defenders."
 
 func _spawn_player_evader():
 	_evader = SHIP.instantiate()

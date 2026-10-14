@@ -162,10 +162,6 @@ func _toggle_dark():
 	if is_instance_valid(_shuttle):
 		_shuttle.ship_color = _shuttle_color()
 		_shuttle.sensor_visible = not STATE.cloaked
-	if STATE.cloaked:
-		_hint_label.text = "Shuttle dark. The defenders cannot sense you at all and will carry on as if you were not here."
-	else:
-		_hint_label.text = "Shuttle lit. The defenders read you as an ally again, so your sees-ally rule steers them."
 	queue_redraw()
 
 func _summon_defender():
@@ -173,11 +169,9 @@ func _summon_defender():
 		return
 	var distance: float = _shuttle.global_position.distance_to(_planet)
 	if distance < PLACE_MIN or distance > PLACE_MAX:
-		_hint_label.text = "Drop the marker inside the blue placement band around the planet."
 		return
 	var other: int = _other_index()
 	if not STATE.detach(other):
-		_hint_label.text = "Planet %s has nothing left to send." % _letter(other)
 		return
 	var gate: Vector2 = _gate_center()
 	var ship := _make_ship(PlayerData.ship_blocks, DEFENDER_HP, C_DARK)
@@ -189,7 +183,6 @@ func _summon_defender():
 		"target": _shuttle.global_position,
 		"rot": _shuttle.rotation,
 	})
-	_hint_label.text = "One defender inbound from planet %s." % _letter(other)
 	_update_count()
 	queue_redraw()
 

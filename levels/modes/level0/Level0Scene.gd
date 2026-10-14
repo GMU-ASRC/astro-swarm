@@ -41,9 +41,6 @@ func _uses_workspace() -> bool:
 func _shows_run_controls() -> bool:
 	return false
 
-func _shows_hint_text() -> bool:
-	return false
-
 func _setup_level():
 	_rng.randomize()
 	_timer_label.visible = false
