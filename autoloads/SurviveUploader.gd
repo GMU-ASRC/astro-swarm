@@ -1,6 +1,6 @@
 extends Node
 
-const URL := "https://astroswarm.autonomousrobotics.club/api/survive/matches"
+const MATCHES_PATH := "/api/survive/matches"
 const API_KEY := "world-unfair-file"
 
 signal submit_finished(success: bool, code: int, response)
@@ -28,7 +28,7 @@ func submit(match_data: Dictionary):
 		"X-API-Key: " + API_KEY,
 		"Content-Type: application/json",
 	]
-	if req.request(URL, headers, HTTPClient.METHOD_POST, JSON.stringify(payload)) != OK:
+	if req.request(PlayerSettings.server_url() + MATCHES_PATH, headers, HTTPClient.METHOD_POST, JSON.stringify(payload)) != OK:
 		req.queue_free()
 		submit_finished.emit(false, 0, {})
 

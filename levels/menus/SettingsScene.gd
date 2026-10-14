@@ -1,5 +1,7 @@
 extends Control
 
+const CreditsTab = preload("res://levels/menus/CreditsTab.gd")
+
 signal closed
 
 var embedded: bool = false
@@ -26,6 +28,7 @@ var embedded: bool = false
 @onready var bind_list: VBoxContainer = $VBox/TabContainer/Keybinds/Margin/VBox/Scroll/BindList
 @onready var reset_binds_btn: Button = $VBox/TabContainer/Keybinds/Margin/VBox/ResetButton
 @onready var back_btn = $VBox/TopBar/BackButton
+@onready var tab_container: TabContainer = $VBox/TabContainer
 
 var _capturing_action: String = ""
 var _capturing_btn: Button = null
@@ -41,6 +44,7 @@ func _ready():
 	_build_planet_name_ui()
 	_build_dev_mode_ui()
 	_build_text_size_ui()
+	_build_credits_tab()
 
 	window_mode_option.select(PlayerSettings.get_window_mode_idx())
 	window_mode_option.item_selected.connect(func(_idx): _update_resolution_enabled())
@@ -76,6 +80,11 @@ func _ready():
 
 	reset_binds_btn.pressed.connect(_on_reset_binds)
 	_build_keybind_rows()
+
+func _build_credits_tab():
+	var credits_tab := CreditsTab.new()
+	credits_tab.name = "Credits"
+	tab_container.add_child(credits_tab)
 
 func _populate_resolutions():
 	resolution_option.clear()
@@ -173,15 +182,57 @@ func _build_dev_mode_ui():
 	dev_mode_toggle.focus_mode = Control.FOCUS_NONE
 	dev_mode_toggle.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	dev_mode_toggle.button_pressed = PlayerSettings.is_dev_mode()
-	dev_mode_toggle.toggled.connect(PlayerSettings.set_dev_mode)
+	var server_box := _build_server_url_box()
+	server_box.visible = dev_mode_toggle.button_pressed
+	dev_mode_toggle.toggled.connect(func(on: bool):
+		PlayerSettings.set_dev_mode(on)
+		server_box.visible = on
+	)
 
 	var separator := HSeparator.new()
 
 	var first_index: int = player_vbox.get_node("ResetTitle").get_index()
-	var nodes: Array = [title, info, dev_mode_toggle, separator]
+	var nodes: Array = [title, info, dev_mode_toggle, server_box, separator]
 	for i in nodes.size():
 		player_vbox.add_child(nodes[i])
 		player_vbox.move_child(nodes[i], first_index + i)
+
+func _build_server_url_box() -> VBoxContainer:
+	var server_box := VBoxContainer.new()
+	server_box.add_theme_constant_override("separation", 8)
+
+	var title := Label.new()
+	title.text = "Backend Server URL"
+
+	var server_edit := LineEdit.new()
+	server_edit.text = PlayerSettings.get_custom_server_url()
+	server_edit.placeholder_text = PlayerSettings.DEFAULT_SERVER_URL
+	server_edit.custom_minimum_size = Vector2(360, 0)
+	server_edit.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+
+	var status_label := Label.new()
+	status_label.add_theme_font_size_override("font_size", 11)
+	status_label.add_theme_color_override("font_color", Color(0.5, 0.52, 0.62, 1))
+	var refresh_status := func():
+		status_label.text = "Using %s. Leave empty for the default server." % PlayerSettings.server_url()
+	refresh_status.call()
+	server_box.visibility_changed.connect(refresh_status)
+
+	var save_server := func():
+		PlayerSettings.set_custom_server_url(server_edit.text)
+		server_edit.text = PlayerSettings.get_custom_server_url()
+		refresh_status.call()
+	server_edit.text_submitted.connect(func(_text): save_server.call())
+
+	var save_btn := Button.new()
+	save_btn.text = " Save Server URL "
+	save_btn.focus_mode = Control.FOCUS_NONE
+	save_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	save_btn.pressed.connect(save_server)
+
+	for node in [title, server_edit, save_btn, status_label]:
+		server_box.add_child(node)
+	return server_box
 
 func _build_planet_name_ui():
 	var title := Label.new()

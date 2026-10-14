@@ -1,6 +1,7 @@
 extends Node
 
 const SETTINGS_PATH := "user://player_settings.cfg"
+const DEFAULT_SERVER_URL := "https://astroswarm.autonomousrobotics.club"
 
 const DEFAULT_BUS_VOLUMES := {
 	"Master": 100.0,
@@ -243,6 +244,22 @@ func is_dev_mode() -> bool:
 func set_dev_mode(on: bool):
 	_cfg.set_value("developer", "dev_mode", on)
 	_save()
+
+func get_custom_server_url() -> String:
+	return _cfg.get_value("developer", "server_url", "")
+
+func set_custom_server_url(url: String):
+	var server_url: String = url.strip_edges().trim_suffix("/")
+	if server_url != "" and not server_url.contains("://"):
+		server_url = "http://" + server_url
+	_cfg.set_value("developer", "server_url", server_url)
+	_save()
+
+func server_url() -> String:
+	var custom_url: String = get_custom_server_url()
+	if is_dev_mode() and custom_url != "":
+		return custom_url
+	return DEFAULT_SERVER_URL
 
 func get_flag(key: String, default_value: bool = false) -> bool:
 	return _cfg.get_value("progress", key, default_value)

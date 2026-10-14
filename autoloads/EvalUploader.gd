@@ -1,8 +1,8 @@
 extends Node
 
-const URL := "https://astroswarm.autonomousrobotics.club/api/evaluations"
-const BEST_URL := URL + "/best"
-const RUN_URL := URL + "/run"
+const EVALUATIONS_PATH := "/api/evaluations"
+const BEST_PATH := EVALUATIONS_PATH + "/best"
+const RUN_PATH := EVALUATIONS_PATH + "/run"
 const API_KEY := "world-unfair-file"
 
 signal submit_finished(success: bool, code: int, response)
@@ -37,7 +37,7 @@ func submit(algorithm: Array, placements: Array, level_id: String, collisions: b
 		"X-API-Key: " + API_KEY,
 		"Content-Type: application/json",
 	]
-	if req.request(URL, headers, HTTPClient.METHOD_POST, body) != OK:
+	if req.request(PlayerSettings.server_url() + EVALUATIONS_PATH, headers, HTTPClient.METHOD_POST, body) != OK:
 		req.queue_free()
 		submit_finished.emit(false, 0, {})
 
@@ -66,7 +66,7 @@ func submit_run(level_id: String, algorithm: Array, placements: Array, run: Dict
 		"X-API-Key: " + API_KEY,
 		"Content-Type: application/json",
 	]
-	if req.request(RUN_URL, headers, HTTPClient.METHOD_POST, body) != OK:
+	if req.request(PlayerSettings.server_url() + RUN_PATH, headers, HTTPClient.METHOD_POST, body) != OK:
 		req.queue_free()
 		submit_finished.emit(false, 0, {})
 
@@ -80,7 +80,7 @@ func fetch_best(level_id: String):
 		req.queue_free()
 	)
 	var headers := ["X-API-Key: " + API_KEY]
-	if req.request("%s?level_id=%s" % [BEST_URL, level_id], headers, HTTPClient.METHOD_GET) != OK:
+	if req.request("%s%s?level_id=%s" % [PlayerSettings.server_url(), BEST_PATH, level_id], headers, HTTPClient.METHOD_GET) != OK:
 		req.queue_free()
 		best_fetched.emit(false, {})
 
@@ -96,7 +96,7 @@ func claim_xp(entry_id: String):
 		"X-API-Key: " + API_KEY,
 		"Content-Type: application/json",
 	]
-	var url: String = "%s/%s/claim-xp" % [URL, entry_id]
+	var url: String = "%s%s/%s/claim-xp" % [PlayerSettings.server_url(), EVALUATIONS_PATH, entry_id]
 	if req.request(url, headers, HTTPClient.METHOD_POST, "{}") != OK:
 		req.queue_free()
 		xp_claimed.emit(entry_id, false, 0, "Could not reach the server")

@@ -2,8 +2,8 @@ extends Node
 
 signal upload_finished(success: bool, message: String, entry_url: String)
 
-const URL := "https://astroswarm.autonomousrobotics.club/api/simulator/entries"
-const ENTRY_PAGE_URL := "https://astroswarm.autonomousrobotics.club/simulator/"
+const ENTRIES_PATH := "/api/simulator/entries"
+const ENTRY_PAGE_PATH := "/simulator/"
 const API_KEY := "world-unfair-file"
 const REQUEST_TIMEOUT := 120.0
 const SimulatorEntryPayload := preload("res://levels/components/SimulatorEntryPayload.gd")
@@ -51,7 +51,7 @@ func upload_run(run_path: String, title: String, description: String):
 		"X-API-Key: " + API_KEY,
 		"Content-Type: application/json",
 	]
-	if request.request(URL, headers, HTTPClient.METHOD_POST, JSON.stringify(payload, "", false)) != OK:
+	if request.request(PlayerSettings.server_url() + ENTRIES_PATH, headers, HTTPClient.METHOD_POST, JSON.stringify(payload, "", false)) != OK:
 		request.queue_free()
 		is_uploading = false
 		_finish_deferred(false, "The upload could not be started.")
@@ -60,7 +60,7 @@ func _on_request_completed(code: int, body: PackedByteArray):
 	is_uploading = false
 	var response = JSON.parse_string(body.get_string_from_utf8()) if body.size() > 0 else null
 	if code >= 200 and code < 300 and response is Dictionary and response.has("id"):
-		upload_finished.emit(true, "Uploaded. Your entry is live on the website.", ENTRY_PAGE_URL + str(response["id"]))
+		upload_finished.emit(true, "Uploaded. Your entry is live on the website.", PlayerSettings.server_url() + ENTRY_PAGE_PATH + str(response["id"]))
 		return
 	var reason := "HTTP %d" % code
 	if code == 0:

@@ -1,7 +1,7 @@
 extends Control
 
 const VERSION := "v0.0.9-alpha"
-const VERSION_URL := "https://astroswarm.autonomousrobotics.club/api/version"
+const VERSION_PATH := "/api/version"
 const API_KEY := "world-unfair-file"
 
 func _ready():
@@ -18,7 +18,7 @@ func _check_for_update():
 	req.timeout = 8.0
 	add_child(req)
 	req.request_completed.connect(_on_version_response.bind(req))
-	if req.request(VERSION_URL, ["X-API-Key: " + API_KEY], HTTPClient.METHOD_GET) != OK:
+	if req.request(PlayerSettings.server_url() + VERSION_PATH, ["X-API-Key: " + API_KEY], HTTPClient.METHOD_GET) != OK:
 		req.queue_free()
 
 func _on_version_response(_result, code, _headers, body, req):
