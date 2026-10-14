@@ -9,6 +9,9 @@ var _gap_left: float = 0.0
 func _launch_label() -> String:
 	return "LAUNCH WAVES (S) >"
 
+func _wave_total() -> int:
+	return MAX_WAVES
+
 func _wave_spawn_angle() -> float:
 	return _rng.randf() * TAU
 
@@ -19,12 +22,6 @@ func _launch():
 	_gap_left = 0.0
 	_launch_wave()
 	_phase_label.text = "WAVES INBOUND"
-	_hint_label.text = _wave_hint()
-
-func _wave_hint() -> String:
-	if _has_attrition():
-		return "One evader at a time, %d waves in all. Every capture costs the defender that made it, so the run ends early if your line is gone." % MAX_WAVES
-	return "One evader at a time, %d waves in all. A defender that catches one survives and takes the next. Hold all %d." % [MAX_WAVES, MAX_WAVES]
 
 func _launch_wave():
 	_wave += 1
@@ -41,7 +38,7 @@ func _track_events():
 	if not _evaders.is_empty():
 		_gap_left = WAVE_GAP_SECONDS
 		return
-	if _wave >= MAX_WAVES:
+	if _wave >= _wave_total():
 		_finish("cleared")
 		return
 	_gap_left -= get_process_delta_time()
@@ -52,20 +49,20 @@ func _update_count():
 	if _count_label == null:
 		return
 	if _phase == Phase.SETUP:
-		_count_label.text = "DEFENDERS %d / %d" % [_defender_ships.size(), RING_COUNT]
+		_count_label.text = "DEFENDERS %d / %d" % [_defender_ships.size(), _scatter_count()]
 	else:
 		_count_label.text = "DEFENDERS %d   WAVE %d/%d   DOWN %d   THROUGH %d" % [
-			_live_defenders(), _wave, MAX_WAVES, _destroyed, _breached
+			_live_defenders(), _wave, _wave_total(), _destroyed, _breached
 		]
 
 func _update_event_label():
 	_event_label.text = "DETECTED %s   WAVE %d/%d   DOWN %d   THROUGH %d   LOST %d" % [
-		_time_text(_detect_time), _wave, MAX_WAVES, _destroyed, _breached, _defenders_lost
+		_time_text(_detect_time), _wave, _wave_total(), _destroyed, _breached, _defenders_lost
 	]
 
 func _event_summary() -> String:
 	return "First detection: %s\nWaves launched: %d of %d\nEvaders destroyed: %d\nEvaders that reached the planet: %d%s" % [
-		_time_text(_detect_time), _wave, MAX_WAVES, _destroyed, _breached, _attrition_summary()
+		_time_text(_detect_time), _wave, _wave_total(), _destroyed, _breached, _attrition_summary()
 	]
 
 func _show_outcome(reason: String):
@@ -75,15 +72,15 @@ func _show_outcome(reason: String):
 	if reason == "overrun":
 		title = "LINE WIPED OUT"
 		headline = "Every defender was spent after %d of the %d waves. %d evaders were destroyed and %d reached the planet." % [
-			_wave, MAX_WAVES, _destroyed, _breached
+			_wave, _wave_total(), _destroyed, _breached
 		]
 	elif reason == "timeout":
 		title = "OUT OF TIME"
 		headline = "The clock ran out during wave %d of %d, with %d destroyed and %d through." % [
-			_wave, MAX_WAVES, _destroyed, _breached
+			_wave, _wave_total(), _destroyed, _breached
 		]
 	elif held:
-		headline = "All %d waves were stopped and nothing touched the planet." % MAX_WAVES
+		headline = "All %d waves were stopped and nothing touched the planet." % _wave_total()
 	else:
 		headline = "%d of the %d evaders sent reached the planet." % [_breached, _launched]
 	_phase_label.text = title

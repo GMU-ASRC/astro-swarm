@@ -6,7 +6,7 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Same waves, Commander, same scattered line. One rule changes, and it changes everything.
+Back to waves, Commander, one evader at a time this time, each from a fresh bearing on the red ring. Five scattered defenders, and one rule that changes everything.
 
 [Line:2]
 Here a capture takes both ships. The evader dies and so does the defender that caught it. You are trading bodies now.

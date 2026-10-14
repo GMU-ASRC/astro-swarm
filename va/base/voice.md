@@ -24,7 +24,7 @@ Those moons are more than decoration. Press Moons to visit them. Hivemind is whe
 Rank up and more moons arrive. The first is the Shipyard. Spend coin there on upgrades that raise how fast, how far and how wide your programs may set a ship, and on addons such as Thrusters, which unlock the Throttle block.
 
 [Line:6]
-My Entries lists every run you have sent to the server. Come back to it to see how an entry scored and to claim the experience it earned.
+My Entries lists every run you have sent to the server. Come back to it to see how an entry scored and to claim the experience it earned, or open any entry on the website for its charts and replays.
 
 [Line:7]
 When you are ready, pick a game mode at the bottom and press Play. Start with Levels, Commander. I will meet you there.

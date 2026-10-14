@@ -9,22 +9,22 @@ In game, {planet} is replaced with the name the player gave their home planet.
 When recording, say "your planet" in its place.
 
 [Line:1]
-Back on defense, Commander, and this time they are not sending one ship and going home. They keep coming.
+Back on defense, Commander, and this time they are not sending one ship and going home. They come in groups.
 
 [Line:2]
-One evader at a time, five waves in all. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing.
+Two waves in all. Each wave sends one evader for every defender you field, all at once, spread around the red ring.
 
 [Line:3]
-Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here.
+Pick how many defenders to field, five up to five hundred. They are scattered for you, same as level two, and they all run whatever you write in the workspace.
 
 [Line:4]
-The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the next wave.
+The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the second wave.
 
 [Line:5]
-Every bearing gets used eventually, so an arc you left uncovered will be found. There is no lucky angle to hide behind over a whole run.
+A bigger line faces a bigger wave, so more defenders will not make this easier. Every arc of the ring gets tested at once.
 
 [Line:6]
-A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home.
+The second wave launches the moment the first is settled. A defender that chased the first wave halfway to the ring is out of position for the next one. Give them a reason to come home.
 
 [Line:7]
-Hold all five and nothing touches {planet}. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander.
+Hold both waves and nothing touches {planet}. Out on the server I run the same two waves against every line size, so build something that scales. Watch the ring, Commander.

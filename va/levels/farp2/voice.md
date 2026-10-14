@@ -12,7 +12,7 @@ When recording, say "your planet" in its place.
 Back at {planet}, Commander, but this time you do not get to place anything. I have scattered the defenders for you.
 
 [Line:2]
-Field five, twenty five, fifty or a hundred of them. They drop at random inside the blue ring, facing whichever way they landed. Press reroll for a different scatter as often as you like.
+Field anywhere from five up to five hundred of them. They drop at random inside the blue ring, facing whichever way they landed. Press reroll for a different scatter as often as you like.
 
 [Line:3]
 Whatever is on screen when you launch is the layout the server benchmarks, so pick a scatter you are willing to be graded on.
@@ -21,10 +21,10 @@ Whatever is on screen when you launch is the layout the server benchmarks, so pi
 That leaves the algorithm, and only the algorithm. Open the workspace and make them sweep. Turning while moving forward covers far more sky than driving in a straight line.
 
 [Line:5]
-Ten evaders, one after another, but this time spotting one is not enough. A defender has to touch an evader to capture it, and only then does it disappear. You get a ten second head start before the first one shows up, so use it to get your swarm moving. Capture more than half of them and {planet} holds. Capture all ten and there is a bonus in it for you.
+Two evaders for every defender you field, one after another, but this time spotting one is not enough. A defender has to touch an evader to capture it, and only then does it disappear. You get a ten second head start before the first one shows up, so use it to get your swarm moving. Capture more than half of them and {planet} holds. Capture every one and there is a bonus in it for you.
 
 [Line:6]
 An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit. I am scoring circliness here too, mill by mill, so a swarm that breaks into tidy little circles still scores well.
 
 [Line:7]
-The best entry submitted here becomes the opponent in level five, layout and all. Beat everyone and other commanders will be flying against your work.
+The best entry submitted here becomes the opponent in level six, layout and all. Beat everyone and other commanders will be flying against your work.

@@ -10,6 +10,6 @@ const LINES := [
 	{"id": 3, "text": "Top right is your Astro Coin. Win a level and I pay you in coin and experience, every time. Capture every evader on level two and there is a bonus on top."},
 	{"id": 4, "text": "Those moons are more than decoration. Press Moons to visit them. Hivemind is where you program your spaceship, block by block, and it is open from the start."},
 	{"id": 5, "text": "Rank up and more moons arrive. The first is the Shipyard. Spend coin there on upgrades that raise how fast, how far and how wide your programs may set a ship, and on addons such as Thrusters, which unlock the Throttle block."},
-	{"id": 6, "text": "My Entries lists every run you have sent to the server. Come back to it to see how an entry scored and to claim the experience it earned."},
+	{"id": 6, "text": "My Entries lists every run you have sent to the server. Come back to it to see how an entry scored and to claim the experience it earned, or open any entry on the website for its charts and replays."},
 	{"id": 7, "text": "When you are ready, pick a game mode at the bottom and press Play. Start with Levels, Commander. I will meet you there."},
 ]

@@ -34,28 +34,28 @@ static func _level_one() -> Array:
 static func _level_two() -> Array:
 	return [
 		{"id": 1, "text": "Back at {planet}, Commander, but this time you do not get to place anything. I have scattered the defenders for you."},
-		{"id": 2, "text": "Field five, twenty five, fifty or a hundred of them. They drop at random inside the blue ring, facing whichever way they landed. Press reroll for a different scatter as often as you like."},
+		{"id": 2, "text": "Field anywhere from five up to five hundred of them. They drop at random inside the blue ring, facing whichever way they landed. Press reroll for a different scatter as often as you like."},
 		{"id": 3, "text": "Whatever is on screen when you launch is the layout the server benchmarks, so pick a scatter you are willing to be graded on."},
 		{"id": 4, "text": "That leaves the algorithm, and only the algorithm. Open the workspace and make them sweep. Turning while moving forward covers far more sky than driving in a straight line."},
-		{"id": 5, "text": "Ten evaders, one after another, but this time spotting one is not enough. A defender has to touch an evader to capture it, and only then does it disappear. You get a ten second head start before the first one shows up, so use it to get your swarm moving. Capture more than half of them and {planet} holds. Capture all ten and there is a bonus in it for you."},
+		{"id": 5, "text": "Two evaders for every defender you field, one after another, but this time spotting one is not enough. A defender has to touch an evader to capture it, and only then does it disappear. You get a ten second head start before the first one shows up, so use it to get your swarm moving. Capture more than half of them and {planet} holds. Capture every one and there is a bonus in it for you."},
 		{"id": 6, "text": "An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit. I am scoring circliness here too, mill by mill, so a swarm that breaks into tidy little circles still scores well."},
 		{"id": 7, "text": "The best entry submitted here becomes the opponent in level six, layout and all. Beat everyone and other commanders will be flying against your work."},
 	]
 
 static func _level_three() -> Array:
 	return [
-		{"id": 1, "text": "Back on defense, Commander, and this time they are not sending one ship and going home. They keep coming."},
-		{"id": 2, "text": "One evader at a time, five waves in all. The moment your line settles a kill, the next one launches off the red ring on a fresh bearing."},
-		{"id": 3, "text": "Your five defenders are scattered for you, same as level two, and they all run whatever you write in the workspace. No placing by hand here."},
-		{"id": 4, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the next wave."},
-		{"id": 5, "text": "Every bearing gets used eventually, so an arc you left uncovered will be found. There is no lucky angle to hide behind over a whole run."},
-		{"id": 6, "text": "A defender that chased the last wave halfway to the ring is out of position for the next one. Give them a reason to come home."},
-		{"id": 7, "text": "Hold all five and nothing touches {planet}. Out on the server I keep throwing waves at your algorithm long past five, until there is nothing left to throw them at, so build something that lasts. Watch the ring, Commander."},
+		{"id": 1, "text": "Back on defense, Commander, and this time they are not sending one ship and going home. They come in groups."},
+		{"id": 2, "text": "Two waves in all. Each wave sends one evader for every defender you field, all at once, spread around the red ring."},
+		{"id": 3, "text": "Pick how many defenders to field, five up to five hundred. They are scattered for you, same as level two, and they all run whatever you write in the workspace."},
+		{"id": 4, "text": "The good news is that a defender survives the kill. Touch an evader and it is gone, and your defender is still standing for the second wave."},
+		{"id": 5, "text": "A bigger line faces a bigger wave, so more defenders will not make this easier. Every arc of the ring gets tested at once."},
+		{"id": 6, "text": "The second wave launches the moment the first is settled. A defender that chased the first wave halfway to the ring is out of position for the next one. Give them a reason to come home."},
+		{"id": 7, "text": "Hold both waves and nothing touches {planet}. Out on the server I run the same two waves against every line size, so build something that scales. Watch the ring, Commander."},
 	]
 
 static func _level_four() -> Array:
 	return [
-		{"id": 1, "text": "Same waves, Commander, same scattered line. One rule changes, and it changes everything."},
+		{"id": 1, "text": "Back to waves, Commander, one evader at a time this time, each from a fresh bearing on the red ring. Five scattered defenders, and one rule that changes everything."},
 		{"id": 2, "text": "Here a capture takes both ships. The evader dies and so does the defender that caught it. You are trading bodies now."},
 		{"id": 3, "text": "Five defenders means five kills, and not one more. Two defenders piling onto the same evader is a body wasted and a wave you will not be there for."},
 		{"id": 4, "text": "So keep them apart. When sees ally with a turn is worth far more here than it ever was on the earlier levels."},
