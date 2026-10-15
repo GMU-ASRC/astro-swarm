@@ -21,6 +21,7 @@ static var garrisons: Array = [[], []]
 static var allocate_remaining: float = ALLOCATE_SECONDS
 static var results: Array = [{}, {}]
 static var frames: Array = []
+static var genome_switch_frames: Array = []
 static var trips: int = 0
 static var delivered: int = 0
 static var cloaked: bool = false
@@ -45,6 +46,7 @@ static func reset(scatter: Array):
 	allocate_remaining = ALLOCATE_SECONDS
 	results = [{}, {}]
 	frames = []
+	genome_switch_frames = []
 	trips = 0
 	delivered = 0
 	cloaked = false

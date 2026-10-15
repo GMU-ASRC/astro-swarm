@@ -144,6 +144,9 @@ func setup_player_orbit(center: Vector2, radius: float, ang_speed: float, start_
 	global_position = center + Vector2(radius, 0.0).rotated(start_angle)
 	rotation = start_angle + PI / 2.0
 
+func reprogram(blocks: Array):
+	_set_program(blocks)
+
 func _set_program(blocks: Array):
 	_executor = BlockExecutor.new(self)
 	_executor.set_program(SIM.normalize_to_scripts(blocks))

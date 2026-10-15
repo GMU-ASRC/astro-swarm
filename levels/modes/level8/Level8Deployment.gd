@@ -208,7 +208,7 @@ func _update_transits(delta: float):
 func _land_transit(ship: Node2D, target: Vector2, heading: float):
 	ship.global_position = target
 	ship.rotation = heading
-	ship.ship_color = C_DEFENDER
+	ship.ship_color = _defender_color()
 	ship.sensor_visible = true
 	ship.set_physics_process(_phase == Phase.ACTIVE)
 	ship.queue_redraw()

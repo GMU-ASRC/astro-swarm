@@ -45,6 +45,13 @@ func _time_limit() -> float:
 func _timer_text() -> String:
 	return _countdown_text()
 
+func _carries_genome_switches() -> bool:
+	return STATE.running
+
+func _on_genome_switched(stage_index: int):
+	super(stage_index)
+	STATE.genome_switch_frames.append(STATE.frames.size())
+
 func _setup_level():
 	_rng.randomize()
 	_launch_btn.text = _launch_label()
@@ -292,6 +299,8 @@ func _clear_ships():
 	super()
 
 func _change_scene(path: String):
+	if _genome_switcher != null:
+		_genome_switcher.carry()
 	if STATE.stage == STATE.Stage.ALLOCATE:
 		_hand_scene_over()
 	STATE.shuttle_parked = false
@@ -411,9 +420,14 @@ func _submit_entry():
 		"planet": [int(_planet.x), int(_planet.y), int(PLANET_RADIUS)],
 		"arena": [int(_arena.x), int(_arena.y)],
 		"frames": STATE.frames,
+		"genome_switches": STATE.genome_switch_frames,
 		"stats": _run_stats(),
 	}
-	EvalUploader.submit_run(_level_id(), PlayerData.get_ship_algorithm(), _combined_placements(), run)
+	EvalUploader.submit_run(_level_id(), _launch_algorithm(), _combined_placements(), run, _genome_schedule())
+
+func _launch_algorithm() -> Array:
+	var schedule: Array = _genome_schedule()
+	return schedule[0]["algorithm"] if not schedule.is_empty() else PlayerData.get_ship_algorithm()
 
 func _draw_level():
 	if STATE.stage == STATE.Stage.ALLOCATE:

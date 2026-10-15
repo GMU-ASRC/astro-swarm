@@ -7,12 +7,12 @@ const API_KEY := "world-unfair-file"
 
 signal submit_finished(success: bool, code: int, response)
 signal best_fetched(success: bool, response)
-signal xp_claimed(entry_id: String, success: bool, xp: int, message: String)
+signal xp_claimed(entry_id: String, success: bool, xp: int, coins: int, message: String)
 
 func game_version() -> String:
 	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.9"))
 
-func submit(algorithm: Array, placements: Array, level_id: String, collisions: bool = false):
+func submit(algorithm: Array, placements: Array, level_id: String, collisions: bool = false, genome_schedule: Array = []):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
 		submit_finished.emit(false, 0, {})
 		return
@@ -24,6 +24,7 @@ func submit(algorithm: Array, placements: Array, level_id: String, collisions: b
 		"placements": placements,
 		"game_version": game_version(),
 		"collisions": collisions,
+		"genome_schedule": genome_schedule,
 	})
 	var req := HTTPRequest.new()
 	req.timeout = 20.0
@@ -41,7 +42,7 @@ func submit(algorithm: Array, placements: Array, level_id: String, collisions: b
 		req.queue_free()
 		submit_finished.emit(false, 0, {})
 
-func submit_run(level_id: String, algorithm: Array, placements: Array, run: Dictionary):
+func submit_run(level_id: String, algorithm: Array, placements: Array, run: Dictionary, genome_schedule: Array = []):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
 		submit_finished.emit(false, 0, {})
 		return
@@ -53,6 +54,7 @@ func submit_run(level_id: String, algorithm: Array, placements: Array, run: Dict
 		"placements": placements,
 		"game_version": game_version(),
 		"run": run,
+		"genome_schedule": genome_schedule,
 	})
 	var req := HTTPRequest.new()
 	req.timeout = 30.0
@@ -99,23 +101,28 @@ func claim_xp(entry_id: String):
 	var url: String = "%s%s/%s/claim-xp" % [PlayerSettings.server_url(), EVALUATIONS_PATH, entry_id]
 	if req.request(url, headers, HTTPClient.METHOD_POST, "{}") != OK:
 		req.queue_free()
-		xp_claimed.emit(entry_id, false, 0, "Could not reach the server")
+		xp_claimed.emit(entry_id, false, 0, 0, "Could not reach the server")
 
 func _finish_claim(entry_id: String, code: int, data):
 	if code < 200 or code >= 300:
 		var reason: String = "Claim failed (%d)" % code
 		if typeof(data) == TYPE_DICTIONARY and data.has("error"):
 			reason = str(data["error"])
-		xp_claimed.emit(entry_id, false, 0, reason)
+		xp_claimed.emit(entry_id, false, 0, 0, reason)
 		return
 	var xp: int = 0
+	var coins: int = 0
+	var note: String = ""
 	var already: bool = false
 	if typeof(data) == TYPE_DICTIONARY:
 		xp = int(data.get("xp", 0))
+		coins = int(data.get("coins", 0))
+		note = str(data.get("coin_note", ""))
 		already = bool(data.get("already_claimed", false))
-	if not already and xp > 0:
+	if not already:
 		PlayerData.add_xp(xp)
-	xp_claimed.emit(entry_id, true, xp, "")
+		PlayerData.add_coins(coins)
+	xp_claimed.emit(entry_id, true, xp, coins, note)
 
 func _parse_json(response: PackedByteArray):
 	var text := response.get_string_from_utf8().strip_edges()

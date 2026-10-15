@@ -12,6 +12,7 @@ const GAME_THEME     := preload("res://ui/GameTheme.tres")
 const HUD_BUTTONS    := preload("res://ui/hud/HudButtons.gd")
 const STARFIELD      := preload("res://ui/game/Starfield.gd")
 const RESULT_PANEL   := preload("res://levels/components/LevelResultPanel.gd")
+const GENOME_SWITCHER := preload("res://levels/components/GenomeSwitcher.gd")
 const PAUSE_MENU     := preload("res://levels/components/PauseMenu.gd")
 const ACHIEVEMENTS   := preload("res://achievements/Achievements.gd")
 const EVADER_STREAM  := preload("res://levels/components/EvaderStream.gd")
@@ -105,6 +106,8 @@ var _evader: Node2D = null
 
 var _collisions_on: bool = false
 var _submitted: bool = false
+var _launch_program: Array = []
+var _genome_switcher
 
 var _camera: Camera2D
 var _panning: bool = false
@@ -192,6 +195,9 @@ func _submits_algorithm() -> bool:
 
 func _uses_workspace() -> bool:
 	return true
+
+func _carries_genome_switches() -> bool:
+	return false
 
 func _planet_collisions() -> bool:
 	return true
@@ -288,6 +294,8 @@ func _process(delta: float):
 		_update_stream(delta)
 		_track_events()
 		_update_event_label()
+		if _genome_switcher != null:
+			_genome_switcher.update_defenders(_live_defender_count())
 		if _phase == Phase.ACTIVE and _elapsed >= _time_limit():
 			_finish("timeout")
 	queue_redraw()
@@ -354,7 +362,7 @@ func _evader_reached_goal(evader: Node2D) -> bool:
 	return evader.global_position.distance_to(_planet) <= PLANET_RADIUS + GOAL_MARGIN
 
 func _spawn_defender(placement: Dictionary, program: Array):
-	var ship := _make_ship(program, DEFENDER_HP, C_DEFENDER)
+	var ship := _make_ship(program, DEFENDER_HP, _defender_color())
 	ship.global_position = placement.pos
 	ship.rotation = placement.rot
 	ship.set_meta("placement", placement)
@@ -371,6 +379,11 @@ func _make_ship(program: Array, hp_value: float, color: Color) -> Node2D:
 	ship.can_fire = false
 	ship.show_health = false
 	add_child(ship)
+	_apply_ship_config(ship, program)
+	ship.set_physics_process(false)
+	return ship
+
+func _apply_ship_config(ship: Node2D, program: Array):
 	var cfg: Dictionary = SimulationManager.ship_config_from_scripts(program, ship.view_distance, ship.fov_degrees, ship.max_speed, ship.turn_rate, ship.hull_radius)
 	ship.view_distance = cfg.view_distance
 	ship.fov_degrees = cfg.fov_degrees
@@ -378,8 +391,33 @@ func _make_ship(program: Array, hp_value: float, color: Color) -> Node2D:
 	ship.turn_rate = cfg.turn_speed
 	ship.hull_radius = cfg.dot_radius
 	ship.refresh_cone()
-	ship.set_physics_process(false)
-	return ship
+
+func _on_genome_switched(stage_index: int):
+	var program: Array = PlayerData.get_ship_algorithm()
+	var color: Color = GENOME_SWITCHER.stage_color(stage_index)
+	for ship in _defender_ships:
+		if is_instance_valid(ship) and not ship.is_evader:
+			ship.reprogram(program)
+			_apply_ship_config(ship, program)
+			ship.ship_color = color
+
+func _defender_color() -> Color:
+	if _genome_switcher != null and _genome_switcher.is_counting():
+		return GENOME_SWITCHER.stage_color(_genome_switcher.stage_index())
+	return C_DEFENDER
+
+func _live_defender_count() -> int:
+	var count: int = 0
+	for ship in _defender_ships:
+		if is_instance_valid(ship) and not ship.is_evader:
+			count += 1
+	return count
+
+func _genome_schedule() -> Array:
+	if _genome_switcher == null:
+		return []
+	var schedule: Array = _genome_switcher.schedule()
+	return schedule if schedule.size() > 1 else []
 
 func _spawn_scripted_evader(spawn_pos: Vector2):
 	_evader = _make_scripted_evader(spawn_pos)
@@ -466,6 +504,10 @@ func _start_active():
 	_capture_time = -1.0
 	_goal_time = -1.0
 	_launch_btn.visible = false
+	if _launch_program.is_empty():
+		_launch_program = PlayerData.get_ship_algorithm()
+	if _genome_switcher != null and not _genome_switcher.is_counting():
+		_genome_switcher.start_counting(_live_defender_count())
 	for ship in _defender_ships:
 		if is_instance_valid(ship):
 			ship.set_physics_process(true)
@@ -475,6 +517,8 @@ func _finish(reason: String):
 		_stream.freeze()
 	_phase = Phase.DONE
 	_end_reason = reason
+	if _genome_switcher != null:
+		_genome_switcher.lock()
 	PlayerData.complete_level(_level_id())
 	ACHIEVEMENTS.check_level_completed(_level_id())
 	for ship in _defender_ships:
@@ -567,7 +611,8 @@ func _submit_entry():
 	_submitted = true
 	if not EvalUploader.submit_finished.is_connected(_on_submit_finished):
 		EvalUploader.submit_finished.connect(_on_submit_finished)
-	EvalUploader.submit(PlayerData.ship_blocks, _placements_payload(), _level_id(), _collisions_on)
+	var program: Array = _launch_program if not _launch_program.is_empty() else PlayerData.ship_blocks
+	EvalUploader.submit(program, _placements_payload(), _level_id(), _collisions_on, _genome_schedule())
 
 func _on_submit_finished(success: bool, code: int, response):
 	if success or code == 409:
@@ -600,6 +645,10 @@ func _restart():
 	if _stream != null:
 		_stream.reset()
 	_launch_btn.visible = true
+	_launch_program = []
+	GENOME_SWITCHER.carried = {}
+	if _genome_switcher != null:
+		_genome_switcher.reset_switches()
 	_phase_label.add_theme_color_override("font_color", ACCENT)
 	_update_event_label()
 	_restart_level()
@@ -790,6 +839,12 @@ func _build_hud():
 		_add_top_button("WORKSPACE", _open_workspace, HUD_BUTTONS.Kind.PRIMARY)
 	if _shows_run_controls():
 		_add_top_button("RESTART (P)", _restart)
+	if _uses_workspace() and GenomeBank.is_unlocked():
+		_genome_switcher = GENOME_SWITCHER.new()
+		_genome_switcher.genome_switched.connect(_on_genome_switched)
+		_top_bar.add_child(_genome_switcher)
+		if _carries_genome_switches() and not GENOME_SWITCHER.carried.is_empty():
+			_genome_switcher.resume(GENOME_SWITCHER.carried)
 
 	if _uses_collisions_toggle():
 		var collisions_btn := CheckButton.new()
@@ -862,6 +917,7 @@ func _show_result(passed: bool, title: String, headline: String):
 	var has_next: bool = not LevelInfo.next_level(_level_id()).is_empty()
 	var reward: Dictionary = LEVEL_REWARDS.grant(_level_id(), _flawless_run) if passed else {}
 	_flawless_run = false
+	ACHIEVEMENTS.check_run_result(passed, not _genome_schedule().is_empty())
 	_result_panel.show_result(passed, status, title, headline, _summary_rows(), has_next)
 	if not reward.is_empty():
 		_result_panel.add_note("REWARD: +%d ASTRO COIN   +%d XP" % [reward["coins"], reward["xp"]])
