@@ -12,6 +12,13 @@
 
 - A Credits tab in the settings, with a link to the website
 - A backend server URL setting in dev mode
+- The Genome moon, where every algorithm is a genome you can create, copy, rename, delete and make active, with a genome switcher and Save as New in the workspace
+- Switching genomes during a level, 3 switches per run, with a Level Switches upgrade in the Genome moon that adds up to 5 more. A mid-run switch needs a 5 second cooldown and a defender lost since the last switch, and recolors the defenders
+- Entries upload their genome schedule, each genome with the defender count it took over at
+- Eight new achievements for genomes, switching, moons and upgrades
+- Entries pay AstroCoin as well as XP when claimed, up to 5 paid entries per level per day
+- The Genome moon unlocks at commander level 4 or on completing Level 4, whichever comes first
+- A reveal screen for each newly unlocked moon that takes you straight to it, and a Dr. Blob tutorial the first time each moon is opened
 
 # 0.0.8
 

@@ -120,7 +120,7 @@ func _make_entry_card(entry: Dictionary) -> Control:
 	view_button.pressed.connect(_open_entry.bind(entry))
 	buttons.add_child(view_button)
 
-	var claim_button := STYLE.make_button("CLAIM XP")
+	var claim_button := STYLE.make_button("CLAIM REWARD")
 	claim_button.pressed.connect(_on_claim_pressed.bind(entry, claim_button))
 	buttons.add_child(claim_button)
 	_style_claim_button(claim_button, entry)
@@ -152,15 +152,16 @@ func _result_caption(level_id: String) -> String:
 func _style_claim_button(button: Button, entry: Dictionary):
 	var status: String = str(entry.get("status", ""))
 	var xp_awarded = entry.get("xp_awarded", null)
+	var coins_awarded = entry.get("coins_awarded", null)
 	if status != "done":
 		button.disabled = true
 		button.text = "PENDING"
 	elif xp_awarded != null:
 		button.disabled = true
-		button.text = "XP: %d" % int(xp_awarded)
+		button.text = STYLE.reward_text(int(xp_awarded), int(coins_awarded) if coins_awarded != null else 0)
 	else:
 		button.disabled = false
-		button.text = "CLAIM XP"
+		button.text = "CLAIM REWARD"
 
 func _on_claim_pressed(entry: Dictionary, button: Button):
 	var claim_id: String = str(entry.get("id", ""))
@@ -173,18 +174,18 @@ func _on_claim_pressed(entry: Dictionary, button: Button):
 		EvalUploader.xp_claimed.connect(_on_claim_finished)
 	EvalUploader.claim_xp(claim_id)
 
-func _on_claim_finished(claimed_id: String, success: bool, xp: int, message: String):
+func _on_claim_finished(claimed_id: String, success: bool, xp: int, coins: int, message: String):
 	var button: Button = _claim_buttons.get(claimed_id, null)
 	if button == null or not is_instance_valid(button):
 		return
 	_claim_buttons.erase(claimed_id)
 	if success:
 		button.disabled = true
-		button.text = "XP: %d" % xp
-		_status_label.text = "Claimed %d XP." % xp
+		button.text = STYLE.reward_text(xp, coins)
+		_status_label.text = ("Claimed %d XP and %d coins. %s" % [xp, coins, message]).strip_edges()
 	else:
 		button.disabled = false
-		button.text = "CLAIM XP"
+		button.text = "CLAIM REWARD"
 		_status_label.text = message
 
 func _open_entry(entry: Dictionary):

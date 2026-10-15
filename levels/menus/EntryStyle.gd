@@ -94,6 +94,9 @@ static func make_website_button(text: String, url: String) -> Button:
 	button.pressed.connect(func(): OS.shell_open(url))
 	return button
 
+static func reward_text(xp: int, coins: int) -> String:
+	return "+%d XP  +%d COINS" % [xp, coins]
+
 static func status_color(status: String) -> Color:
 	if status == "done":
 		return C_GREEN

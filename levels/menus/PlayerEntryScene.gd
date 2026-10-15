@@ -105,7 +105,7 @@ func _build_xp_row(page: VBoxContainer):
 	xp_row.add_theme_constant_override("separation", 12)
 	page.add_child(xp_row)
 
-	_claim_btn = STYLE.make_button("CLAIM XP")
+	_claim_btn = STYLE.make_button("CLAIM REWARD")
 	_claim_btn.visible = false
 	_claim_btn.pressed.connect(_on_claim_pressed)
 	xp_row.add_child(_claim_btn)
@@ -187,7 +187,7 @@ func _apply_detail(data: Dictionary):
 	_set_status(status)
 
 	_algo_text.text = _algorithm_to_text(data.get("algorithm", []))
-	_update_xp_ui(status, data.get("xp_awarded", null))
+	_update_xp_ui(status, data.get("xp_awarded", null), data.get("coins_awarded", null))
 
 	var level_id: String = str(data.get("level_id", "farp"))
 	var pilot: bool = LevelInfo.is_pilot(level_id)
@@ -285,19 +285,19 @@ func _make_stat_card(caption_text: String, value_text: String) -> Control:
 	column.add_child(caption)
 	return card
 
-func _update_xp_ui(status: String, xp_awarded):
+func _update_xp_ui(status: String, xp_awarded, coins_awarded):
 	if status != "done":
 		_claim_btn.visible = false
-		_xp_label.text = "XP can be claimed once the entry finishes processing." if status in ["queued", "running"] else ""
+		_xp_label.text = "The reward can be claimed once the entry finishes processing." if status in ["queued", "running"] else ""
 		return
 	if xp_awarded == null:
 		_claim_btn.visible = true
 		_claim_btn.disabled = false
-		_claim_btn.text = "CLAIM XP"
+		_claim_btn.text = "CLAIM REWARD"
 		_xp_label.text = ""
 	else:
 		_claim_btn.visible = false
-		_xp_label.text = "XP claimed: %d" % int(xp_awarded)
+		_xp_label.text = "Claimed %s" % STYLE.reward_text(int(xp_awarded), int(coins_awarded) if coins_awarded != null else 0)
 
 func _on_claim_pressed():
 	_claim_btn.disabled = true
@@ -307,18 +307,18 @@ func _on_claim_pressed():
 		EvalUploader.xp_claimed.connect(_on_claim_finished)
 	EvalUploader.claim_xp(entry_id)
 
-func _on_claim_finished(claimed_id: String, success: bool, xp: int, message: String):
+func _on_claim_finished(claimed_id: String, success: bool, xp: int, coins: int, message: String):
 	if claimed_id != entry_id:
 		return
 	if not success:
 		_claim_btn.disabled = false
-		_claim_btn.text = "CLAIM XP - RETRY"
+		_claim_btn.text = "CLAIM REWARD - RETRY"
 		_xp_label.add_theme_color_override("font_color", STYLE.C_RED)
 		_xp_label.text = message
 		return
 	_claim_btn.visible = false
 	_xp_label.add_theme_color_override("font_color", STYLE.C_GREEN)
-	_xp_label.text = "XP awarded: %d" % xp
+	_xp_label.text = ("Awarded %s. %s" % [STYLE.reward_text(xp, coins), message]).strip_edges()
 
 func _algorithm_to_text(scripts) -> String:
 	if typeof(scripts) != TYPE_ARRAY or scripts.is_empty():
