@@ -79,6 +79,8 @@ static func editor_max(block_type: String, base_max: float) -> float:
 	return current_limit(upgrade)
 
 static func limit_text(upgrade: Dictionary, level: int) -> String:
+	if not upgrade.has("block_type"):
+		return "%d%s" % [roundi(limit_at_level(upgrade, level)), upgrade.get("suffix", "")]
 	var input: Dictionary = SimulationManager.BLOCK_DEFS[upgrade["block_type"]]["input"]
 	var limit: float = limit_at_level(upgrade, level)
 	if float(input["step"]) >= 1.0:

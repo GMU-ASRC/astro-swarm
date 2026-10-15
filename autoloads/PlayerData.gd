@@ -11,6 +11,8 @@ const WORKSPACE_MOON_SEED := 424242
 const DEFAULT_PLANET_REFERENCE := "your planet"
 const PLANET_NAME_MAX_LENGTH := 24
 const MOON_LEVEL_STEP := 2
+const GENOME_MOON_INDEX := 1
+const GENOME_UNLOCK_LEVEL_ID := "farp4"
 
 const DEFAULT_SHIP_BLOCKS := [
 	{"type": "when_sees_enemy", "params": {}},
@@ -40,8 +42,7 @@ var planet_seed: int = 0
 var planet_type: String = "terran"
 var moon_seeds: Array = []
 var ship_blocks: Array = []
-var ship_algorithms: Dictionary = {}
-var active_algorithm: String = ""
+var legacy_algorithms: Dictionary = {}
 var ship_upgrades: Dictionary = {}
 var ship_addons: Array = []
 var game_mode: String = "levels"
@@ -49,6 +50,7 @@ var farp_placements: Array = []
 var farp_layouts: Dictionary = {}
 var completed_levels: Array = []
 var achievements: Array = []
+var revealed_moons: Array = []
 
 var _rng := RandomNumberGenerator.new()
 
@@ -66,8 +68,10 @@ func _catch_up_achievements():
 	ACHIEVEMENTS.check_commander_level(level)
 	if is_level_completed(ACHIEVEMENTS.FIRST_LEVEL_ID):
 		ACHIEVEMENTS.check_level_completed(ACHIEVEMENTS.FIRST_LEVEL_ID)
-	if not ship_algorithms.is_empty():
+	if not legacy_algorithms.is_empty():
 		unlock_achievement(ACHIEVEMENTS.HIVEMIND)
+	ACHIEVEMENTS.check_purchases()
+	ACHIEVEMENTS.check_genome_count(GenomeBank.genome_count(), GenomeBank.is_full())
 
 func has_profile() -> bool:
 	return username.strip_edges() != ""
@@ -80,6 +84,15 @@ func xp_needed() -> int:
 
 func moons_for_level(lvl: int) -> int:
 	return clampi(floori(float(lvl) / float(MOON_LEVEL_STEP)), 0, MAX_MOONS)
+
+func moons_unlocked() -> int:
+	var unlocked: int = moons_for_level(level)
+	if is_level_completed(GENOME_UNLOCK_LEVEL_ID):
+		unlocked = maxi(unlocked, GENOME_MOON_INDEX + 1)
+	return unlocked
+
+func is_genome_unlocked() -> bool:
+	return moon_seeds.size() > GENOME_MOON_INDEX
 
 func set_planet_name(value: String):
 	planet_name = value.strip_edges()
@@ -164,31 +177,6 @@ func set_ship_blocks(blocks: Array):
 	_save()
 	ship_program_changed.emit()
 
-func save_algorithm(algo_name: String, scripts: Array):
-	var key: String = algo_name.strip_edges()
-	if key == "":
-		return
-	ship_algorithms[key] = SIM.normalize_to_scripts(scripts)
-	active_algorithm = key
-	_save()
-	unlock_achievement(ACHIEVEMENTS.HIVEMIND)
-
-func get_algorithm(algo_name: String) -> Array:
-	return SIM.normalize_to_scripts(ship_algorithms.get(algo_name, []))
-
-func delete_algorithm(algo_name: String):
-	if ship_algorithms.erase(algo_name):
-		if active_algorithm == algo_name:
-			active_algorithm = ""
-		_save()
-
-func set_active_algorithm(algo_name: String):
-	active_algorithm = algo_name if ship_algorithms.has(algo_name) else ""
-	_save()
-
-func algorithm_names() -> Array:
-	return ship_algorithms.keys()
-
 func ship_upgrade_level(upgrade_id: String) -> int:
 	return int(ship_upgrades.get(upgrade_id, 0))
 
@@ -196,6 +184,7 @@ func raise_ship_upgrade(upgrade_id: String):
 	ship_upgrades[upgrade_id] = ship_upgrade_level(upgrade_id) + 1
 	_save()
 	ship_upgrades_changed.emit()
+	ACHIEVEMENTS.check_purchases()
 
 func has_ship_addon(addon_id: String) -> bool:
 	return ship_addons.has(addon_id)
@@ -206,6 +195,7 @@ func add_ship_addon(addon_id: String):
 	ship_addons.append(addon_id)
 	_save()
 	ship_addons_changed.emit()
+	ACHIEVEMENTS.check_purchases()
 
 func _within_ship_rules(scripts: Array) -> Array:
 	return SHIP_ADDONS.strip_locked_blocks(SHIP_UPGRADES.clamp_scripts(scripts))
@@ -233,9 +223,20 @@ func complete_level(level_id: String):
 		return
 	completed_levels.append(level_id)
 	_save()
+	if _sync_moons():
+		moons_changed.emit()
 
 func is_level_completed(level_id: String) -> bool:
 	return completed_levels.has(level_id)
+
+func is_moon_revealed(moon_id: String) -> bool:
+	return revealed_moons.has(moon_id)
+
+func mark_moon_revealed(moon_id: String):
+	if revealed_moons.has(moon_id):
+		return
+	revealed_moons.append(moon_id)
+	_save()
 
 func unlock_achievement(achievement_id: String):
 	if achievements.has(achievement_id):
@@ -258,8 +259,7 @@ func reset_game():
 	planet_type = "terran"
 	moon_seeds = []
 	ship_blocks = []
-	ship_algorithms = {}
-	active_algorithm = ""
+	legacy_algorithms = {}
 	ship_upgrades = {}
 	ship_addons = []
 	game_mode = "levels"
@@ -267,10 +267,12 @@ func reset_game():
 	farp_layouts = {}
 	completed_levels = []
 	achievements = []
+	revealed_moons = []
 	_ensure_planet()
 	_sync_moons()
 	_ensure_ship_program()
 	_save()
+	GenomeBank.reset()
 	username_changed.emit(username)
 	planet_name_changed.emit(planet_name)
 	level_changed.emit(level)
@@ -281,14 +283,15 @@ func reset_game():
 	ship_upgrades_changed.emit()
 	ship_addons_changed.emit()
 
-func _sync_moons():
-	var target: int = moons_for_level(level)
+func _sync_moons() -> bool:
+	var target: int = moons_unlocked()
 	var changed: bool = false
 	while moon_seeds.size() < target:
 		moon_seeds.append(_new_seed())
 		changed = true
 	if changed:
 		_save()
+	return changed
 
 func _new_seed() -> int:
 	return _rng.randi_range(1, 999999)
@@ -305,8 +308,6 @@ func _save():
 	cfg.set_value("planet", "type", planet_type)
 	cfg.set_value("moons", "seeds", moon_seeds)
 	cfg.set_value("ship", "blocks", ship_blocks)
-	cfg.set_value("ship", "algorithms", ship_algorithms)
-	cfg.set_value("ship", "active_algorithm", active_algorithm)
 	cfg.set_value("ship", "upgrades", ship_upgrades)
 	cfg.set_value("ship", "addons", ship_addons)
 	cfg.set_value("match", "game_mode", game_mode)
@@ -314,6 +315,7 @@ func _save():
 	cfg.set_value("farp", "layouts", farp_layouts)
 	cfg.set_value("progress", "completed_levels", completed_levels)
 	cfg.set_value("progress", "achievements", achievements)
+	cfg.set_value("progress", "revealed_moons", revealed_moons)
 	cfg.save(SAVE_PATH)
 
 func _load():
@@ -330,8 +332,7 @@ func _load():
 	planet_type = cfg.get_value("planet", "type", "terran")
 	moon_seeds = cfg.get_value("moons", "seeds", [])
 	ship_blocks = SIM.normalize_to_scripts(cfg.get_value("ship", "blocks", []))
-	ship_algorithms = cfg.get_value("ship", "algorithms", {})
-	active_algorithm = cfg.get_value("ship", "active_algorithm", "")
+	legacy_algorithms = cfg.get_value("ship", "algorithms", {})
 	ship_upgrades = cfg.get_value("ship", "upgrades", {})
 	ship_addons = cfg.get_value("ship", "addons", [])
 	game_mode = cfg.get_value("match", "game_mode", "levels")
@@ -339,3 +340,4 @@ func _load():
 	farp_layouts = cfg.get_value("farp", "layouts", {})
 	completed_levels = cfg.get_value("progress", "completed_levels", [])
 	achievements = cfg.get_value("progress", "achievements", [])
+	revealed_moons = cfg.get_value("progress", "revealed_moons", [])

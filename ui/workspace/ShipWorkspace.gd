@@ -11,8 +11,8 @@ var embedded: bool = false
 @onready var palette_list: VBoxContainer = $Body/Left/LeftVBox/PaletteScroll/PaletteMargin/PaletteList
 @onready var canvas: Control = $Body/Right/RightVBox/Scroll/Canvas
 
-var _name_edit: LineEdit
-var _algo_option: OptionButton
+var _genome_option: OptionButton
+var _save_as_btn: Button
 var _loading: bool = false
 var _error_banner: PanelContainer
 
@@ -35,6 +35,7 @@ const FARP_SCENES := [
 	"res://levels/modes/level6/Level6Scene.tscn",
 ]
 const FARP_DISABLED_BLOCKS := ["set_size"]
+const GENOME_MOON_SCENE := "res://levels/menus/moons/GenomeMoonScene.tscn"
 
 func _enter_tree():
 	SHIP_UPGRADES.editing_ship = true
@@ -48,7 +49,7 @@ func _ready():
 	back_btn.text = _back_label()
 	back_btn.pressed.connect(_on_back)
 	canvas.canvas_mutated.connect(_save_blocks)
-	_build_save_load_ui()
+	_build_genome_ui()
 	WorkspaceStyle.apply(self, WorkspaceStyle.GAME)
 	_build_error_banner()
 	_build_palette()
@@ -57,6 +58,8 @@ func _ready():
 func _back_label() -> String:
 	if embedded:
 		return " ← Resume "
+	if return_scene == GENOME_MOON_SCENE:
+		return " ← Genome "
 	return " ← Level " if FARP_SCENES.has(return_scene) else " ← Base "
 
 func _build_error_banner():
@@ -69,87 +72,62 @@ func _update_errors():
 	if _error_banner != null:
 		_error_banner.show_messages(canvas.highlight_errors())
 
-func _build_save_load_ui():
+func _build_genome_ui():
+	if not GenomeBank.is_unlocked():
+		return
 	var spacer: Control = $TopBar/HBox/Spacer
+	var nodes: Array = [VSeparator.new()]
 
-	var sep := VSeparator.new()
-	top_hbox.add_child(sep)
-	top_hbox.move_child(sep, spacer.get_index())
+	var genome_label := Label.new()
+	genome_label.text = "Genome"
+	nodes.append(genome_label)
 
-	_name_edit = LineEdit.new()
-	_name_edit.placeholder_text = "Algorithm name"
-	_name_edit.custom_minimum_size = Vector2(150, 0)
-	_name_edit.max_length = 24
-	top_hbox.add_child(_name_edit)
-	top_hbox.move_child(_name_edit, spacer.get_index())
+	_genome_option = OptionButton.new()
+	_genome_option.focus_mode = Control.FOCUS_NONE
+	_genome_option.custom_minimum_size = Vector2(180, 0)
+	_genome_option.item_selected.connect(_on_genome_selected)
+	nodes.append(_genome_option)
 
-	var save_btn := Button.new()
-	save_btn.text = "Save"
-	save_btn.focus_mode = Control.FOCUS_NONE
-	save_btn.pressed.connect(_on_save_algorithm)
-	top_hbox.add_child(save_btn)
-	top_hbox.move_child(save_btn, spacer.get_index())
+	_save_as_btn = Button.new()
+	_save_as_btn.text = "Save as New"
+	_save_as_btn.focus_mode = Control.FOCUS_NONE
+	_save_as_btn.tooltip_text = "Copy this program into a new genome and keep editing the copy"
+	_save_as_btn.pressed.connect(_on_save_as_new)
+	nodes.append(_save_as_btn)
 
-	_algo_option = OptionButton.new()
-	_algo_option.focus_mode = Control.FOCUS_NONE
-	_algo_option.custom_minimum_size = Vector2(150, 0)
-	top_hbox.add_child(_algo_option)
-	top_hbox.move_child(_algo_option, spacer.get_index())
+	for node in nodes:
+		top_hbox.add_child(node)
+		top_hbox.move_child(node, spacer.get_index())
 
-	var load_btn := Button.new()
-	load_btn.text = "Load"
-	load_btn.focus_mode = Control.FOCUS_NONE
-	load_btn.pressed.connect(_on_load_algorithm)
-	top_hbox.add_child(load_btn)
-	top_hbox.move_child(load_btn, spacer.get_index())
+	GenomeBank.genomes_changed.connect(_refresh_genome_list)
+	_refresh_genome_list()
 
-	var delete_btn := Button.new()
-	delete_btn.text = "Delete"
-	delete_btn.focus_mode = Control.FOCUS_NONE
-	delete_btn.pressed.connect(_on_delete_algorithm)
-	top_hbox.add_child(delete_btn)
-	top_hbox.move_child(delete_btn, spacer.get_index())
-
-	_name_edit.text = PlayerData.active_algorithm
-	_refresh_algo_list(PlayerData.active_algorithm)
-
-func _refresh_algo_list(select_name: String = ""):
-	_algo_option.clear()
-	var names: Array = PlayerData.algorithm_names()
-	names.sort()
-	for n in names:
-		_algo_option.add_item(n)
-	if select_name != "":
-		for i in _algo_option.item_count:
-			if _algo_option.get_item_text(i) == select_name:
-				_algo_option.select(i)
-				break
-
-func _on_save_algorithm():
-	var algo_name: String = _name_edit.text.strip_edges()
-	if algo_name == "":
+func _refresh_genome_list():
+	if not is_instance_valid(_genome_option):
 		return
-	PlayerData.save_algorithm(algo_name, canvas.collect_scripts())
-	_refresh_algo_list(algo_name)
+	_genome_option.clear()
+	for index in GenomeBank.genomes.size():
+		var genome: Dictionary = GenomeBank.genomes[index]
+		_genome_option.add_item(genome["name"], index)
+		_genome_option.set_item_metadata(index, genome["id"])
+		if genome["id"] == GenomeBank.active_id:
+			_genome_option.select(index)
+	_save_as_btn.disabled = GenomeBank.is_full()
 
-func _on_load_algorithm():
-	if _algo_option.item_count == 0:
+func _on_genome_selected(index: int):
+	var genome_id: String = str(_genome_option.get_item_metadata(index))
+	if genome_id == GenomeBank.active_id:
 		return
-	var algo_name: String = _algo_option.get_item_text(_algo_option.selected)
-	var scripts: Array = PlayerData.get_algorithm(algo_name)
-	_populate_canvas(scripts)
-	PlayerData.set_ship_blocks(scripts)
-	PlayerData.set_active_algorithm(algo_name)
-	_name_edit.text = algo_name
+	_save_blocks()
+	GenomeBank.activate(genome_id)
+	_load_blocks()
 
-func _on_delete_algorithm():
-	if _algo_option.item_count == 0:
-		return
-	var algo_name: String = _algo_option.get_item_text(_algo_option.selected)
-	PlayerData.delete_algorithm(algo_name)
-	if _name_edit.text.strip_edges() == algo_name:
-		_name_edit.text = ""
-	_refresh_algo_list(PlayerData.active_algorithm)
+func _on_save_as_new():
+	_save_blocks()
+	var source: Dictionary = GenomeBank.active_genome()
+	var new_id: String = GenomeBank.create(source.get("name", GenomeBank.DEFAULT_NAME), PlayerData.get_ship_algorithm())
+	if new_id != "":
+		GenomeBank.activate(new_id)
 
 func _build_palette():
 	for child in palette_list.get_children():

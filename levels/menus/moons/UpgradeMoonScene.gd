@@ -4,6 +4,7 @@ const SHIP_UPGRADES := preload("res://progression/ShipUpgrades.gd")
 const SHIP_ADDONS := preload("res://progression/ShipAddons.gd")
 const UPGRADE_ROW := preload("res://levels/menus/moons/UpgradeRow.gd")
 const ADDON_CARD := preload("res://levels/menus/moons/AddonCard.gd")
+const MOON_CATALOG := preload("res://levels/menus/moons/MoonCatalog.gd")
 
 const MOONS_SCENE := "res://levels/menus/moons/MoonsScene.tscn"
 const SECTION_FONT_SIZE := 18
@@ -25,6 +26,7 @@ func _ready():
 	_add_section("UPGRADES", sections, UPGRADE_ROW, SHIP_UPGRADES.ALL, SHIP_UPGRADES.purchase)
 	_add_section("ADDONS", _card_shelf(), ADDON_CARD, SHIP_ADDONS.ALL, SHIP_ADDONS.purchase)
 	_refresh()
+	MOON_CATALOG.show_tutorial_once(self, MOON_CATALOG.SHIPYARD)
 
 func _add_section(title: String, holder: Container, item_script: GDScript, items: Array, purchase: Callable):
 	sections.add_child(_section_label(title))

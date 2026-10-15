@@ -1,12 +1,9 @@
 extends Control
 
-const MOON := preload("res://entities/planet/PlanetMoon.tscn")
 const SHIP_WORKSPACE := preload("res://ui/workspace/ShipWorkspace.gd")
+const MOON_CATALOG := preload("res://levels/menus/moons/MoonCatalog.gd")
+const MOON_VISUAL := preload("res://levels/menus/moons/MoonVisual.gd")
 
-const UPGRADE_MOON_SCENE := "res://levels/menus/moons/UpgradeMoonScene.tscn"
-const UPGRADE_MOON_INDEX := 0
-
-const MOON_VIS_PIXELS := 52.0
 const MOON_DISP := 300.0
 const SLOT_WIDTH := 360.0
 const TAG_FONT_SIZE := 20
@@ -40,11 +37,11 @@ func _build_moons():
 		c.queue_free()
 	_add_moon(PlayerData.WORKSPACE_MOON_SEED, "Hivemind", "Program your spaceship", _open_workspace)
 	for index in PlayerData.moon_seeds.size():
-		var moon_seed: int = int(PlayerData.moon_seeds[index])
-		if index == UPGRADE_MOON_INDEX:
-			_add_moon(moon_seed, "Shipyard", "Upgrade your spaceship", _open_upgrade_moon)
-		else:
-			_add_moon(moon_seed, "Outpost Moon", "Coming soon", Callable())
+		var moon: Dictionary = MOON_CATALOG.for_index(index)
+		var on_open: Callable = Callable()
+		if MOON_CATALOG.is_openable(moon):
+			on_open = get_tree().change_scene_to_file.bind(moon["scene"])
+		_add_moon(int(PlayerData.moon_seeds[index]), moon["title"], moon["description"], on_open)
 
 func _relayout():
 	await get_tree().process_frame
@@ -79,7 +76,7 @@ func _add_moon(moon_seed: int, title: String, desc: String, on_open: Callable):
 	moon_center.custom_minimum_size = Vector2(0, MOON_DISP * HOVER_SCALE)
 	moon_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(moon_center)
-	var moon_visual: Control = _make_moon_visual(moon_seed)
+	var moon_visual: Control = MOON_VISUAL.make(moon_seed, MOON_DISP)
 	moon_center.add_child(moon_visual)
 
 	var tag := PanelContainer.new()
@@ -112,9 +109,6 @@ func _open_workspace():
 	SHIP_WORKSPACE.return_scene = "res://levels/menus/PlayerBaseScene.tscn"
 	get_tree().change_scene_to_file("res://ui/workspace/ShipWorkspace.tscn")
 
-func _open_upgrade_moon():
-	get_tree().change_scene_to_file(UPGRADE_MOON_SCENE)
-
 func _tag_style(hovered: bool, openable: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = C_TAG_HOVER if hovered else C_TAG
@@ -135,22 +129,3 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 	label.add_theme_color_override("font_color", color)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
-
-func _make_moon_visual(moon_seed: int) -> Control:
-	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(MOON_DISP, MOON_DISP)
-	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var moon := MOON.instantiate() as Control
-	holder.add_child(moon)
-	moon.generate(moon_seed, MOON_VIS_PIXELS)
-	var sc: float = MOON_DISP / MOON_VIS_PIXELS
-	moon.scale = Vector2(sc, sc)
-	moon.position = Vector2.ZERO
-	_disable_mouse(moon)
-	return holder
-
-func _disable_mouse(node: Node):
-	if node is Control:
-		node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for c in node.get_children():
-		_disable_mouse(c)

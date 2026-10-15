@@ -41,6 +41,9 @@ const ASTRO_ID_SCENE := "res://levels/menus/AstroIDScene.tscn"
 const RANKS := preload("res://progression/Ranks.gd")
 const TUTORIAL := preload("res://ui/tutorial/BlobTutorial.gd")
 const TUTORIAL_LINES := preload("res://ui/tutorial/PlayerBaseTutorialLines.gd")
+const MOON_CATALOG := preload("res://levels/menus/moons/MoonCatalog.gd")
+const MOON_REVEAL := preload("res://levels/menus/moons/MoonRevealOverlay.gd")
+const ACHIEVEMENTS := preload("res://achievements/Achievements.gd")
 
 var _planet: Control
 var _moons: Array = []
@@ -217,9 +220,29 @@ func _on_confirm_username():
 
 func _show_tutorial_once():
 	if PlayerSettings.get_flag(TUTORIAL_LINES.SEEN_FLAG):
+		_reveal_unlocked_moon()
 		return
 	_show_tutorial()
-	_tutorial.finished.connect(func(): PlayerSettings.set_flag(TUTORIAL_LINES.SEEN_FLAG, true))
+	_tutorial.finished.connect(func():
+		PlayerSettings.set_flag(TUTORIAL_LINES.SEEN_FLAG, true)
+		_reveal_unlocked_moon()
+	)
+
+func _reveal_unlocked_moon():
+	for index in PlayerData.moon_seeds.size():
+		var moon: Dictionary = MOON_CATALOG.for_index(index)
+		if not MOON_CATALOG.is_openable(moon) or PlayerData.is_moon_revealed(moon["id"]):
+			continue
+		var reveal = MOON_REVEAL.new()
+		reveal.moon = moon
+		reveal.moon_seed = int(PlayerData.moon_seeds[index])
+		reveal.travel_requested.connect(func():
+			PlayerData.mark_moon_revealed(moon["id"])
+			ACHIEVEMENTS.check_moon_travel()
+			get_tree().change_scene_to_file(moon["scene"])
+		)
+		add_child(reveal)
+		return
 
 func _show_tutorial():
 	if is_instance_valid(_tutorial):
