@@ -75,8 +75,10 @@ func _build_ui():
 	buttons.add_child(back)
 
 func _is_locked(level_index: int) -> bool:
-	if PlayerSettings.is_dev_mode() or level_index == 0:
+	if PlayerSettings.is_dev_mode():
 		return false
+	if level_index == 0:
+		return not (PlayerData.is_level_completed(LevelInfo.TRAINING_LEVEL["id"]) or PlayerData.is_level_completed(LevelInfo.LEVELS[0]["id"]))
 	return not PlayerData.is_level_completed(LevelInfo.LEVELS[level_index - 1]["id"])
 
 func _make_tile(number: int, level: Dictionary, locked: bool) -> Control:

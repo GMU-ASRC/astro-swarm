@@ -30,6 +30,7 @@ const GAME_PALETTE := {
 }
 
 const FARP_SCENES := [
+	"res://levels/modes/level0/Level0Scene.tscn",
 	"res://levels/modes/level1/Level1Scene.tscn",
 	"res://levels/modes/level2/Level2Scene.tscn",
 	"res://levels/modes/level6/Level6Scene.tscn",

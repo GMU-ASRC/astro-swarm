@@ -3,10 +3,12 @@ extends Node
 const EVALUATIONS_PATH := "/api/evaluations"
 const BEST_PATH := EVALUATIONS_PATH + "/best"
 const RUN_PATH := EVALUATIONS_PATH + "/run"
+const TRAINING_SCORES_PATH := "/api/training/scores"
 const API_KEY := "world-unfair-file"
 
 signal submit_finished(success: bool, code: int, response)
 signal best_fetched(success: bool, response)
+signal training_score_finished(success: bool, code: int, response)
 signal xp_claimed(entry_id: String, success: bool, xp: int, coins: int, message: String)
 
 func game_version() -> String:
@@ -41,6 +43,33 @@ func submit(algorithm: Array, placements: Array, level_id: String, collisions: b
 	if req.request(PlayerSettings.server_url() + EVALUATIONS_PATH, headers, HTTPClient.METHOD_POST, body) != OK:
 		req.queue_free()
 		submit_finished.emit(false, 0, {})
+
+func submit_training_score(circliness: float, algorithm: Array, placements: Array):
+	if not PlayerData.has_profile() or PlayerData.player_id == "":
+		training_score_finished.emit(false, 0, {})
+		return
+	var body := JSON.stringify({
+		"player_id": PlayerData.player_id,
+		"username": PlayerData.username,
+		"circliness": circliness,
+		"algorithm": algorithm,
+		"placements": placements,
+		"game_version": game_version(),
+	})
+	var req := HTTPRequest.new()
+	req.timeout = 20.0
+	add_child(req)
+	req.request_completed.connect(func(_result, code, _headers, response):
+		training_score_finished.emit(code >= 200 and code < 300, code, _parse_json(response))
+		req.queue_free()
+	)
+	var headers := [
+		"X-API-Key: " + API_KEY,
+		"Content-Type: application/json",
+	]
+	if req.request(PlayerSettings.server_url() + TRAINING_SCORES_PATH, headers, HTTPClient.METHOD_POST, body) != OK:
+		req.queue_free()
+		training_score_finished.emit(false, 0, {})
 
 func submit_run(level_id: String, algorithm: Array, placements: Array, run: Dictionary, genome_schedule: Array = []):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":

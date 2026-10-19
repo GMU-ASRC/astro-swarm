@@ -85,12 +85,12 @@ const LESSONS := [
 	},
 	{
 		"title": "MILLS AND CIRCLINESS",
-		"text": "Circliness scores how good a mill is, from 0 to 1. A perfect mill holds a clean ring and every ship flies around the center rather than toward or away from it. If the swarm splits into smaller mills, each one is scored and I average them, so several tidy circles still score well.",
+		"text": "Circliness scores how good a mill is, from 0% to 100%. A perfect mill holds a clean ring and every ship flies around the center rather than toward or away from it. If the swarm splits into smaller mills, each one is scored and I average them, so several tidy circles still score well.",
 		"demo": "mill",
 	},
 	{
 		"title": "YOU ARE READY",
-		"text": "That is everything you need. Open the workspace to build your own program, or head straight to Level 1 and put it to work. You can come back to training from the level list at any time. Good luck, Commander.",
+		"text": "That is everything you need. Now try it yourself in the sandbox: place up to twenty defenders, build a program in the workspace, and run the swarm. Hold a circliness of 50% and Level 1 unlocks. Good luck, Commander.",
 		"demo": "mill",
 		"finish": true,
 	},
