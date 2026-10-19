@@ -26,7 +26,7 @@ const GENE_POOL_SIZE := 5
 const ALL := [
 	{"id": LIFTOFF,       "title": "LIFTOFF",       "description": "Finish level 1.",                                   "icon": "res://assets/badges/liftoff.svg"},
 	{"id": PLANET_GUARD,  "title": "PLANET GUARD",  "description": "Finish level 1 without a single evader landing.",   "icon": "res://assets/badges/planet-guard.svg"},
-	{"id": PERFECT_ORBIT, "title": "PERFECT ORBIT", "description": "Average circliness over 0.9 in level 1.",           "icon": "res://assets/badges/perfect-orbit.svg"},
+	{"id": PERFECT_ORBIT, "title": "PERFECT ORBIT", "description": "Average circliness over 90% in level 1.",           "icon": "res://assets/badges/perfect-orbit.svg"},
 	{"id": HIVEMIND,      "title": "HIVEMIND",      "description": "Create your first genome.",                        "icon": "res://assets/badges/hivemind.svg"},
 	{"id": VETERAN,       "title": "VETERAN",       "description": "Reach the rank of Commander.",                        "icon": "res://assets/badges/veteran.svg"},
 	{"id": SWARM_MASTER,  "title": "SWARM MASTER",  "description": "Finish every level.",                               "icon": "res://assets/badges/swarm-master.svg"},

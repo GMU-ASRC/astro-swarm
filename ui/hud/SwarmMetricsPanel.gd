@@ -1,5 +1,7 @@
 extends PanelContainer
 
+const EVADER_STREAM := preload("res://levels/components/EvaderStream.gd")
+
 const ROW_STATUS        := "status"
 const ROW_CURRENT_LOSS  := "current_loss"
 const ROW_MINIMUM_LOSS  := "minimum_loss"
@@ -57,7 +59,7 @@ func set_metrics(status: String, current_loss: float, minimum_loss: float, goal_
 	_rows[ROW_CURRENT_LOSS].text = "CURRENT LOSS: " + _number(current_loss)
 	_rows[ROW_MINIMUM_LOSS].text = "MINIMUM LOSS: " + _number(minimum_loss)
 	_rows[ROW_GOAL_DISTANCE].text = "GOAL DISTANCE: " + _number(goal_distance)
-	_rows[ROW_CIRCLINESS].text = "CIRCLINESS: " + _number(circliness)
+	_rows[ROW_CIRCLINESS].text = "CIRCLINESS: " + EVADER_STREAM.circliness_text(circliness)
 
 func set_legend(entries: Array):
 	for child in _legend_box.get_children():

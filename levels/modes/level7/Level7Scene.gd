@@ -345,7 +345,7 @@ func _update_event_label():
 
 func _event_summary() -> String:
 	return "Minimum loss: %s\nGoal distance: %s\nCircliness: %s" % [
-		_metric_text(_minimum_loss), _metric_text(_goal_distance), _metric_text(_circliness)]
+		_metric_text(_minimum_loss), _metric_text(_goal_distance), EVADER_STREAM.circliness_text(_circliness)]
 
 func _metric_text(value: float) -> String:
 	if value < 0.0:

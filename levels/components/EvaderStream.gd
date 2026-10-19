@@ -152,4 +152,4 @@ func _progress_text() -> String:
 static func circliness_text(value: float) -> String:
 	if value < 0.0:
 		return "--"
-	return "%.3f" % value
+	return "%d%%" % roundi(value * 100.0)
