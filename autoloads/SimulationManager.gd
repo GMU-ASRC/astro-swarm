@@ -85,9 +85,9 @@ var settings: Dictionary = {
 }
 
 const BLOCK_DEFS := {
-	"set_speed":     {"category": "config",    "label": "Set speed to",        "input": {"min": 0.5,  "max": 10.0, "default": 3.75, "step": 0.05, "suffix": " m/s"}},
+	"set_speed":     {"category": "config",    "label": "Set speed to",        "input": {"min": 0.5,  "max": 10.0, "default": 3.75, "step": 0.05, "slider_step": 0.1, "suffix": " m/s"}},
 	"set_turn":      {"category": "config",    "label": "Set turn rate to",    "input": {"min": 15.0, "max": 360.0, "default": 120.0, "step": 5.0, "suffix": "°/s"}},
-	"set_view":      {"category": "config",    "label": "Set vision range to", "input": {"min": 0.5,  "max": 12.5, "default": 3.75, "step": 0.1,  "suffix": " m"}},
+	"set_view":      {"category": "config",    "label": "Set vision range to", "input": {"min": 0.5,  "max": 12.5, "default": 3.75, "step": 0.1,  "slider_step": 0.1, "suffix": " m"}},
 	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 20.0, "max": 180.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
 	"set_size":      {"category": "config",    "label": "Set size to",         "input": {"min": 2.0,  "max": 16.0, "default": 6.0,  "step": 0.5,  "suffix": " px"}},
 
@@ -174,8 +174,14 @@ const BLOCK_DEFS := {
 	"do_stop":       {"category": "action", "label": "Stop",            "input": null},
 	"do_wander":     {"category": "action", "label": "Wander randomly", "input": null},
 	"do_random_walk":{"category": "action", "label": "Random walk",     "input": null},
-	"do_turn_left":  {"category": "action", "label": "Turn left at",    "input": {"min": 15.0, "max": 360.0, "default": 90.0, "step": 5.0, "suffix": "°/s"}},
-	"do_turn_right": {"category": "action", "label": "Turn right at",   "input": {"min": 15.0, "max": 360.0, "default": 90.0, "step": 5.0, "suffix": "°/s"}},
+	"do_turn_left":  {"category": "action", "label": "Turn left at", "inputs": [
+		{"type": "slider", "key": "value", "min": 1.0, "default": 90.0, "unit_key": "unit", "max_by_unit": {"degrees": 360.0, "percent": 100.0}},
+		{"type": "dropdown", "key": "unit", "provider": "turn_units", "default": "degrees", "rebuilds_inputs": true},
+	]},
+	"do_turn_right": {"category": "action", "label": "Turn right at", "inputs": [
+		{"type": "slider", "key": "value", "min": 1.0, "default": 90.0, "unit_key": "unit", "max_by_unit": {"degrees": 360.0, "percent": 100.0}},
+		{"type": "dropdown", "key": "unit", "provider": "turn_units", "default": "degrees", "rebuilds_inputs": true},
+	]},
 	"do_turn_left_by":  {"category": "action", "label": "Turn left by",  "input": {"min": 1.0, "max": 360.0, "default": 180.0, "step": 1.0, "suffix": "°"}},
 	"do_turn_right_by": {"category": "action", "label": "Turn right by", "input": {"min": 1.0, "max": 360.0, "default": 180.0, "step": 1.0, "suffix": "°"}},
 	"do_face":       {"category": "action", "label": "Face the target",  "input": null},
@@ -431,6 +437,12 @@ func config_entry(block_type: String, params: Dictionary) -> Dictionary:
 		"set_size":  return {"key": "dot_radius",    "value": float(params.get("value", 6.0))}
 	return {}
 
+func turn_command(params: Dictionary, turn_rate: float) -> float:
+	var value: float = float(params.get("value", 90.0))
+	if str(params.get("unit", "degrees")) == "percent":
+		return turn_rate * clampf(value, 0.0, 100.0) / 100.0
+	return minf(deg_to_rad(value), turn_rate)
+
 func ship_config_from_scripts(scripts: Array, base_view: float, base_fov: float, base_speed: float = 150.0, base_turn: float = 3.2, base_size: float = 9.0) -> Dictionary:
 	var cfg := {
 		"view_distance": base_view,
@@ -525,6 +537,9 @@ func dropdown_options(provider: String) -> Array:
 		"zone_states":
 			options.append({"value": "on", "text": "on"})
 			options.append({"value": "off", "text": "off"})
+		"turn_units":
+			options.append({"value": "degrees", "text": "°/s"})
+			options.append({"value": "percent", "text": "% of turn rate"})
 		"operators":
 			options.append({"value": "=", "text": "="})
 			options.append({"value": "!=", "text": "≠"})

@@ -301,10 +301,10 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 				return BlockExecutor.DONE
 			return BlockExecutor.RUNNING
 		"do_turn_left":
-			_turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
+			_turn_cmd = -SimulationManager.turn_command(params, turn_rate)
 			return BlockExecutor.DONE
 		"do_turn_right":
-			_turn_cmd = deg_to_rad(float(params.get("value", 90.0)))
+			_turn_cmd = SimulationManager.turn_command(params, turn_rate)
 			return BlockExecutor.DONE
 		"do_turn_left_by":
 			_turn_cmd = 0.0

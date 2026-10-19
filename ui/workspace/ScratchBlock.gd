@@ -113,6 +113,9 @@ func _apply_block_def():
 		_ignore_mouse_tree(self)
 	queue_redraw()
 
+func rebuild_inputs():
+	BlockInputs.build(self, inputs_box, SimulationManager.BLOCK_DEFS.get(block_type, {}))
+
 func _ignore_mouse_tree(node: Node):
 	if node is Control:
 		node.mouse_filter = Control.MOUSE_FILTER_IGNORE

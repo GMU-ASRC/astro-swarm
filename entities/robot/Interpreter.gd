@@ -96,10 +96,10 @@ func exec_action(block_type: String, params: Dictionary, delta: float, state: Di
 				return BlockExecutor.DONE
 			return BlockExecutor.RUNNING
 		"do_turn_left":
-			robot.turn_cmd = -deg_to_rad(float(params.get("value", 90.0)))
+			robot.turn_cmd = -SimulationManager.turn_command(params, robot.config.turn_speed)
 			return BlockExecutor.DONE
 		"do_turn_right":
-			robot.turn_cmd = deg_to_rad(float(params.get("value", 90.0)))
+			robot.turn_cmd = SimulationManager.turn_command(params, robot.config.turn_speed)
 			return BlockExecutor.DONE
 		"do_turn_left_by":
 			robot.turn_cmd = 0.0

@@ -5,6 +5,9 @@ const SHIP_UPGRADES := preload("res://progression/ShipUpgrades.gd")
 const SLOT_COLOR := Color(0, 0, 0, 0.25)
 const TEXT_COLOR := Color(1, 1, 1, 1)
 const FONT_SIZE := 12
+const FINE_STEP := 0.01
+const DEFAULT_SLIDER_STEP := 1.0
+const STEP_TOLERANCE := 0.0001
 
 static func build(block, inputs_box: HBoxContainer, def: Dictionary):
 	for c in inputs_box.get_children():
@@ -79,6 +82,8 @@ static func _make_dropdown(block, spec: Dictionary, options: Array) -> OptionBut
 	opt.item_selected.connect(func(idx):
 		if idx >= 0 and idx < options.size():
 			block.block_params[key] = options[idx].value
+			if spec.get("rebuilds_inputs", false):
+				block.rebuild_inputs()
 			block.block_changed.emit()
 	)
 	return opt
@@ -117,7 +122,7 @@ static func _make_text(block, spec: Dictionary) -> LineEdit:
 static func _make_slider(block, spec: Dictionary) -> HBoxContainer:
 	var key: String = spec.get("key", "value")
 	var suffix: String = spec.get("suffix", "")
-	var step: float = spec.get("step", 1.0)
+	var slider_step: float = spec.get("slider_step", DEFAULT_SLIDER_STEP)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -125,45 +130,83 @@ static func _make_slider(block, spec: Dictionary) -> HBoxContainer:
 	slider.custom_minimum_size = Vector2(100, 0)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.min_value = spec.get("min", 0.0)
-	slider.max_value = SHIP_UPGRADES.editor_max(block.block_type, spec.get("max", 100.0))
-	slider.step = step
+	slider.max_value = _slider_max(block, spec)
+	slider.step = 0.0
 	slider.focus_mode = Control.FOCUS_ALL
 	slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	slider.gui_input.connect(func(event):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			slider.grab_focus()
+		elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
+			var direction: float = 1.0 if event.is_action_pressed("ui_right", true) else -1.0
+			slider.value = clampf(_next_slider_value(slider.value, slider_step, direction), slider.min_value, slider.max_value)
+			slider.accept_event()
 	)
-	var value_label := Label.new()
-	value_label.custom_minimum_size = Vector2(64, 0)
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	value_label.add_theme_color_override("font_color", TEXT_COLOR)
-	value_label.add_theme_font_size_override("font_size", FONT_SIZE)
+	var value_input := LineEdit.new()
+	value_input.custom_minimum_size = Vector2(56, 0)
+	value_input.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	value_input.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_style_line_edit(value_input)
+	var suffix_label := _make_label(suffix)
+	suffix_label.add_theme_color_override("font_color", TEXT_COLOR)
 	slider.value = float(block.block_params.get(key, spec.get("default", 0.0)))
 	block.block_params[key] = slider.value
-	_update_slider_label(value_label, slider.value, suffix, step)
+	value_input.text = _format_value(slider.value)
 	slider.value_changed.connect(func(v):
-		block.block_params[key] = v
-		_update_slider_label(value_label, v, suffix, step)
+		var stepped_value: float = _step_slider_value(v, slider.min_value, slider.max_value, slider_step)
+		slider.set_value_no_signal(stepped_value)
+		block.block_params[key] = stepped_value
+		value_input.text = _format_value(stepped_value)
 		block.block_changed.emit()
 	)
+	var apply_typed_value := func():
+		var typed_text: String = value_input.text.strip_edges()
+		if typed_text.is_valid_float():
+			var typed_value: float = snappedf(clampf(typed_text.to_float(), slider.min_value, slider.max_value), FINE_STEP)
+			if typed_value != float(block.block_params[key]):
+				block.block_params[key] = typed_value
+				slider.set_value_no_signal(typed_value)
+				block.block_changed.emit()
+		value_input.text = _format_value(float(block.block_params[key]))
+	value_input.text_submitted.connect(func(_text):
+		apply_typed_value.call()
+		value_input.release_focus()
+	)
+	value_input.focus_exited.connect(apply_typed_value)
 	row.add_child(slider)
-	row.add_child(value_label)
+	row.add_child(value_input)
+	if suffix != "":
+		row.add_child(suffix_label)
 	return row
 
-static func _update_slider_label(lbl: Label, val: float, suffix: String, step: float):
-	lbl.text = _format_number(val, suffix, step)
+static func _slider_max(block, spec: Dictionary) -> float:
+	if spec.has("max_by_unit"):
+		var unit: String = str(block.block_params.get(spec.get("unit_key", "unit"), "degrees"))
+		return float(spec.max_by_unit.get(unit, spec.max_by_unit.values()[0]))
+	return SHIP_UPGRADES.editor_max(block.block_type, spec.get("max", 100.0))
 
-static func _format_number(val: float, suffix: String, step: float) -> String:
-	if step >= 1.0:
-		return "%d%s" % [int(val), suffix]
-	return "%.1f%s" % [val, suffix]
+static func _step_slider_value(val: float, min_value: float, max_value: float, slider_step: float) -> float:
+	if val <= min_value or val >= max_value:
+		return val
+	return clampf(snappedf(roundf(val / slider_step) * slider_step, FINE_STEP), min_value, max_value)
+
+static func _next_slider_value(val: float, slider_step: float, direction: float) -> float:
+	var steps_taken: float = val / slider_step
+	if direction > 0.0:
+		return snappedf((floorf(steps_taken + STEP_TOLERANCE) + 1.0) * slider_step, FINE_STEP)
+	return snappedf((ceilf(steps_taken - STEP_TOLERANCE) - 1.0) * slider_step, FINE_STEP)
+
+static func _format_value(val: float) -> String:
+	return String.num(snappedf(val, FINE_STEP), 2)
+
+static func _format_number(val: float, suffix: String) -> String:
+	return _format_value(val) + suffix
 
 static func _compact_text(block, spec: Dictionary) -> String:
 	var value = block.block_params.get(spec.get("key", "value"), spec.get("default", null))
 	match spec.get("type", "slider"):
 		"slider", "number":
-			return _format_number(float(value if value != null else 0.0), spec.get("suffix", ""), spec.get("step", 1.0))
+			return _format_number(float(value if value != null else 0.0), spec.get("suffix", ""))
 		"species", "dropdown":
 			var provider: String = "species" if spec.get("type") == "species" else spec.get("provider", "")
 			var options: Array = SimulationManager.dropdown_options(provider)
