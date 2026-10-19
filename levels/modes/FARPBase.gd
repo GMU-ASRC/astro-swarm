@@ -33,6 +33,8 @@ const MAX_DEFENDERS := 20    # count
 const MIN_DEFENDERS := 1     # count
 const DEFENDER_HP   := 99.0  # hit points
 
+const FIRST_GENOME_SWITCH_LEVEL := 4
+
 const EVADER_HP            := 3.0    # hit points
 const EVADER_SPEED         := 105.0  # pixels/second (2.625 m/s)
 const EVADER_SPAWN_RADIUS  := 1000.0 # pixels, radius of the ring the evader spawns on
@@ -195,6 +197,9 @@ func _submits_algorithm() -> bool:
 
 func _uses_workspace() -> bool:
 	return true
+
+func _uses_genome_switcher() -> bool:
+	return _uses_workspace() and GenomeBank.is_unlocked() and LevelInfo.number(_level_id()) >= FIRST_GENOME_SWITCH_LEVEL
 
 func _carries_genome_switches() -> bool:
 	return false
@@ -839,7 +844,7 @@ func _build_hud():
 		_add_top_button("WORKSPACE", _open_workspace, HUD_BUTTONS.Kind.PRIMARY)
 	if _shows_run_controls():
 		_add_top_button("RESTART (P)", _restart)
-	if _uses_workspace() and GenomeBank.is_unlocked():
+	if _uses_genome_switcher():
 		_genome_switcher = GENOME_SWITCHER.new()
 		_genome_switcher.genome_switched.connect(_on_genome_switched)
 		_top_bar.add_child(_genome_switcher)
