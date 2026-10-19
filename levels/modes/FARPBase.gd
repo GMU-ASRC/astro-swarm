@@ -29,7 +29,7 @@ const PLANET_DISP   := 240.0                   # pixels, drawn planet diameter
 const PLANET_RADIUS := PLANET_DISP * 0.5       # pixels
 const GOAL_MARGIN   := 16.0                    # pixels past PLANET_RADIUS that still counts as reaching the planet
 
-const MAX_DEFENDERS := 6     # count
+const MAX_DEFENDERS := 20    # count
 const MIN_DEFENDERS := 1     # count
 const DEFENDER_HP   := 99.0  # hit points
 
