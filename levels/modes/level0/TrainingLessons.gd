@@ -90,7 +90,7 @@ const LESSONS := [
 	},
 	{
 		"title": "YOU ARE READY",
-		"text": "That is everything you need. Now try it yourself in the sandbox: place up to twenty defenders, build a program in the workspace, and run the swarm. Hold a circliness of 50% and Level 1 unlocks. Good luck, Commander.",
+		"text": "That is everything you need. Now try it yourself in the sandbox: place up to twenty defenders, build a program in the workspace, and run the swarm. Average over 50% circliness for 10 seconds and Level 1 unlocks. Good luck, Commander.",
 		"demo": "mill",
 		"finish": true,
 	},

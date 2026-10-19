@@ -5,11 +5,12 @@ signal scored(average_circliness: float)
 
 const CIRCLINESS_TRACKER := preload("res://levels/components/CirclinessTracker.gd")
 const EVADER_STREAM := preload("res://levels/components/EvaderStream.gd")
+const ROLLING_AVERAGE := preload("res://levels/components/RollingAverage.gd")
 const FARP_BASE := preload("res://levels/modes/FARPBase.gd")
 
 const CIRCLINESS_GOAL := 0.5
-const PASS_HOLD_SECONDS := 2.0
-const SCORE_WINDOW_SECONDS := 30.0
+const AVERAGE_WINDOW_SECONDS := 10.0
+const SUBMIT_COOLDOWN_SECONDS := 5.0
 const SANDBOX_ZOOM := 0.8
 const DRAG_MIN_DISTANCE := 6.0
 const PICK_RADIUS := 16.0
@@ -18,11 +19,11 @@ var level
 var circliness := CIRCLINESS_TRACKER.new()
 var _dragging: bool = false
 var _drag_start: Vector2 = Vector2.ZERO
-var _time_above_goal: float = 0.0
+var window_average := ROLLING_AVERAGE.new(AVERAGE_WINDOW_SECONDS)
 var _passed_this_run: bool = false
-var _run_seconds: float = 0.0
-var _scored_this_run: bool = false
-var _last_score: float = -1.0
+var _best_average: float = -1.0
+var _best_submitted: float = -1.0
+var _since_submit: float = SUBMIT_COOLDOWN_SECONDS
 var upload_note: String = ""
 
 func start():
@@ -49,16 +50,14 @@ func launch():
 		return
 	save_placements()
 	circliness.reset()
-	_time_above_goal = 0.0
+	window_average.reset()
 	_passed_this_run = false
-	_run_seconds = 0.0
-	_scored_this_run = false
-	_last_score = -1.0
-	upload_note = ""
+	_since_submit = SUBMIT_COOLDOWN_SECONDS
 	level._start_active()
 	level._phase_label.text = "SWARM RUNNING"
 
 func reset():
+	flush_score()
 	level._clear_ships()
 	level._placements.clear()
 	level._phase = FARP_BASE.Phase.SETUP
@@ -84,19 +83,25 @@ func update(delta: float):
 	if level._phase != FARP_BASE.Phase.ACTIVE:
 		return
 	circliness.sample(level._defender_ships)
-	if circliness.latest >= CIRCLINESS_GOAL:
-		_time_above_goal += delta
-	else:
-		_time_above_goal = 0.0
-	if not _passed_this_run and _time_above_goal >= PASS_HOLD_SECONDS:
+	window_average.add(maxf(circliness.latest, 0.0), delta)
+	_since_submit += delta
+	if not window_average.is_full():
+		return
+	var current_average: float = window_average.average()
+	if not _passed_this_run and current_average > CIRCLINESS_GOAL:
 		_passed_this_run = true
 		passed.emit()
-	_run_seconds += delta
-	if not _scored_this_run and _run_seconds >= SCORE_WINDOW_SECONDS:
-		_scored_this_run = true
-		_last_score = circliness.average()
-		if _last_score >= 0.0:
-			scored.emit(_last_score)
+	if current_average > _best_average:
+		_best_average = current_average
+	if _since_submit >= SUBMIT_COOLDOWN_SECONDS:
+		flush_score()
+
+func flush_score():
+	if _best_average <= _best_submitted:
+		return
+	_best_submitted = _best_average
+	_since_submit = 0.0
+	scored.emit(_best_average)
 
 func handle_input(event: InputEvent):
 	if level._phase != FARP_BASE.Phase.SETUP:
@@ -127,15 +132,27 @@ func count_text() -> String:
 
 func status_text() -> String:
 	if level._phase != FARP_BASE.Phase.ACTIVE:
-		return "REACH %s CIRCLINESS TO PASS TRAINING" % EVADER_STREAM.circliness_text(CIRCLINESS_GOAL)
-	return "MILLS %d   CIRCLINESS %s / %s   %s" % [
-		circliness.latest_mills, EVADER_STREAM.circliness_text(circliness.latest), EVADER_STREAM.circliness_text(CIRCLINESS_GOAL), _score_text()
+		return "AVERAGE OVER %s CIRCLINESS FOR %dS TO PASS%s" % [
+			EVADER_STREAM.circliness_text(CIRCLINESS_GOAL), int(AVERAGE_WINDOW_SECONDS), _best_text()
+		]
+	return "MILLS %d   CIRCLINESS %s   %dS AVERAGE %s / %s%s" % [
+		circliness.latest_mills,
+		EVADER_STREAM.circliness_text(circliness.latest),
+		int(AVERAGE_WINDOW_SECONDS),
+		_window_text(),
+		EVADER_STREAM.circliness_text(CIRCLINESS_GOAL),
+		_best_text(),
 	]
 
-func _score_text() -> String:
-	if not _scored_this_run:
-		return "SCORE IN %dS" % ceili(SCORE_WINDOW_SECONDS - _run_seconds)
-	var text: String = "%dS SCORE %s" % [int(SCORE_WINDOW_SECONDS), EVADER_STREAM.circliness_text(_last_score)]
+func _window_text() -> String:
+	if not window_average.is_full():
+		return "IN %dS" % ceili(AVERAGE_WINDOW_SECONDS - window_average.elapsed())
+	return EVADER_STREAM.circliness_text(window_average.average())
+
+func _best_text() -> String:
+	if _best_average < 0.0:
+		return ""
+	var text: String = "   BEST %s" % EVADER_STREAM.circliness_text(_best_average)
 	if upload_note != "":
 		text += "   " + upload_note
 	return text

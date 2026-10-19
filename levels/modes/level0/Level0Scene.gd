@@ -96,9 +96,15 @@ func _update_count():
 
 func _open_workspace():
 	if _sandbox != null:
+		_sandbox.flush_score()
 		_sandbox.save_placements()
 		opens_in_sandbox = true
 	super()
+
+func _exit_level(scene_path: String):
+	if _sandbox != null:
+		_sandbox.flush_score()
+	super(scene_path)
 
 func _enter_sandbox():
 	if _sandbox != null:
