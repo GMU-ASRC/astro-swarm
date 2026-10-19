@@ -392,9 +392,9 @@ func _apply_ship_config(ship: Node2D, program: Array):
 	ship.hull_radius = cfg.dot_radius
 	ship.refresh_cone()
 
-func _on_genome_switched(stage_index: int):
+func _on_genome_switched(_stage_index: int):
 	var program: Array = PlayerData.get_ship_algorithm()
-	var color: Color = GENOME_SWITCHER.stage_color(stage_index)
+	var color: Color = GenomeBank.active_color()
 	for ship in _defender_ships:
 		if is_instance_valid(ship) and not ship.is_evader:
 			ship.reprogram(program)
@@ -403,7 +403,7 @@ func _on_genome_switched(stage_index: int):
 
 func _defender_color() -> Color:
 	if _genome_switcher != null and _genome_switcher.is_counting():
-		return GENOME_SWITCHER.stage_color(_genome_switcher.stage_index())
+		return GenomeBank.active_color()
 	return C_DEFENDER
 
 func _live_defender_count() -> int:

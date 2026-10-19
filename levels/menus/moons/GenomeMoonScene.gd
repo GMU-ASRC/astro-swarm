@@ -30,6 +30,7 @@ func _ready():
 	GenomeBank.genomes_changed.connect(_refresh)
 	PlayerData.coins_changed.connect(_on_coins_changed)
 	PlayerData.ship_upgrades_changed.connect(_refresh_upgrades)
+	PlayerData.ship_upgrades_changed.connect(_refresh)
 	_build_upgrades()
 	_build_dialogs()
 	_refresh()
@@ -72,10 +73,13 @@ func _refresh():
 	var can_add: bool = not GenomeBank.is_full()
 	for genome in GenomeBank.genomes:
 		var card = GENOME_CARD.new()
-		card.setup(genome, genome["id"] == GenomeBank.active_id, can_delete, can_add)
+		var is_active: bool = GenomeBank.in_loadout(genome["id"])
+		var can_activate: bool = (is_active and GenomeBank.loadout.size() > 1) or (not is_active and not GenomeBank.loadout_full())
+		card.setup(genome, is_active, can_activate, can_delete, can_add)
 		card.action_requested.connect(_on_card_action)
+		card.color_picked.connect(GenomeBank.set_color)
 		cards.add_child(card)
-	count_label.text = "%d / %d" % [GenomeBank.genome_count(), GenomeBank.MAX_GENOMES]
+	count_label.text = "%d / %d   ACTIVE %d / %d" % [GenomeBank.genome_count(), GenomeBank.MAX_GENOMES, GenomeBank.loadout_genomes().size(), GenomeBank.loadout_limit()]
 	new_btn.disabled = not can_add
 
 func _on_card_action(action: String, genome_id: String):
@@ -85,7 +89,7 @@ func _on_card_action(action: String, genome_id: String):
 			SHIP_WORKSPACE.return_scene = MOON_CATALOG.GENOME_SCENE
 			get_tree().change_scene_to_file(WORKSPACE_SCENE)
 		"activate":
-			GenomeBank.activate(genome_id)
+			GenomeBank.toggle_loadout(genome_id)
 		"duplicate":
 			GenomeBank.duplicate_genome(genome_id)
 		"rename":
