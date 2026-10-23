@@ -1,4 +1,4 @@
-# Unreleased
+# 0.0.9
 
 ## Updates
 
@@ -7,6 +7,19 @@
 - Level 2 offers 250 and 500 defenders
 - Removed the bottom-left hint text and the tutorial button from every level
 - Restyled the entries screens to match the website entry page, with links to open each entry and your profile on the website
+- Hid the pilot level from the Levels screen and moved every level after it down one: Swarm is now Level 6 and Supply Level 7. Saves, progress and tutorial flags move to the new ids on first launch
+- Level 5 gets the same 5, 10, 15 or 20 defender picker as Level 4
+- Level 6 (Swarm) passes once the two swarms hold merged for a second, even if the mill never reaches the planet, and its agents see wider but not as far
+- Level 7 (Supply) lets you pick 10 or 25 defenders, with half as many evaders per planet, and attrition is on, so a capture takes the defender too
+- The Level 7 jump gate is now the right edge of planet A and the left edge of planet B. The shuttle crosses instantly, and a defender that drifts in arrives about 2.5 seconds later
+- Calling a defender across with E now waits out the same 2.5 second crossing before it appears
+- The supply deployment window is 30 seconds
+- Supply planets are attacked all at once: evaders arrive one at a time onto a random planet, and every planet keeps fighting live while you are on another one. The gates stay open and E keeps working through the assault
+- The supply shuttle no longer draws a vision cone
+- The evader spawn box is no longer drawn on the supply levels
+- The planet board sits fully on screen on the supply levels
+- The demo mode is only listed in dev mode
+- Updated the Dr. Blob voice lines for Levels 1, 4, 5, 6 and 7
 
 ## Additions
 
@@ -19,6 +32,13 @@
 - Entries pay AstroCoin as well as XP when claimed, up to 5 paid entries per level per day
 - The Genome moon unlocks at commander level 4 or on completing Level 4, whichever comes first
 - A reveal screen for each newly unlocked moon that takes you straight to it, and a Dr. Blob tutorial the first time each moon is opened
+- Level 8 - Triad: the supply level across three planets, with planet A as the hub (right edge to planet B, bottom edge to planet C), a 10, 25 or 50 defender picker and a third of the line in evaders per planet
+- Jump gate edge art for the supply levels
+- Sur2, a dev-only one-minute Survive cut for recording video: no tutorial, power-ups or upload, blue ships run each player's genome and capture by touch, each player's genome flies the evaders sent at the rival, and the left and right edges are jump gates
+
+## Fixes
+
+- Fixed typing a value below a block's slider minimum snapping it back up; typed values now only stop at zero and the maximum
 
 # 0.0.8
 
