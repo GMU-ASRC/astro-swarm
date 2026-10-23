@@ -25,6 +25,3 @@ Two evaders for every defender you field, one after another, but this time spott
 
 [Line:6]
 An algorithm that only works on one lucky scatter falls apart on the next. Reroll a few times before you commit. I am scoring circliness here too, mill by mill, so a swarm that breaks into tidy little circles still scores well.
-
-[Line:7]
-The best entry submitted here becomes the opponent in level six, layout and all. Beat everyone and other commanders will be flying against your work.

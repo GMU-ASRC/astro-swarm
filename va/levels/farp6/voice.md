@@ -6,25 +6,25 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Change of seat, Commander. Today you are the evader, and the planet is the thing you are trying to reach.
+Something different today, Commander. No evaders, no defense. Two swarms are out there milling in circles, minding their own business.
 
 [Line:2]
-The defenders in your way run the best level two algorithm anyone has submitted, standing exactly where that entry placed them. Their commander's name is up in the top bar.
+Every one of those agents follows a single rule. It turns one way when it can see another ship, and the other way when it sees nothing at all. That rule on its own is what makes them mill.
 
 [Line:3]
-Drag anywhere on the red ring to choose where you start. Pick your approach before you launch, because you only get the one.
+You fly the gold leader. They cannot tell you apart from one of their own, so wherever you go, you bend their turning. That is your only tool here.
 
 [Line:4]
-Then you fly it yourself. Forward and back drive, left and right turn, and you can remap all of that in settings.
+First job is the merge. The two groups count as one swarm when every agent is linked to the rest through its neighbours. Watch the two center markers become one gold marker. Hold them together as one for a single second and you have passed.
 
 [Line:5]
-Being seen is survivable. The first defender that gets you in its cone logs a detection and costs you the clean run, but the run carries on.
+Second job is delivery. Walk that merged mill across the arena until its gold marker sits inside the white ring around the planet.
 
 [Line:6]
-Being touched is not survivable. Any defender that reaches you ends the run then and there.
+Third job is the hard one. Leave. Get well clear and stay clear for a few seconds while the swarm holds together and keeps milling without you.
 
 [Line:7]
-You have three minutes on the clock in the top right. Reach the planet and you win, and reaching it having never been seen is the run worth flying for.
+The panel on the right keeps score. The loss is how far the swarm center sits from the planet plus how far the mill is from a clean circle. Lower is better, and I keep the lowest you reach.
 
 [Line:8]
-Every attempt is recorded and rendered on the website with your times, detected or not. Good luck, Commander.
+Five minutes on the clock. The merge is the pass, but the full delivery is the run worth flying. Be patient with them, Commander. Pull too hard and the ring comes apart in your hands.

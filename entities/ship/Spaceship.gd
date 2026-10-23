@@ -44,6 +44,8 @@ var planet_collisions: bool = true
 var collisions_enabled: bool = true
 var is_evader: bool = false
 var sensor_visible: bool = true # false hides this ship from every other ship's sensors
+var world_id: int = 0            # ships only sense and push ships that share it
+var show_cone: bool = true
 
 var forward_input: float = 0.0 # throttle in -1..1, negative drives backward
 var turn_input: float = 0.0    # turn in -1..1, scaled by turn_rate
@@ -214,7 +216,7 @@ func _resolve_obstacles():
 
 func _resolve_ship_collisions():
 	for other in get_tree().get_nodes_in_group("ships"):
-		if other == self or not is_instance_valid(other) or other.is_evader:
+		if other == self or not is_instance_valid(other) or other.is_evader or other.world_id != world_id:
 			continue
 		var min_dist: float = hull_radius + other.hull_radius
 		var offset: Vector2 = global_position - other.global_position
@@ -438,14 +440,14 @@ func take_damage(amount: float):
 func _live_enemies() -> Array:
 	var out: Array = []
 	for s in _visible:
-		if is_instance_valid(s) and s.hp > 0.0 and s.sensor_visible and s.team != team:
+		if is_instance_valid(s) and s.hp > 0.0 and s.sensor_visible and s.world_id == world_id and s.team != team:
 			out.append(s)
 	return out
 
 func _live_allies() -> Array:
 	var out: Array = []
 	for s in _visible:
-		if is_instance_valid(s) and s.hp > 0.0 and s.sensor_visible and s.team == team:
+		if is_instance_valid(s) and s.hp > 0.0 and s.sensor_visible and s.world_id == world_id and s.team == team:
 			out.append(s)
 	return out
 
@@ -513,7 +515,7 @@ func _team_color() -> Color:
 
 func _draw():
 	var col: Color = _team_color()
-	if _cone_polygon.size() >= 3 and not is_evader:
+	if show_cone and _cone_polygon.size() >= 3 and not is_evader:
 		var fill := Color(col.r, col.g, col.b, 0.05)
 		draw_polygon(_cone_polygon, PackedColorArray([fill]))
 	if show_health and hp < max_hp:

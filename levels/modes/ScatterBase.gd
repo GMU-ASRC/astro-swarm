@@ -2,6 +2,7 @@ extends "res://levels/modes/FARPBase.gd"
 
 const SPACING_FILL := 0.8
 const DEFENDER_COUNT_OPTIONS := [5, 25, 50, 100, 250, 500]
+const ATTRITION_DEFENDER_COUNT_OPTIONS := [5, 10, 15, 20]
 
 var _rng := RandomNumberGenerator.new()
 var _defender_count: int = RING_COUNT

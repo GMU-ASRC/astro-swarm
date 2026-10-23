@@ -30,7 +30,8 @@ const ORBIT_MAX := 255.0
 const GAME_MODES := [
 	{"id": "levels",      "label": "Levels",       "scene": "res://levels/menus/LevelsScene.tscn"},
 	{"id": "survive",     "label": "Survive",      "scene": "res://levels/modes/SurviveScene.tscn"},
-	{"id": "demo",        "label": "Demo",         "scene": "res://levels/modes/demo/DemoScene.tscn"},
+	{"id": "sur2",        "label": "Sur2",         "scene": "res://levels/modes/sur2/Sur2Scene.tscn", "dev_only": true},
+	{"id": "demo",        "label": "Demo",         "scene": "res://levels/modes/demo/DemoScene.tscn", "dev_only": true},
 ]
 
 const MARKET_PANEL := preload("res://levels/components/MarketPanel.gd")
@@ -49,6 +50,7 @@ var _planet: Control
 var _moons: Array = []
 var _orbit_time: float = 0.0
 var _mode_index: int = 0
+var _game_modes: Array = []
 var _tutorial: CanvasLayer
 
 func _ready():
@@ -62,6 +64,7 @@ func _ready():
 	_make_username_open_astro_id()
 	shop_btn.disabled = true
 	game_mode_btn.pressed.connect(_on_game_mode_btn)
+	_game_modes = _available_game_modes()
 	_setup_mode_popup()
 	_init_game_mode()
 
@@ -259,19 +262,27 @@ func _init_game_mode():
 	# Migrate old "domination"/"timed_local" saves to "levels"
 	if PlayerData.game_mode == "domination" or PlayerData.game_mode == "timed_local":
 		PlayerData.set_game_mode("levels")
-	for i in GAME_MODES.size():
-		if GAME_MODES[i].id == PlayerData.game_mode:
+	for i in _game_modes.size():
+		if _game_modes[i].id == PlayerData.game_mode:
 			_mode_index = i
 			break
-	game_mode_btn.text = GAME_MODES[_mode_index].label
+	game_mode_btn.text = _game_modes[_mode_index].label
 	_refresh_mode_ui()
 
 var _mode_popup: PopupMenu
 
+func _available_game_modes() -> Array:
+	var modes: Array = []
+	for mode in GAME_MODES:
+		if mode.get("dev_only", false) and not PlayerSettings.is_dev_mode():
+			continue
+		modes.append(mode)
+	return modes
+
 func _setup_mode_popup():
 	_mode_popup = PopupMenu.new()
-	for i in GAME_MODES.size():
-		_mode_popup.add_item(GAME_MODES[i].label, i)
+	for i in _game_modes.size():
+		_mode_popup.add_item(_game_modes[i].label, i)
 	add_child(_mode_popup)
 	_mode_popup.id_pressed.connect(_on_mode_selected)
 
@@ -285,8 +296,8 @@ func _on_game_mode_btn():
 
 func _on_mode_selected(id: int):
 	_mode_index = id
-	PlayerData.set_game_mode(GAME_MODES[id].id)
-	game_mode_btn.text = GAME_MODES[id].label
+	PlayerData.set_game_mode(_game_modes[id].id)
+	game_mode_btn.text = _game_modes[id].label
 	_refresh_mode_ui()
 
 func _refresh_mode_ui():
@@ -304,4 +315,4 @@ func _on_shop():
 		print("Shop coming soon")
 
 func _on_find_match():
-	get_tree().change_scene_to_file(GAME_MODES[_mode_index].scene)
+	get_tree().change_scene_to_file(_game_modes[_mode_index].scene)

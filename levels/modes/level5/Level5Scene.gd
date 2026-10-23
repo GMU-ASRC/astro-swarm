@@ -11,6 +11,9 @@ func _level_id() -> String:
 func _level_title() -> String:
 	return "LEVEL 5 - BREAK THE SIEGE"
 
+func _defender_options() -> Array:
+	return ATTRITION_DEFENDER_COUNT_OPTIONS
+
 func _launch_label() -> String:
 	return "LAUNCH SIEGE (S) >"
 
@@ -32,7 +35,7 @@ func _update_count():
 	if _count_label == null:
 		return
 	if _phase == Phase.SETUP:
-		_count_label.text = "DEFENDERS %d / %d" % [_defender_ships.size(), RING_COUNT]
+		_count_label.text = "DEFENDERS %d / %d" % [_defender_ships.size(), _scatter_count()]
 	else:
 		_count_label.text = "DEFENDERS %d   INBOUND %d   DOWN %d   THROUGH %d" % [
 			_live_defenders(), _evaders.size(), _destroyed, _breached

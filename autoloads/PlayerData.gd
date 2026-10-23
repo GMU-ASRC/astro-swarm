@@ -4,6 +4,7 @@ const SIM := preload("res://autoloads/SimulationManager.gd")
 const ACHIEVEMENTS := preload("res://achievements/Achievements.gd")
 const SHIP_UPGRADES := preload("res://progression/ShipUpgrades.gd")
 const SHIP_ADDONS := preload("res://progression/ShipAddons.gd")
+const LEVEL_ID_MIGRATION := preload("res://progression/LevelIdMigration.gd")
 
 const SAVE_PATH := "user://player.cfg"
 const MAX_MOONS := 5
@@ -314,6 +315,7 @@ func _save():
 	cfg.set_value("farp", "placements", farp_placements)
 	cfg.set_value("farp", "layouts", farp_layouts)
 	cfg.set_value("progress", "completed_levels", completed_levels)
+	cfg.set_value("progress", "level_ids_version", LEVEL_ID_MIGRATION.CURRENT_VERSION)
 	cfg.set_value("progress", "achievements", achievements)
 	cfg.set_value("progress", "revealed_moons", revealed_moons)
 	cfg.save(SAVE_PATH)
@@ -339,5 +341,8 @@ func _load():
 	farp_placements = cfg.get_value("farp", "placements", [])
 	farp_layouts = cfg.get_value("farp", "layouts", {})
 	completed_levels = cfg.get_value("progress", "completed_levels", [])
+	if int(cfg.get_value("progress", "level_ids_version", 1)) < LEVEL_ID_MIGRATION.CURRENT_VERSION:
+		completed_levels = LEVEL_ID_MIGRATION.migrate_completed_levels(completed_levels)
+		farp_layouts = LEVEL_ID_MIGRATION.migrate_layouts(farp_layouts)
 	achievements = cfg.get_value("progress", "achievements", [])
 	revealed_moons = cfg.get_value("progress", "revealed_moons", [])

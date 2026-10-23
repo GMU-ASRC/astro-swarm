@@ -12,6 +12,9 @@ var edge_top: Texture2D
 var edge_bottom: Texture2D
 var edge_left: Texture2D
 var edge_right: Texture2D
+var gate_left: Texture2D
+var gate_right: Texture2D
+var gate_band: float = 48.0 # pixels, width of a jump gate strip
 
 func _ready():
 	queue_redraw()
@@ -35,6 +38,10 @@ func _draw_edges():
 	draw_texture_rect(edge_bottom, Rect2(0.0, arena.y - t, arena.x, t), true)
 	draw_texture_rect(edge_left, Rect2(0.0, 0.0, t, arena.y), true)
 	draw_texture_rect(edge_right, Rect2(arena.x - t, 0.0, t, arena.y), true)
+	if gate_left != null:
+		draw_texture_rect(gate_left, Rect2(0.0, 0.0, gate_band, arena.y), true)
+	if gate_right != null:
+		draw_texture_rect(gate_right, Rect2(arena.x - gate_band, 0.0, gate_band, arena.y), true)
 
 func _draw_dashed_circle(center: Vector2, radius: float, color: Color, width: float):
 	var segments := 60

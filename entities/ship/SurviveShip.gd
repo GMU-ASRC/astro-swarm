@@ -15,6 +15,7 @@ const FREEZE_PATH := "res://assets/sprites/effects/freeze.png"
 
 const SPRITE_WIDTH := 46.0        # pixels, width the freeze effect is sized against
 const HERD_MEMORY_SECONDS := 5.0  # seconds a ship keeps following its herder after losing sight
+const EVADER_MIN_THROTTLE := 0.6  # share of full speed a programmed evader always keeps
 
 const PROGRAMS := preload("res://entities/ship/SwarmPrograms.gd")
 
@@ -34,6 +35,9 @@ var pilot_turn: float = 0.0               # turn in -1..1, scaled by pilot_turn_
 var pilot_speed: float = 200.0            # pixels/second (5.0 m/s)
 var pilot_turn_rate: float = 3.0          # radians/second
 var freeze_remaining: float = 0.0         # seconds left frozen
+var herd_programs: Array = []             # per player slot, an empty entry keeps the stock herding program
+var herd_colors: Array = []               # per player slot, the color a ship herded by that player takes
+var evader_homing: float = 0.0            # radians/second a programmed evader turns toward its planet
 
 var _sight_timer: float = 0.0             # seconds of herd memory left before the ship goes wild again
 var _freeze_sprite: Sprite2D
@@ -63,7 +67,7 @@ func setup_herded(slot: int):
 	role = Role.HERDED
 	herder_slot = slot
 	_sight_timer = HERD_MEMORY_SECONDS
-	_apply_program(HERDED_PROGRAM)
+	_apply_program(_herd_program(slot))
 	_refresh_sprite()
 	if was_wild:
 		herded.emit(self, slot)
@@ -84,6 +88,18 @@ func setup_evader(planet_center: Vector2, planet_radius: float):
 	rotation = (planet_center - global_position).angle()
 	_refresh_sprite()
 
+# An evader that runs a player's program on its way in, with a steady pull
+# toward its planet so the program decides how it gets there, not whether.
+func setup_program_evader(planet_center: Vector2, planet_radius: float, blocks: Array, homing: float):
+	setup_evader(planet_center, planet_radius)
+	evader_homing = homing
+	_apply_program(blocks)
+
+func _herd_program(slot: int) -> Array:
+	if slot >= 0 and slot < herd_programs.size() and not herd_programs[slot].is_empty():
+		return herd_programs[slot]
+	return HERDED_PROGRAM
+
 func _apply_program(blocks: Array):
 	_set_program(blocks)
 	var scripts: Array = SIM.normalize_to_scripts(blocks)
@@ -100,6 +116,8 @@ func _refresh_sprite():
 func _role_color() -> Color:
 	if role == Role.PILOT:
 		return PILOT_COLORS[clampi(pilot_slot, 0, 1)]
+	if role == Role.HERDED and herder_slot >= 0 and herder_slot < herd_colors.size():
+		return herd_colors[herder_slot]
 	return ROLE_COLORS[role]
 
 func _scale_sprite(node: Sprite2D, width: float):
@@ -120,7 +138,10 @@ func _physics_process(delta: float):
 		Role.PILOT:
 			_drive_pilot(delta)
 		Role.EVADER:
-			_drive_evader(delta)
+			if _executor != null:
+				_drive_program_evader(delta)
+			else:
+				_drive_evader(delta)
 		_:
 			_update_herd_state(delta)
 			super(delta)
@@ -136,6 +157,13 @@ func _drive_evader(delta: float):
 	rotation = lerp_angle(rotation, desired, clampf(2.4 * delta, 0.0, 1.0))
 	global_position += Vector2.RIGHT.rotated(rotation) * max_speed * delta
 	queue_redraw()
+
+func _drive_program_evader(delta: float):
+	super._physics_process(delta)
+	var desired: float = (target_planet - global_position).angle()
+	rotation = rotate_toward(rotation, desired, evader_homing * delta)
+	var extra: float = maxf(0.0, EVADER_MIN_THROTTLE - forward_input)
+	global_position += Vector2.RIGHT.rotated(rotation) * max_speed * extra * delta
 
 func _update_herd_state(delta: float):
 	if role == Role.HERDED:

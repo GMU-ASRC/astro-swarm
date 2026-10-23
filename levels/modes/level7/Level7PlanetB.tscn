@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/modes/level7/Level7PlanetB.gd" id="1_b"]
+
+[node name="Level7PlanetB" type="Node2D"]
+script = ExtResource("1_b")

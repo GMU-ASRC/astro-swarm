@@ -15,7 +15,7 @@ Dr. Blob at your service, Commander. That planet in the middle is {planet}, your
 Ten red evaders will come in one after another from random points far out around {planet}, each driving straight at it. Everything you do here is about stopping them.
 
 [Line:3]
-Drag inside the blue ring to drop a defender. The direction you drag is the way it ends up facing, so aim it as you place it. You get up to six, and a right click takes one away again.
+Drag inside the blue ring to drop a defender. The direction you drag is the way it ends up facing, so aim it as you place it. You get up to twenty, and a right click takes one away again.
 
 [Line:4]
 Every defender runs the same program, and you write it in the workspace. Blocks decide how they move, how far they see and how wide they look. Wide eyes spot evaders sooner, long eyes spot them further out, and you cannot have both.

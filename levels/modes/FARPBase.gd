@@ -259,7 +259,7 @@ func _restart_level():
 	pass
 
 func _seen_flag() -> String:
-	return "tutorial_seen_" + _level_id()
+	return PlayerSettings.TUTORIAL_SEEN_PREFIX + _level_id()
 
 func _voice_dir() -> String:
 	return "res://va/levels/" + _level_id()

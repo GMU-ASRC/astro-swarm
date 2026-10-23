@@ -6,13 +6,13 @@ that matches the line number and stays silent for any line with no recording, so
 the lines can be recorded one at a time.
 
 [Line:1]
-Back to waves, Commander, one evader at a time this time, each from a fresh bearing on the red ring. Five scattered defenders, and one rule that changes everything.
+Back to waves, Commander, one evader at a time this time, each from a fresh bearing on the red ring. Pick five, ten, fifteen or twenty scattered defenders, and one rule that changes everything.
 
 [Line:2]
 Here a capture takes both ships. The evader dies and so does the defender that caught it. You are trading bodies now.
 
 [Line:3]
-Five defenders means five kills, and not one more. Two defenders piling onto the same evader is a body wasted and a wave you will not be there for.
+Every defender you field is one kill, and not one more. Two defenders piling onto the same evader is a body wasted and a wave you will not be there for.
 
 [Line:4]
 So keep them apart. When sees ally with a turn is worth far more here than it ever was on the earlier levels.

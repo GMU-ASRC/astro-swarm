@@ -33,7 +33,7 @@ const FARP_SCENES := [
 	"res://levels/modes/level0/Level0Scene.tscn",
 	"res://levels/modes/level1/Level1Scene.tscn",
 	"res://levels/modes/level2/Level2Scene.tscn",
-	"res://levels/modes/level6/Level6Scene.tscn",
+	"res://levels/modes/level9/Level9Scene.tscn",
 ]
 const FARP_DISABLED_BLOCKS := ["set_size"]
 const GENOME_MOON_SCENE := "res://levels/menus/moons/GenomeMoonScene.tscn"

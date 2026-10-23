@@ -226,17 +226,24 @@ func _process(delta: float):
 		Phase.ACTIVE:
 			_elapsed += delta
 			_poll_pilots(delta)
+			_update_extras(delta)
 			_run_waves()
 			_resolve_lasers()
 			_resolve_planet_hits()
 			_sample_apm(delta)
-			if _elapsed >= MATCH_SECONDS:
+			if _elapsed >= _match_seconds():
 				_finish()
 	_update_cameras(delta)
 	_refresh_hud()
 
 func _player_count() -> int:
 	return 2
+
+func _match_seconds() -> float:
+	return MATCH_SECONDS
+
+func _update_extras(_delta: float):
+	pass
 
 func _update_cameras(delta: float):
 	for slot in _player_count():
@@ -349,6 +356,11 @@ func _start_match():
 
 func _build_spawn_queue():
 	_first_target = _rng.randi_range(0, 1)
+	var times: Array = _spawn_times()
+	for i in times.size():
+		_spawn_queue.append({"time": times[i], "slot": (_first_target + i) % 2})
+
+func _spawn_times() -> Array:
 	var times: Array = []
 	var t: float = WAVE_ONE_START
 	while t <= WAVE_ONE_END and times.size() < EVADER_TOTAL:
@@ -360,8 +372,7 @@ func _build_spawn_queue():
 		t += SPAWN_INTERVAL
 	while times.size() < EVADER_TOTAL:
 		times.append(WAVE_TWO_END)
-	for i in times.size():
-		_spawn_queue.append({"time": times[i], "slot": (_first_target + i) % 2})
+	return times
 
 func _run_waves():
 	while _spawn_index < _spawn_queue.size() and _elapsed >= float(_spawn_queue[_spawn_index]["time"]):
@@ -724,7 +735,7 @@ func _match_payload() -> Dictionary:
 		})
 	return {
 		"outcome": _outcome,
-		"duration": int(round(minf(_elapsed, MATCH_SECONDS))),
+		"duration": int(round(minf(_elapsed, _match_seconds()))),
 		"players": players,
 		"apm_bucket_seconds": int(APM_BUCKET_SECONDS),
 		"apm_times": _apm_times,
@@ -988,7 +999,7 @@ func _refresh_hud():
 		_timer_label.text = "%d" % int(ceilf(maxf(0.0, _countdown)))
 		_timer_label.add_theme_color_override("font_color", C_GREENISH)
 	else:
-		var remaining: float = maxf(0.0, MATCH_SECONDS - _elapsed)
+		var remaining: float = maxf(0.0, _match_seconds() - _elapsed)
 		_timer_label.text = "%d:%02d" % [floori(remaining / 60.0), int(remaining) % 60]
 		_timer_label.add_theme_color_override("font_color", C_RED if (_phase == Phase.ACTIVE and remaining <= 30.0) else C_TEXT)
 	_wave_label.text = _wave_text() if _phase == Phase.ACTIVE else ""

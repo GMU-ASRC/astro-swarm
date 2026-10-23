@@ -1,23 +1,15 @@
-extends "res://levels/modes/level8/Level8Deployment.gd"
+extends "res://levels/modes/supply/SupplyAssault.gd"
 
 const BOARD := preload("res://ui/hud/PlanetBoard.gd")
 
-const PLANET_A_SCENE := "res://levels/modes/level8/Level8PlanetA.tscn"
-const PLANET_B_SCENE := "res://levels/modes/level8/Level8PlanetB.tscn"
-
-const HANDOVER_DELAY := 3.0 # seconds the planet A result is held before planet B loads
-
-var _record_accum: float = 0.0
-var _evader_slots: Array = []
-var _commit_btn: Button = null
-var _travelling: bool = false
 var _board: PanelContainer = null
+var _defender_picker: OptionButton = null
 
-func _other_scene() -> String:
-	return PLANET_B_SCENE if _planet_index() == STATE.PLANET_A else PLANET_A_SCENE
+func _line_options() -> Array:
+	return [10, 25]
 
-func _level_id() -> String:
-	return "farp8"
+func _has_attrition() -> bool:
+	return true
 
 func _planet_collisions() -> bool:
 	return _planet_index() == STATE.PLANET_A
@@ -29,7 +21,7 @@ func _star_seed() -> int:
 	return STATE.planet_seed(_planet_index())
 
 func _level_title() -> String:
-	return "LEVEL 8 - PLANET %s" % _planet_letter()
+	return "LEVEL %d - PLANET %s" % [LevelInfo.number(_level_id()), _planet_letter()]
 
 func _launch_label() -> String:
 	return "START DEPLOYMENT (S) >"
@@ -48,10 +40,6 @@ func _timer_text() -> String:
 func _carries_genome_switches() -> bool:
 	return STATE.running
 
-func _on_genome_switched(stage_index: int):
-	super(stage_index)
-	STATE.genome_switch_frames.append(STATE.frames.size())
-
 func _setup_level():
 	_rng.randomize()
 	_launch_btn.text = _launch_label()
@@ -59,11 +47,26 @@ func _setup_level():
 	_commit_btn.pressed.connect(_commit)
 	_commit_btn.visible = false
 	_top_bar.add_child(_commit_btn)
+	if not STATE.running or STATE.level_id != _level_id():
+		_reset_run()
+	_build_defender_picker()
 	_build_board()
-	if not STATE.running:
-		STATE.reset(_scatter_placements())
-	_spawn_garrison()
+	if STATE.stage == STATE.Stage.ALLOCATE:
+		_spawn_garrison()
 	_resume_stage()
+
+func _reset_run():
+	_close_worlds()
+	if not _line_options().has(STATE.defender_total):
+		STATE.defender_total = _line_options()[0]
+	STATE.reset(_level_id(), _planet_count(), [])
+	STATE.capture(STATE.PLANET_A, _scatter_placements())
+
+func _planet_names() -> Array:
+	var names: Array = []
+	for planet in _planet_count():
+		names.append("PLANET %s" % STATE.letter(planet))
+	return names
 
 func _build_board():
 	_board = BOARD.new()
@@ -79,18 +82,50 @@ func _build_board():
 	_board.offset_top = 58
 	_board.offset_right = -16
 	_board.offset_bottom = 58
+	_board.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_hud_root.add_child(_board)
 	_hud_root.move_child(_board, 0)
-	_board.build(["PLANET A", "PLANET B"], STATE.EVADERS_PER_PLANET)
+	_board.build(_planet_names(), STATE.evaders_per_planet())
+
+func _build_defender_picker():
+	_defender_picker = OptionButton.new()
+	_defender_picker.focus_mode = Control.FOCUS_NONE
+	HUD_BUTTONS.apply(_defender_picker, HUD_BUTTONS.Kind.NEUTRAL, 9)
+	for option in _line_options():
+		_defender_picker.add_item("%d DEFENDERS" % option)
+	_defender_picker.select(_line_options().find(STATE.defender_total))
+	_defender_picker.item_selected.connect(_on_defender_total_selected)
+	_top_bar.add_child(_defender_picker)
+	_refresh_defender_picker()
+
+func _can_pick_defenders() -> bool:
+	return _phase == Phase.SETUP and not STATE.deploying and STATE.stage == STATE.Stage.ALLOCATE and _planet_index() == STATE.PLANET_A
+
+func _refresh_defender_picker():
+	if _defender_picker != null:
+		_defender_picker.visible = _can_pick_defenders()
+
+func _on_defender_total_selected(index: int):
+	if not _can_pick_defenders():
+		_defender_picker.select(_line_options().find(STATE.defender_total))
+		return
+	STATE.defender_total = _line_options()[index]
+	_reset_run()
+	_spawn_garrison()
+	_rebuild_board()
+	queue_redraw()
+
+func _rebuild_board():
+	if _board != null:
+		_board.queue_free()
+	_build_board()
+	_refresh_board()
 
 func _refresh_board():
 	if _board == null:
 		return
-	for planet in [STATE.PLANET_A, STATE.PLANET_B]:
+	for planet in _planet_count():
 		var here: bool = planet == _planet_index()
-		if here and _fighting():
-			_board.set_planet(planet, true, _destroyed, _breached, "%d THROUGH" % _breached)
-			continue
 		var result: Dictionary = STATE.results[planet]
 		if not result.is_empty():
 			var through: int = int(result.get("breached", 0))
@@ -98,40 +133,41 @@ func _refresh_board():
 			continue
 		_board.set_planet(planet, here, 0, 0, "%d DEFENDERS" % _count_at(planet))
 
-func _fighting() -> bool:
-	return STATE.stage != STATE.Stage.ALLOCATE and _phase != Phase.SETUP
-
 func _breach_evader(evader: Node2D):
 	super(evader)
+	_flash_planet(_planet_index())
+
+func _flash_planet(planet: int):
 	if _board != null:
-		_board.flash(_planet_index())
+		_board.flash(planet)
 
 func _resume_stage():
 	if STATE.stage == STATE.Stage.ALLOCATE:
 		if STATE.deploying:
 			_begin_allocation()
 		return
-	if STATE.stage == STATE.Stage.ASSAULT_A and _planet_index() == STATE.PLANET_A:
-		_start_assault()
-		return
-	if STATE.stage == STATE.Stage.ASSAULT_B and _planet_index() == STATE.PLANET_B:
+	if STATE.stage == STATE.Stage.ASSAULT:
 		_start_assault()
 
 func _restart_level():
 	_despawn_shuttle()
 	STATE.running = false
+	_close_worlds()
 	if _planet_index() != STATE.PLANET_A:
-		_change_scene(PLANET_A_SCENE)
+		_change_scene(_scene_for(STATE.PLANET_A))
 		return
-	STATE.reset(_scatter_placements())
+	_reset_run()
 	_spawn_garrison()
+	_rebuild_board()
 	_launch_btn.text = _launch_label()
 	_phase_label.text = _level_title()
 	if _commit_btn != null:
 		_commit_btn.visible = false
+	_refresh_defender_picker()
 
 func _exit_level(scene_path: String):
 	STATE.running = false
+	_close_worlds()
 	super(scene_path)
 
 # Going to the workspace reloads this scene, so the live line is written back
@@ -139,11 +175,14 @@ func _exit_level(scene_path: String):
 func _open_workspace():
 	if STATE.stage == STATE.Stage.ALLOCATE:
 		_hand_scene_over()
+	elif STATE.stage == STATE.Stage.ASSAULT:
+		_leave_planet()
+		_hold_worlds(true)
 	super()
 
 func _scatter_placements() -> Array:
 	var out: Array = []
-	for _index in STATE.TOTAL_DEFENDERS:
+	for _index in STATE.defender_total:
 		var pos: Vector2 = _garrison_point()
 		for _attempt in SCATTER_ATTEMPTS:
 			if _is_clear_of(pos, out):
@@ -178,11 +217,9 @@ func _begin_allocation():
 	_elapsed = STATE.ALLOCATE_SECONDS - STATE.allocate_remaining
 	_launch_shuttle()
 	_commit_btn.visible = true
+	_refresh_defender_picker()
 	_phase_label.text = "DEPLOYMENT WINDOW - PLANET %s" % _planet_letter()
 	_update_count()
-
-func _cross_to_other_planet():
-	_change_scene(_other_scene())
 
 func _update_level(delta: float):
 	if _travelling:
@@ -191,67 +228,7 @@ func _update_level(delta: float):
 	if STATE.stage == STATE.Stage.ALLOCATE:
 		_update_allocation(delta)
 		return
-	_record(delta)
-	_update_countdown_color()
-
-func _commit():
-	if STATE.stage != STATE.Stage.ALLOCATE:
-		return
-	_hand_scene_over()
-	STATE.stage = STATE.Stage.ASSAULT_A
-	_commit_btn.visible = false
-	if _planet_index() != STATE.PLANET_A:
-		_change_scene(PLANET_A_SCENE)
-		return
-	_start_assault()
-
-func _start_assault():
-	if not is_instance_valid(_shuttle):
-		_launch_shuttle()
-	if _commit_btn != null:
-		_commit_btn.visible = false
-	_start_active()
-	_reset_counters()
-	_evader_slots.clear()
-	_record_accum = 0.0
-	_spawn_edge_wave(STATE.EVADERS_PER_PLANET)
-	_evader_slots = _evaders.duplicate()
-	STATE.frames.append(_snapshot())
-	_phase_label.text = "PLANET %s UNDER ATTACK" % _planet_letter()
-	_update_count()
-
-func _track_events():
-	if _travelling or _phase != Phase.ACTIVE or STATE.stage == STATE.Stage.ALLOCATE:
-		return
-	_resolve_evaders()
-	if _evaders.is_empty():
-		_finish("cleared")
-
-func _record(delta: float):
-	_record_accum += delta
-	var step: float = 1.0 / STATE.RECORD_FPS
-	while _record_accum >= step:
-		_record_accum -= step
-		STATE.frames.append(_snapshot())
-
-func _snapshot() -> Array:
-	var frame: Array = []
-	for index in STATE.TOTAL_DEFENDERS:
-		_append_slot(frame, _defender_ships[index] if index < _defender_ships.size() else null)
-	for index in STATE.EVADERS_PER_PLANET:
-		_append_slot(frame, _evader_slots[index] if index < _evader_slots.size() else null)
-	_append_slot(frame, _shuttle)
-	return frame
-
-func _append_slot(frame: Array, ship):
-	if ship != null and is_instance_valid(ship):
-		frame.append(int(ship.global_position.x))
-		frame.append(int(ship.global_position.y))
-		frame.append(int(rad_to_deg(ship.rotation)))
-		return
-	frame.append(-1)
-	frame.append(-1)
-	frame.append(0)
+	_update_assault(delta)
 
 func _finish(reason: String):
 	if _travelling:
@@ -259,43 +236,18 @@ func _finish(reason: String):
 	if STATE.stage == STATE.Stage.ALLOCATE:
 		_commit()
 		return
+	_settle_transits()
+	_store_tally()
 	STATE.frames.append(_snapshot())
-	STATE.record_result(_planet_index(), {
-		"defenders": _defender_ships.size(),
-		"destroyed": _destroyed,
-		"breached": _breached,
-		"detect": _detect_time,
-		"goal": _goal_time,
-		"reason": reason,
-	})
-	if _planet_index() == STATE.PLANET_A:
-		STATE.stage = STATE.Stage.ASSAULT_B
-		_hand_over()
-		return
 	STATE.stage = STATE.Stage.DONE
+	var worlds = _worlds()
+	if worlds != null:
+		worlds.freeze()
 	super(reason)
-
-func _hand_over():
-	_phase = Phase.DONE
-	_stop_ships()
-	var held: bool = _breached == 0
-	_phase_label.text = "PLANET A HELD" if held else "PLANET A BREACHED"
-	_phase_label.add_theme_color_override("font_color", C_GREEN if held else C_RED)
-	_update_event_label()
-	await get_tree().create_timer(HANDOVER_DELAY).timeout
-	if is_inside_tree():
-		_change_scene(PLANET_B_SCENE)
-
-func _stop_ships():
-	for ship in _defender_ships:
-		if is_instance_valid(ship):
-			ship.set_physics_process(false)
-	for evader in _evaders:
-		if is_instance_valid(evader):
-			evader.set_physics_process(false)
 
 func _clear_ships():
 	_evader_slots.clear()
+	_defender_slots.clear()
 	super()
 
 func _change_scene(path: String):
@@ -303,27 +255,34 @@ func _change_scene(path: String):
 		_genome_switcher.carry()
 	if STATE.stage == STATE.Stage.ALLOCATE:
 		_hand_scene_over()
+	elif STATE.stage == STATE.Stage.ASSAULT and STATE.running:
+		_leave_planet()
 	STATE.shuttle_parked = false
 	_travelling = true
 	if is_instance_valid(_music):
 		_music.stop()
 	get_tree().change_scene_to_file(path)
 
+func _planet_counts_text() -> String:
+	var parts: Array = []
+	for planet in _planet_count():
+		parts.append("%s %d" % [STATE.letter(planet), _count_at(planet)])
+	return "   ".join(PackedStringArray(parts))
+
 func _update_count():
 	_refresh_board()
 	if _count_label == null:
 		return
 	if STATE.stage == STATE.Stage.ALLOCATE and _phase == Phase.ACTIVE:
-		_count_label.text = "PLANET %s   A %d   B %d   INBOUND %d   SHUTTLE %s" % [
-			_planet_letter(), _count_at(STATE.PLANET_A), _count_at(STATE.PLANET_B),
-			_transits.size(), "DARK" if STATE.cloaked else "LIT"]
+		_count_label.text = "PLANET %s   %s   INBOUND %d   SHUTTLE %s" % [
+			_planet_letter(), _planet_counts_text(), _transits.size() + STATE.crossings_to(_planet_index()), "DARK" if STATE.cloaked else "LIT"]
 		return
 	if _phase == Phase.SETUP:
 		_count_label.text = "PLANET %s   DEFENDERS %d / %d" % [
-			_planet_letter(), _defender_ships.size(), STATE.TOTAL_DEFENDERS]
+			_planet_letter(), _defender_ships.size(), STATE.defender_total]
 		return
-	_count_label.text = "DEFENDERS %d   INBOUND %d   DOWN %d   THROUGH %d" % [
-		_live_defenders(), _evaders.size(), _destroyed, _breached]
+	_count_label.text = "PLANET %s   %s   EVADERS %d   DOWN %d   THROUGH %d" % [
+		_planet_letter(), _planet_counts_text(), _evaders.size(), _destroyed, _breached]
 
 func _update_event_label():
 	if _event_label == null:
@@ -332,29 +291,33 @@ func _update_event_label():
 		_event_label.text = "E CALLS ONE ACROSS   Q GOES %s   CROSSINGS %d" % [
 			"LIT" if STATE.cloaked else "DARK", STATE.trips]
 		return
-	_event_label.text = "PLANET %s   DOWN %d/%d   THROUGH %d   CROSSINGS %d" % [
-		_planet_letter(), _destroyed, STATE.EVADERS_PER_PLANET, _breached, STATE.trips]
+	_event_label.text = "PLANET %s   DOWN %d/%d   THROUGH %d   STILL TO COME %d   E CALLS ONE ACROSS   CROSSINGS %d" % [
+		_planet_letter(), _destroyed, STATE.evaders_per_planet(), _breached, STATE.attack_queue.size(), STATE.trips]
 
 func _event_summary() -> String:
-	return "Planet A: %s\nPlanet B: %s\nEvaders stopped: %d of %d\nCrossings flown: %d" % [
-		_result_line(STATE.PLANET_A), _result_line(STATE.PLANET_B),
-		STATE.destroyed_total(), STATE.evaders_total(), STATE.trips]
+	var lines: Array = []
+	for planet in _planet_count():
+		lines.append("Planet %s: %s" % [STATE.letter(planet), _result_line(planet)])
+	lines.append("Evaders stopped: %d of %d" % [STATE.destroyed_total(), STATE.evaders_total()])
+	lines.append("Crossings flown: %d" % STATE.trips)
+	return "\n".join(PackedStringArray(lines))
 
 func _result_line(planet: int) -> String:
 	var result: Dictionary = STATE.results[planet]
 	if result.is_empty():
-		return "not fought"
-	return "%d defenders, %d stopped, %d through" % [
-		int(result.get("defenders", 0)), int(result.get("destroyed", 0)), int(result.get("breached", 0))]
+		return "not attacked"
+	return "%d defenders, %d stopped, %d through, %d lost" % [
+		int(result.get("defenders", 0)), int(result.get("destroyed", 0)), int(result.get("breached", 0)), int(result.get("lost", 0))]
 
 func _show_outcome(_reason: String):
-	var held: bool = STATE.both_held()
-	var title: String = "BOTH PLANETS HELD" if held else "LINE BROKEN"
+	var held: bool = STATE.all_held()
+	var every: String = "BOTH" if _planet_count() == 2 else "ALL"
+	var title: String = "%s PLANETS HELD" % every if held else "LINE BROKEN"
 	var headline: String
 	if held:
-		headline = "Every evader was stopped on both planets. The split worked."
+		headline = "Every evader was stopped on %s planets. The split worked." % every.to_lower()
 	elif STATE.breached_total() >= STATE.evaders_total():
-		headline = "Both planets were overrun. The defenders never reached the fights that needed them."
+		headline = "Every planet was overrun. The defenders never reached the fights that needed them."
 	else:
 		headline = "%d of %d evaders reached a planet." % [STATE.breached_total(), STATE.evaders_total()]
 	_phase_label.text = title
@@ -362,7 +325,7 @@ func _show_outcome(_reason: String):
 	_show_result(held, title, headline)
 
 func _outcome() -> String:
-	if STATE.both_held():
+	if STATE.all_held():
 		return "win"
 	if STATE.breached_total() > 0:
 		return "lose"
@@ -370,7 +333,7 @@ func _outcome() -> String:
 
 func _combined_placements() -> Array:
 	var out: Array = []
-	for planet in [STATE.PLANET_A, STATE.PLANET_B]:
+	for planet in _planet_count():
 		for placement in STATE.garrison(planet):
 			out.append({"x": placement.pos.x, "y": placement.pos.y, "rot": placement.rot})
 	return out
@@ -383,24 +346,29 @@ func _defender_value(property: String, fallback: float) -> float:
 
 func _first_time(key: String) -> float:
 	var best: float = -1.0
-	for planet in [STATE.PLANET_A, STATE.PLANET_B]:
-		var value: float = float(STATE.results[planet].get(key, -1.0))
+	for result in STATE.results:
+		var value: float = float(result.get(key, -1.0))
 		if value >= 0.0 and (best < 0.0 or value < best):
 			best = value
 	return best
 
 func _run_stats() -> Dictionary:
-	return {
-		"defenders_a": float(STATE.garrison(STATE.PLANET_A).size()),
-		"defenders_b": float(STATE.garrison(STATE.PLANET_B).size()),
-		"destroyed_a": float(STATE.results[STATE.PLANET_A].get("destroyed", 0)),
-		"destroyed_b": float(STATE.results[STATE.PLANET_B].get("destroyed", 0)),
-		"breached_a": float(STATE.results[STATE.PLANET_A].get("breached", 0)),
-		"breached_b": float(STATE.results[STATE.PLANET_B].get("breached", 0)),
+	var stats := {
 		"delivered": float(STATE.delivered),
 		"trips": float(STATE.trips),
 		"hold_rate": snappedf(STATE.hold_rate(), 0.01),
+		"defenders_total": float(STATE.defender_total),
+		"evaders_per_planet": float(STATE.evaders_per_planet()),
+		"planets": float(_planet_count()),
 	}
+	for planet in _planet_count():
+		var suffix: String = STATE.letter(planet).to_lower()
+		var result: Dictionary = STATE.results[planet]
+		stats["defenders_" + suffix] = float(STATE.garrison(planet).size())
+		stats["destroyed_" + suffix] = float(result.get("destroyed", 0))
+		stats["breached_" + suffix] = float(result.get("breached", 0))
+		stats["lost_" + suffix] = float(result.get("lost", 0))
+	return stats
 
 func _submit_entry():
 	if _submitted or STATE.frames.is_empty():
@@ -414,7 +382,7 @@ func _submit_entry():
 		"capture_time": -1.0,
 		"goal_time": snappedf(_first_time("goal"), 0.01),
 		"fps": int(STATE.RECORD_FPS),
-		"defenders": STATE.TOTAL_DEFENDERS,
+		"defenders": STATE.defender_total,
 		"view": int(_defender_value("view_distance", 200.0)),
 		"fov": int(_defender_value("fov_degrees", 60.0)),
 		"planet": [int(_planet.x), int(_planet.y), int(PLANET_RADIUS)],
@@ -430,8 +398,5 @@ func _launch_algorithm() -> Array:
 	return schedule[0]["algorithm"] if not schedule.is_empty() else PlayerData.get_ship_algorithm()
 
 func _draw_level():
-	if STATE.stage == STATE.Stage.ALLOCATE:
+	if STATE.stage != STATE.Stage.DONE:
 		_draw_allocation()
-		return
-	if _phase == Phase.ACTIVE:
-		_draw_spawn_band()

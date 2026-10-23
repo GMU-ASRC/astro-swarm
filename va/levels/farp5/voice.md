@@ -15,10 +15,10 @@ No waves today, Commander. They are done trickling in one at a time. Five evader
 They do not come off the ring either. They come off the edges of the arena, spread right around it, so the ones on the long sides arrive well after the ones above and below.
 
 [Line:3]
-Your five defenders are scattered for you, same as always, and they run whatever you write in the workspace.
+Pick five, ten, fifteen or twenty defenders. They are scattered for you, same as always, and they run whatever you write in the workspace.
 
 [Line:4]
-Attrition is still on. A capture takes both ships, so five defenders against five evaders only works if every single trade is a clean one.
+Attrition is still on. A capture takes both ships, so a small line has to make every single trade a clean one, and a big line has to keep from wasting bodies on the same evader.
 
 [Line:5]
 Chasing far out is how you lose this. An evader you miss on the way out is behind your line, and the body you spent chasing is not coming back.

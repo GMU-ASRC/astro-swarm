@@ -25,6 +25,8 @@ const TEXT_SIZES := [
 const DEFAULT_TEXT_SIZE_IDX := 1
 
 const FONT_SCALER := preload("res://ui/FontScaler.gd")
+const LEVEL_ID_MIGRATION := preload("res://progression/LevelIdMigration.gd")
+const TUTORIAL_SEEN_PREFIX := "tutorial_seen_"
 
 var _cfg: ConfigFile = ConfigFile.new()
 var _loaded: bool = false
@@ -34,9 +36,17 @@ func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_cfg.load(SETTINGS_PATH)
 	_loaded = true
+	_migrate_level_ids()
 	_font_scaler = FONT_SCALER.new()
 	add_child(_font_scaler)
 	_apply_all()
+
+func _migrate_level_ids():
+	if int(_cfg.get_value("progress", "level_ids_version", 1)) >= LEVEL_ID_MIGRATION.CURRENT_VERSION:
+		return
+	LEVEL_ID_MIGRATION.migrate_tutorial_flags(_cfg, TUTORIAL_SEEN_PREFIX)
+	_cfg.set_value("progress", "level_ids_version", LEVEL_ID_MIGRATION.CURRENT_VERSION)
+	_save()
 
 func _apply_all():
 	var mode_idx: int = _cfg.get_value("display", "window_mode", 0)

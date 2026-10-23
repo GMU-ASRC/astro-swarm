@@ -149,9 +149,10 @@ static func _make_slider(block, spec: Dictionary) -> HBoxContainer:
 	_style_line_edit(value_input)
 	var suffix_label := _make_label(suffix)
 	suffix_label.add_theme_color_override("font_color", TEXT_COLOR)
-	slider.value = float(block.block_params.get(key, spec.get("default", 0.0)))
-	block.block_params[key] = slider.value
-	value_input.text = _format_value(slider.value)
+	var stored_value: float = maxf(0.0, float(block.block_params.get(key, spec.get("default", 0.0))))
+	slider.value = stored_value
+	block.block_params[key] = stored_value if stored_value < slider.min_value else slider.value
+	value_input.text = _format_value(float(block.block_params[key]))
 	slider.value_changed.connect(func(v):
 		var stepped_value: float = _step_slider_value(v, slider.min_value, slider.max_value, slider_step)
 		slider.set_value_no_signal(stepped_value)
@@ -162,7 +163,7 @@ static func _make_slider(block, spec: Dictionary) -> HBoxContainer:
 	var apply_typed_value := func():
 		var typed_text: String = value_input.text.strip_edges()
 		if typed_text.is_valid_float():
-			var typed_value: float = snappedf(clampf(typed_text.to_float(), slider.min_value, slider.max_value), FINE_STEP)
+			var typed_value: float = snappedf(clampf(typed_text.to_float(), 0.0, slider.max_value), FINE_STEP)
 			if typed_value != float(block.block_params[key]):
 				block.block_params[key] = typed_value
 				slider.set_value_no_signal(typed_value)
