@@ -88,7 +88,7 @@ const BLOCK_DEFS := {
 	"set_speed":     {"category": "config",    "label": "Set speed to",        "input": {"min": 0.5,  "max": 10.0, "default": 3.75, "step": 0.05, "slider_step": 0.1, "suffix": " m/s"}},
 	"set_turn":      {"category": "config",    "label": "Set turn rate to",    "input": {"min": 15.0, "max": 360.0, "default": 120.0, "step": 5.0, "suffix": "°/s"}},
 	"set_view":      {"category": "config",    "label": "Set vision range to", "input": {"min": 0.5,  "max": 12.5, "default": 3.75, "step": 0.1,  "slider_step": 0.1, "suffix": " m"}},
-	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 20.0, "max": 180.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
+	"set_fov":       {"category": "config",    "label": "Set FOV to",          "input": {"min": 1.0, "max": 180.0,"default": 90.0, "step": 1.0,  "suffix": "°"}},
 	"set_size":      {"category": "config",    "label": "Set size to",         "input": {"min": 2.0,  "max": 16.0, "default": 6.0,  "step": 0.5,  "suffix": " px"}},
 
 	"when_start":           {"category": "condition", "label": "On start",             "input": null},
