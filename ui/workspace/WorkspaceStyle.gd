@@ -48,7 +48,7 @@ static func apply(root: Control, colors: Dictionary):
 	_color_label(root.get_node("Body/Left/LeftVBox/PaletteTitle"), colors.title)
 	_color_label(root.get_node("Body/Left/LeftVBox/PaletteHint"), colors.dim)
 	root.get_node("Body/Left/LeftVBox/PaletteScroll/PaletteMargin/PaletteList").add_theme_constant_override("separation", 10)
-	_style_panel(root.get_node("Body/Right"), _box(colors.background, colors.background, [0, 0, 0, 0], [16, 14, 16, 16]))
+	_style_panel(root.get_node("Body/Right"), _box(colors.background, colors.background, [0, 0, 0, 0], [0, 0, 0, 0]))
 	_style_panel(root.get_node("Body/Right/RightVBox/HeaderBar"), _box(colors.header, colors.bar_edge, [1, 1, 1, 1], [12, 8, 12, 8]))
 	_color_label(root.get_node("Body/Right/RightVBox/HeaderBar/Header/HintLabel"), colors.dim)
 	var scroll: ScrollContainer = root.get_node("Body/Right/RightVBox/Scroll")
