@@ -121,11 +121,6 @@ layout_mode = 2
 focus_mode = 0
 text = "My Entries"
 
-[node name="ShopButton" type="Button" parent="HUD/Navbar"]
-layout_mode = 2
-focus_mode = 0
-text = "Shop"
-
 [node name="Spacer" type="Control" parent="HUD/Navbar"]
 custom_minimum_size = Vector2(16, 0)
 layout_mode = 2

@@ -21,7 +21,6 @@ const ORBIT_MAX := 255.0
 @onready var game_mode_btn: Button = $GameModeButton
 @onready var moons_btn: Button = $HUD/Navbar/MoonsButton
 @onready var entries_btn: Button = $HUD/Navbar/EntriesButton
-@onready var shop_btn: Button = $HUD/Navbar/ShopButton
 @onready var modal: Control = $UsernameModal
 @onready var name_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/NameEdit
 @onready var planet_edit: LineEdit = $UsernameModal/Panel/Margin/VBox/PlanetEdit
@@ -34,7 +33,6 @@ const GAME_MODES := [
 	{"id": "demo",        "label": "Demo",         "scene": "res://levels/modes/demo/DemoScene.tscn", "dev_only": true},
 ]
 
-const MARKET_PANEL := preload("res://levels/components/MarketPanel.gd")
 
 const C_COIN := Color(1.0, 0.88, 0.40, 1.0)
 const USERNAME_HOVER_COLOR := Color(0.451, 0.616, 1.0, 1.0)
@@ -62,7 +60,6 @@ func _ready():
 	moons_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/moons/MoonsScene.tscn"))
 	entries_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://levels/menus/PlayerEntriesScene.tscn"))
 	_make_username_open_astro_id()
-	shop_btn.disabled = true
 	game_mode_btn.pressed.connect(_on_game_mode_btn)
 	_game_modes = _available_game_modes()
 	_setup_mode_popup()
@@ -301,18 +298,8 @@ func _on_mode_selected(id: int):
 	_refresh_mode_ui()
 
 func _refresh_mode_ui():
-	shop_btn.text = "Shop"
 	coin_label.text = str(PlayerData.coins)
 	coin_label.add_theme_color_override("font_color", C_COIN)
-
-func _on_shop():
-	if PlayerData.game_mode == "levels":
-		var panel := MARKET_PANEL.new()
-		add_child(panel)
-		panel.closed.connect(func(): shop_btn.disabled = false)
-		shop_btn.disabled = true
-	else:
-		print("Shop coming soon")
 
 func _on_find_match():
 	get_tree().change_scene_to_file(_game_modes[_mode_index].scene)
