@@ -278,6 +278,14 @@ func set_flag(key: String, value: bool):
 	_cfg.set_value("progress", key, value)
 	_save()
 
+func clear_tutorial_flags():
+	if not _cfg.has_section("progress"):
+		return
+	for key in _cfg.get_section_keys("progress"):
+		if key.begins_with(TUTORIAL_SEEN_PREFIX):
+			_cfg.erase_section_key("progress", key)
+	_save()
+
 func _save():
 	if not _loaded:
 		return

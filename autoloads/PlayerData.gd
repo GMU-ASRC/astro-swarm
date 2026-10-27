@@ -277,6 +277,7 @@ func reset_game():
 	_ensure_ship_program()
 	_save()
 	GenomeBank.reset()
+	PlayerSettings.clear_tutorial_flags()
 	username_changed.emit(username)
 	planet_name_changed.emit(planet_name)
 	level_changed.emit(level)
