@@ -2,6 +2,7 @@ extends "res://levels/modes/WaveBase.gd"
 
 const GROUP_WAVES := 2
 const SPAWN_JITTER := 0.35
+const FIRST_WAVE_DELAY := 10.0
 
 func _level_id() -> String:
 	return "farp3"
@@ -14,6 +15,9 @@ func _defender_options() -> Array:
 
 func _wave_total() -> int:
 	return GROUP_WAVES
+
+func _first_wave_delay() -> float:
+	return FIRST_WAVE_DELAY
 
 func _launch_wave():
 	_wave += 1

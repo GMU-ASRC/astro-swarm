@@ -15,12 +15,16 @@ func _wave_total() -> int:
 func _wave_spawn_angle() -> float:
 	return _rng.randf() * TAU
 
+func _first_wave_delay() -> float:
+	return 0.0
+
 func _launch():
 	_start_active()
 	_reset_counters()
 	_wave = 0
-	_gap_left = 0.0
-	_launch_wave()
+	_gap_left = _first_wave_delay()
+	if _gap_left <= 0.0:
+		_launch_wave()
 	_phase_label.text = "WAVES INBOUND"
 
 func _launch_wave():
