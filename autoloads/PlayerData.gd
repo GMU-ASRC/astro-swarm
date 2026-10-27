@@ -16,6 +16,9 @@ const GENOME_MOON_INDEX := 1
 const GENOME_UNLOCK_LEVEL_ID := "farp4"
 
 const DEFAULT_SHIP_BLOCKS := [
+	{"type": "set_speed", "params": {"value": 3.75}},
+	{"type": "set_view", "params": {"value": 3.75}},
+	{"type": "set_fov", "params": {"value": 90.0}},
 	{"type": "when_sees_enemy", "params": {}},
 	{"type": "do_face", "params": {}},
 	{"type": "when_always", "params": {}},
