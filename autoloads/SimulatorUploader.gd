@@ -4,7 +4,6 @@ signal upload_finished(success: bool, message: String, entry_url: String)
 
 const ENTRIES_PATH := "/api/simulator/entries"
 const ENTRY_PAGE_PATH := "/simulator/"
-const API_KEY := "world-unfair-file"
 const REQUEST_TIMEOUT := 120.0
 const SimulatorEntryPayload := preload("res://levels/components/SimulatorEntryPayload.gd")
 
@@ -40,24 +39,15 @@ func upload_run(run_path: String, title: String, description: String):
 	payload["game_version"] = EvalUploader.game_version()
 
 	is_uploading = true
-	var request := HTTPRequest.new()
-	request.timeout = REQUEST_TIMEOUT
-	add_child(request)
-	request.request_completed.connect(func(_result, code, _headers, body):
-		request.queue_free()
-		_on_request_completed(code, body)
+	EntryOutbox.post_entry(ENTRIES_PATH, payload, REQUEST_TIMEOUT, func(code: int, response: PackedByteArray, saved_offline: bool):
+		_on_request_completed(code, response, saved_offline)
 	)
-	var headers := [
-		"X-API-Key: " + API_KEY,
-		"Content-Type: application/json",
-	]
-	if request.request(PlayerSettings.server_url() + ENTRIES_PATH, headers, HTTPClient.METHOD_POST, JSON.stringify(payload, "", false)) != OK:
-		request.queue_free()
-		is_uploading = false
-		_finish_deferred(false, "The upload could not be started.")
 
-func _on_request_completed(code: int, body: PackedByteArray):
+func _on_request_completed(code: int, body: PackedByteArray, saved_offline: bool):
 	is_uploading = false
+	if saved_offline:
+		upload_finished.emit(true, "The website could not be reached. The entry was saved on this computer and will upload automatically when the website is back.", "")
+		return
 	var response = JSON.parse_string(body.get_string_from_utf8()) if body.size() > 0 else null
 	if code >= 200 and code < 300 and response is Dictionary and response.has("id"):
 		upload_finished.emit(true, "Uploaded. Your entry is live on the website.", PlayerSettings.server_url() + ENTRY_PAGE_PATH + str(response["id"]))

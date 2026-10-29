@@ -5,16 +5,45 @@ const ENTRY_SCENE := preload("res://levels/menus/PlayerEntryScene.gd")
 const STYLE := preload("res://levels/menus/EntryStyle.gd")
 
 const ENTRIES_PATH := "/api/evaluations"
+const PENDING_PATHS := [ENTRIES_PATH, ENTRIES_PATH + "/run"]
+const PENDING_STATUS := "saved offline"
 const API_KEY := "world-unfair-file"
 
 var _list: VBoxContainer
 var _status_label: Label
+var _pending_count: int = 0
+var _fetch_request: HTTPRequest
 var _claim_buttons: Dictionary = {}
 
 func _ready():
 	theme = GAME_THEME
 	_build_ui()
+	EntryOutbox.pending_count_changed.connect(_on_pending_count_changed)
+	_reload()
+
+func _reload():
+	if is_instance_valid(_fetch_request):
+		_fetch_request.cancel_request()
+		_fetch_request.queue_free()
+	for child in _list.get_children():
+		child.queue_free()
+	_claim_buttons.clear()
+	_status_label.text = "Loading entries..."
+	_add_pending_entries()
 	_fetch_entries()
+
+func _on_pending_count_changed(_count: int):
+	if _my_pending_entries().size() != _pending_count:
+		_reload()
+
+func _my_pending_entries() -> Array:
+	return EntryOutbox.pending_entries(PENDING_PATHS).filter(func(entry): return str(entry.get("player_id", "")) == PlayerData.player_id)
+
+func _add_pending_entries():
+	var pending: Array = _my_pending_entries()
+	_pending_count = pending.size()
+	for entry in pending:
+		_list.add_child(_make_pending_card(entry))
 
 func _build_ui():
 	add_child(STYLE.make_background())
@@ -63,30 +92,55 @@ func _fetch_entries():
 	var request := HTTPRequest.new()
 	request.timeout = 20.0
 	add_child(request)
+	_fetch_request = request
 	request.request_completed.connect(_on_entries_response.bind(request))
 	if request.request(PlayerSettings.server_url() + ENTRIES_PATH, ["X-API-Key: " + API_KEY], HTTPClient.METHOD_GET) != OK:
 		request.queue_free()
-		_status_label.text = "Could not reach the server."
+		_status_label.text = _with_pending_note("Could not reach the server.")
 
 func _on_entries_response(_result, code, _headers, body, request):
 	request.queue_free()
 	if code != 200:
-		_status_label.text = "Failed to load entries (status %d)." % code
+		_status_label.text = _with_pending_note("Failed to load entries (status %d)." % code)
 		return
 	var data = JSON.parse_string(body.get_string_from_utf8())
 	if not (data is Array):
-		_status_label.text = "No entries found."
+		_status_label.text = _with_pending_note("No entries found.")
 		return
 	var my_entries: Array = []
 	for entry in data:
 		if typeof(entry) == TYPE_DICTIONARY and str(entry.get("player_id", "")) == PlayerData.player_id:
 			my_entries.append(entry)
-	if my_entries.is_empty():
+	if my_entries.is_empty() and _pending_count == 0:
 		_status_label.text = "You have no entries yet."
 		return
-	_status_label.text = "%d entries" % my_entries.size()
+	_status_label.text = _with_pending_note("%d entries" % my_entries.size())
 	for entry in my_entries:
 		_list.add_child(_make_entry_card(entry))
+
+func _with_pending_note(text: String) -> String:
+	if _pending_count == 0:
+		return text
+	return "%s  -  %d saved offline, waiting for the website" % [text, _pending_count]
+
+func _make_pending_card(entry: Dictionary) -> Control:
+	var level_id: String = str(entry.get("level_id", "farp"))
+
+	var card := STYLE.make_card(18)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 6)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.add_child(body)
+
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 10)
+	body.add_child(title_row)
+	title_row.add_child(STYLE.make_label(LevelInfo.display_name(level_id), 16, STYLE.C_TEXT))
+	title_row.add_child(STYLE.make_badge(PENDING_STATUS.to_upper(), STYLE.status_color(PENDING_STATUS)))
+
+	body.add_child(STYLE.make_label(STYLE.local_time_text(str(entry.get("created_at", ""))), 10, STYLE.C_FAINT))
+	body.add_child(STYLE.make_label("Saved on this computer. It will upload automatically when the website is back.", 10, STYLE.C_DIM))
+	return card
 
 func _make_entry_card(entry: Dictionary) -> Control:
 	var level_id: String = str(entry.get("level_id", "farp"))
@@ -109,7 +163,7 @@ func _make_entry_card(entry: Dictionary) -> Control:
 	title_row.add_child(STYLE.make_label(LevelInfo.display_name(level_id), 16, STYLE.C_TEXT))
 	title_row.add_child(STYLE.make_badge(status.to_upper(), STYLE.status_color(status)))
 
-	var meta_text := "%s  -  %s" % [STYLE.short_date(str(entry.get("created_at", ""))), entry_id]
+	var meta_text := "%s  -  %s" % [STYLE.local_time_text(str(entry.get("created_at", ""))), entry_id]
 	body.add_child(STYLE.make_label(meta_text, 10, STYLE.C_FAINT))
 
 	var buttons := HBoxContainer.new()

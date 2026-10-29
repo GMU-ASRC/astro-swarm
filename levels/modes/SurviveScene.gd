@@ -746,10 +746,13 @@ func _match_payload() -> Dictionary:
 		"first_target": _first_target + 1,
 	}
 
-func _on_submit_finished(success: bool, code: int, _response):
+func _on_submit_finished(success: bool, code: int, response):
 	if success:
 		_upload_label.text = "MATCH DATA SUBMITTED"
 		_upload_label.add_theme_color_override("font_color", C_GREENISH)
+	elif response is Dictionary and response.get("saved_offline", false):
+		_upload_label.text = "WEBSITE OFFLINE - SAVED, WILL UPLOAD LATER"
+		_upload_label.add_theme_color_override("font_color", C_AMBER)
 	else:
 		_upload_label.text = "UPLOAD FAILED (%d)" % code
 		_upload_label.add_theme_color_override("font_color", C_RED)

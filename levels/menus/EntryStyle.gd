@@ -11,6 +11,7 @@ const C_FAINT  := Color(0.45, 0.45, 0.51, 1.0)
 const C_BLUE   := Color(0.451, 0.616, 1.0, 1.0)
 const C_GREEN  := Color(0.45, 0.85, 0.5, 1.0)
 const C_RED    := Color(0.9, 0.45, 0.45, 1.0)
+const C_AMBER  := Color(1.0, 0.70, 0.20, 1.0)
 
 static func entry_page_url(entry_id: String) -> String:
 	return PlayerSettings.server_url() + "/levels/" + entry_id
@@ -102,9 +103,13 @@ static func status_color(status: String) -> Color:
 		return C_GREEN
 	if status == "failed" or status == "error":
 		return C_RED
+	if status == "saved offline":
+		return C_AMBER
 	return C_BLUE
 
-static func short_date(iso: String) -> String:
-	if iso.length() >= 10:
-		return iso.substr(0, 10)
-	return iso
+static func local_time_text(iso: String) -> String:
+	if iso.length() < 19:
+		return iso
+	var utc_seconds: int = Time.get_unix_time_from_datetime_string(iso.substr(0, 19))
+	var bias_seconds: int = int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	return Time.get_datetime_string_from_unix_time(utc_seconds + bias_seconds, true).substr(0, 16)

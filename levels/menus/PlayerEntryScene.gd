@@ -130,7 +130,7 @@ func _fill_from_summary():
 	_title_label.text = str(entry_summary.get("username", "Entry"))
 	_set_status(str(entry_summary.get("status", "")))
 	var level_id: String = str(entry_summary.get("level_id", "farp"))
-	_meta_label.text = "%s  -  %s" % [LevelInfo.display_name(level_id), STYLE.short_date(str(entry_summary.get("created_at", "")))]
+	_meta_label.text = "%s  -  %s" % [LevelInfo.display_name(level_id), STYLE.local_time_text(str(entry_summary.get("created_at", "")))]
 	if LevelInfo.is_pilot(level_id):
 		_algo_title.text = "OPPONENT ALGORITHM"
 		_set_headline("-", "PILOTED RUN", "")
@@ -193,7 +193,7 @@ func _apply_detail(data: Dictionary):
 	var pilot: bool = LevelInfo.is_pilot(level_id)
 	var placements: Array = data.get("placements", [])
 	var trials = data.get("trials", entry_summary.get("trials", "-"))
-	var when: String = STYLE.short_date(str(data.get("completed_at", data.get("created_at", ""))))
+	var when: String = STYLE.local_time_text(str(data.get("created_at", entry_summary.get("created_at", ""))))
 	if pilot:
 		_algo_title.text = "OPPONENT ALGORITHM"
 		_meta_label.text = "%s  -  %d defenders  -  %s" % [LevelInfo.display_name(level_id), placements.size(), when]

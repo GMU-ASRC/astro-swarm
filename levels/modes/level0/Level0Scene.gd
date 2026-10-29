@@ -146,9 +146,15 @@ func _on_sandbox_scored(average_circliness: float):
 	_sandbox.upload_note = "SENDING..."
 	EvalUploader.submit_training_score(average_circliness, PlayerData.get_ship_algorithm(), _placements_payload())
 
-func _on_training_score_finished(success: bool, _code: int, _response):
-	if _sandbox != null:
-		_sandbox.upload_note = "SENT TO LEADERBOARD" if success else "NOT SENT"
+func _on_training_score_finished(success: bool, _code: int, response):
+	if _sandbox == null:
+		return
+	if success:
+		_sandbox.upload_note = "SENT TO LEADERBOARD"
+	elif response is Dictionary and response.get("saved_offline", false):
+		_sandbox.upload_note = "SAVED, WILL SEND WHEN ONLINE"
+	else:
+		_sandbox.upload_note = "NOT SENT"
 
 func _show_level_one_button():
 	if is_instance_valid(_level_one_button):

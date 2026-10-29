@@ -18,7 +18,7 @@ func submit(algorithm: Array, placements: Array, level_id: String, collisions: b
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
 		submit_finished.emit(false, 0, {})
 		return
-	var body := JSON.stringify({
+	var payload := {
 		"player_id": PlayerData.player_id,
 		"username": PlayerData.username,
 		"level_id": level_id,
@@ -27,55 +27,32 @@ func submit(algorithm: Array, placements: Array, level_id: String, collisions: b
 		"game_version": game_version(),
 		"collisions": collisions,
 		"genome_schedule": genome_schedule,
-	})
-	var req := HTTPRequest.new()
-	req.timeout = 20.0
-	add_child(req)
-	req.request_completed.connect(func(_result, code, _headers, response):
-		var data = _parse_json(response)
-		submit_finished.emit(code >= 200 and code < 300, code, data)
-		req.queue_free()
+	}
+	EntryOutbox.post_entry(EVALUATIONS_PATH, payload, 20.0, func(code: int, response: PackedByteArray, saved_offline: bool):
+		submit_finished.emit(_is_success(code), code, _response_data(response, saved_offline))
 	)
-	var headers := [
-		"X-API-Key: " + API_KEY,
-		"Content-Type: application/json",
-	]
-	if req.request(PlayerSettings.server_url() + EVALUATIONS_PATH, headers, HTTPClient.METHOD_POST, body) != OK:
-		req.queue_free()
-		submit_finished.emit(false, 0, {})
 
 func submit_training_score(circliness: float, algorithm: Array, placements: Array):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
 		training_score_finished.emit(false, 0, {})
 		return
-	var body := JSON.stringify({
+	var payload := {
 		"player_id": PlayerData.player_id,
 		"username": PlayerData.username,
 		"circliness": circliness,
 		"algorithm": algorithm,
 		"placements": placements,
 		"game_version": game_version(),
-	})
-	var req := HTTPRequest.new()
-	req.timeout = 20.0
-	add_child(req)
-	req.request_completed.connect(func(_result, code, _headers, response):
-		training_score_finished.emit(code >= 200 and code < 300, code, _parse_json(response))
-		req.queue_free()
+	}
+	EntryOutbox.post_entry(TRAINING_SCORES_PATH, payload, 20.0, func(code: int, response: PackedByteArray, saved_offline: bool):
+		training_score_finished.emit(_is_success(code), code, _response_data(response, saved_offline))
 	)
-	var headers := [
-		"X-API-Key: " + API_KEY,
-		"Content-Type: application/json",
-	]
-	if req.request(PlayerSettings.server_url() + TRAINING_SCORES_PATH, headers, HTTPClient.METHOD_POST, body) != OK:
-		req.queue_free()
-		training_score_finished.emit(false, 0, {})
 
 func submit_run(level_id: String, algorithm: Array, placements: Array, run: Dictionary, genome_schedule: Array = []):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":
 		submit_finished.emit(false, 0, {})
 		return
-	var body := JSON.stringify({
+	var payload := {
 		"player_id": PlayerData.player_id,
 		"username": PlayerData.username,
 		"level_id": level_id,
@@ -84,22 +61,10 @@ func submit_run(level_id: String, algorithm: Array, placements: Array, run: Dict
 		"game_version": game_version(),
 		"run": run,
 		"genome_schedule": genome_schedule,
-	})
-	var req := HTTPRequest.new()
-	req.timeout = 30.0
-	add_child(req)
-	req.request_completed.connect(func(_result, code, _headers, response):
-		var data = _parse_json(response)
-		submit_finished.emit(code >= 200 and code < 300, code, data)
-		req.queue_free()
+	}
+	EntryOutbox.post_entry(RUN_PATH, payload, 30.0, func(code: int, response: PackedByteArray, saved_offline: bool):
+		submit_finished.emit(_is_success(code), code, _response_data(response, saved_offline))
 	)
-	var headers := [
-		"X-API-Key: " + API_KEY,
-		"Content-Type: application/json",
-	]
-	if req.request(PlayerSettings.server_url() + RUN_PATH, headers, HTTPClient.METHOD_POST, body) != OK:
-		req.queue_free()
-		submit_finished.emit(false, 0, {})
 
 func fetch_best(level_id: String):
 	var req := HTTPRequest.new()
@@ -152,6 +117,14 @@ func _finish_claim(entry_id: String, code: int, data):
 		PlayerData.add_xp(xp)
 		PlayerData.add_coins(coins)
 	xp_claimed.emit(entry_id, true, xp, coins, note)
+
+func _is_success(code: int) -> bool:
+	return code >= 200 and code < 300
+
+func _response_data(response: PackedByteArray, saved_offline: bool):
+	if saved_offline:
+		return {"saved_offline": true}
+	return _parse_json(response)
 
 func _parse_json(response: PackedByteArray):
 	var text := response.get_string_from_utf8().strip_edges()

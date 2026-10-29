@@ -625,6 +625,8 @@ func _on_submit_finished(success: bool, code: int, response):
 	_result_panel.add_note(_submit_error(code, response))
 
 func _submit_error(code: int, response) -> String:
+	if response is Dictionary and response.get("saved_offline", false):
+		return "The website could not be reached. The entry was saved on this computer and will upload automatically when the website is back."
 	if code == 426:
 		return "This build is out of date, so the server would not take the entry."
 	if code == 0:
