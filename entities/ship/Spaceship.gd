@@ -486,10 +486,13 @@ func _build_hull_sprite():
 	_hull_sprite = Sprite2D.new()
 	_hull_sprite.rotation = PI / 2.0
 	_hull_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_hull_sprite.texture = load(SHIP_SPRITE_PATH)
+	_hull_sprite.texture = load(_sprite_path())
 	_hull_sprite.modulate = ship_color
 	add_child(_hull_sprite)
 	_scale_hull_sprite()
+
+func _sprite_path() -> String:
+	return SHIP_SPRITE_PATH
 
 func _scale_hull_sprite():
 	if _hull_sprite == null or _hull_sprite.texture == null:

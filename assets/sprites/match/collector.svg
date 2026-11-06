@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 320 320" shape-rendering="crispEdges">
+  <rect x="0" y="0" width="320" height="320" fill="none"/>
+  <path fill="#9a9a9a" d="M40 100h60v140h-60Z M220 100h60v140h-60Z M90 150h20v20h-20Z M210 150h20v20h-20Z M130 30h10v10h-10Z M150 30h20v10h-20Z M180 30h10v10h-10Z"/>
+  <path fill="#c0c0c0" d="M50 90h40v10h-40Z M230 90h40v10h-40Z"/>
+  <path fill="#d0d0d0" d="M100 60h120v200h-120Z"/>
+  <path fill="#6a6a6a" d="M100 60h10v200h-10Z M40 100h10v140h-10Z M220 100h10v140h-10Z"/>
+  <path fill="#f0f0f0" d="M210 60h10v200h-10Z M90 100h10v140h-10Z M270 100h10v140h-10Z"/>
+  <path fill="#ffffff" d="M150 60h20v190h-20Z M120 280h20v20h-20Z M180 280h20v20h-20Z"/>
+  <path fill="#3a3a3a" d="M120 40h80v20h-80Z M40 130h60v10h-60Z M220 130h60v10h-60Z M40 180h60v10h-60Z M220 180h60v10h-60Z M50 240h40v10h-40Z M230 240h40v10h-40Z"/>
+  <path fill="#2a2a2a" d="M110 260h100v20h-100Z"/>
+</svg>

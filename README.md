@@ -85,6 +85,22 @@ A short cut of Survive made for recording video, listed as **Sur2** in the game-
 - **Sent evaders.** Every evader is sent by the rival: it flies on the rival's genome with a steady pull toward its planet, tinted toward the rival's color.
 - **Jump gates.** The left and right edges are linked gates. A pilot crosses instantly; any other ship that drifts in comes out on the far side 2.5 seconds later.
 
+## LAN Match
+
+A two-player match between two devices on the same local network, picked as **LAN Match** in the game-mode dropdown.
+
+- **Lobby.** One player presses **Host Game** and picks **Regular** or **Fog of War**; the other sees the game in the list (found by a UDP broadcast on port 7778) or types the host address and presses **Join**. The match runs over ENet on port 7777. The host runs the simulation and the guest sends its orders and receives the world 20 times a second.
+- **Arena.** Every match generates a new arena from a random seed: its size, both home planets (mirrored through the center so neither side is favored) and pairs of mining moons that hold astrodust and slowly refill.
+- **Setup.** Both players get 30 seconds to buy starting ships and write their algorithms. Ships stay parked until the round goes live. Pressing **Ready** on both sides starts it early.
+- **Astrodust.** Each player starts with 250. Collectors run the player's search algorithm; when one touches a mining moon it mines until its hold is full and then flies straight home to unload, then goes back to searching.
+- **Shop.** Defender 30, Collector 50, Evader 40, Scout 60. Defenders go to the hangar and are deployed by dragging inside your ring, the drag setting their heading. Collectors and evaders launch from the planet.
+- **Upgrades.** Cargo Hold, Mining Drill and Collector Engine, four levels each.
+- **Combat.** Planets have 150 health. An evader that reaches the enemy planet explodes for 15 damage. An evader that touches any enemy ship (defender, collector, scout or evader) destroys it and itself.
+- **Workspace.** The **Workspace** button opens a Collector, Defender and Evader program. Edits apply to every ship of that type straight away, also while the round is live. New blocks: *When I see astrodust*, *When I see the enemy planet*, *When I am far from my planet*, the matching *If* blocks, and the actions *Face the astrodust*, *Face the enemy planet* and *Face my planet*.
+- **Camera.** Middle-drag pans, the wheel zooms. In Regular mode the camera can only move a set distance from your planet. A scout is flown with WASD, the arrow keys or a gamepad, and the camera follows it; **F** toggles following.
+- **Fog of War.** You cannot pan. You only see what your planet and ships see. Mining moons and the enemy planet stay hidden until one of your ships finds them.
+- **Winning.** Destroy the enemy planet. If ten minutes pass, the planet with more health wins.
+
 ## Levels
 
 The **Levels** screen lists eight FARP levels. Levels 1 to 6 defend (or attack) the same central planet, level 7 runs over two of them, level 8 over three, and all of them measure the same three events:

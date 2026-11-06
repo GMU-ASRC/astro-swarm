@@ -29,6 +29,7 @@ const ORBIT_MAX := 255.0
 const GAME_MODES := [
 	{"id": "levels",      "label": "Levels",       "scene": "res://levels/menus/LevelsScene.tscn"},
 	{"id": "survive",     "label": "Survive",      "scene": "res://levels/modes/SurviveScene.tscn"},
+	{"id": "lan_match",   "label": "LAN Match",    "scene": "res://levels/menus/MatchLobbyScene.tscn"},
 	{"id": "sur2",        "label": "Sur2",         "scene": "res://levels/modes/sur2/Sur2Scene.tscn", "dev_only": true},
 	{"id": "demo",        "label": "Demo",         "scene": "res://levels/modes/demo/DemoScene.tscn", "dev_only": true},
 ]

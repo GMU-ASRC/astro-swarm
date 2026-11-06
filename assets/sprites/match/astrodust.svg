@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 160 160" shape-rendering="crispEdges">
+  <rect x="0" y="0" width="160" height="160" fill="none"/>
+  <path fill="#4a3a5a" d="M10 130h140v10h-140Z"/>
+  <path fill="#2e2438" d="M20 140h120v10h-120Z"/>
+  <path fill="#f3e8ff" d="M70 10h20v20h-20Z M30 60h10v10h-10Z M120 40h10v10h-10Z"/>
+  <path fill="#d8b4fe" d="M60 30h10v100h-10Z M20 70h10v60h-10Z M110 50h10v80h-10Z"/>
+  <path fill="#b57bff" d="M70 30h20v100h-20Z M30 70h10v60h-10Z M120 50h10v80h-10Z"/>
+  <path fill="#6b3fb3" d="M90 30h10v100h-10Z M40 70h10v60h-10Z M130 50h10v80h-10Z"/>
+  <path fill="#ffffff" d="M10 30h10v10h-10Z M140 20h10v10h-10Z M100 0h10v10h-10Z"/>
+</svg>

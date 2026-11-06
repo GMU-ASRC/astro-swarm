@@ -34,6 +34,7 @@ DominationData="*res://autoloads/DominationData.gd"
 EvalUploader="*res://autoloads/EvalUploader.gd"
 SurviveUploader="*res://autoloads/SurviveUploader.gd"
 EntryOutbox="*res://autoloads/EntryOutbox.gd"
+MatchNetwork="*res://autoloads/MatchNetwork.gd"
 
 [display]
 

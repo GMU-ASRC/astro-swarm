@@ -107,6 +107,9 @@ const BLOCK_DEFS := {
 		{"type": "dropdown", "key": "target", "provider": "targets"},
 	]},
 	"when_not_near_wall":   {"category": "condition", "label": "When I don't touch a wall", "input": null},
+	"when_sees_dust":         {"category": "condition", "label": "When I see astrodust",         "input": null},
+	"when_sees_enemy_planet": {"category": "condition", "label": "When I see the enemy planet",  "input": null},
+	"when_far_from_home":     {"category": "condition", "label": "When I am far from my planet", "input": null},
 	"when_every":           {"category": "condition", "label": "Every", "inputs": [
 		{"type": "number", "key": "value", "min": 0.1, "max": 3600.0, "step": 0.1, "default": 1.0},
 		{"type": "label", "text": "seconds"},
@@ -154,6 +157,11 @@ const BLOCK_DEFS := {
 		{"type": "number", "key": "value", "min": 0.0, "max": 9999.0, "step": 1.0, "default": 0.0},
 		{"type": "label", "text": "robots"},
 	]},
+	"if_sees_dust":        {"category": "logic", "label": "If I see astrodust",          "input": null},
+	"if_not_sees_dust":    {"category": "logic", "label": "If I don't see astrodust",    "input": null},
+	"if_far_from_home":    {"category": "logic", "label": "If I am far from my planet",  "input": null},
+	"elif_sees_dust":      {"category": "logic", "label": "Else if I see astrodust",     "input": null},
+	"elif_far_from_home":  {"category": "logic", "label": "Else if I am far from my planet", "input": null},
 	"else":              {"category": "logic", "label": "Else", "input": null},
 
 	"set_var":           {"category": "variable", "label": "Set", "inputs": [
@@ -186,6 +194,9 @@ const BLOCK_DEFS := {
 	"do_turn_right_by": {"category": "action", "label": "Turn right by", "input": {"min": 1.0, "max": 360.0, "default": 180.0, "step": 1.0, "suffix": "°"}},
 	"do_face":       {"category": "action", "label": "Face the target",  "input": null},
 	"do_fire":       {"category": "action", "label": "Fire",             "input": null},
+	"do_face_dust":         {"category": "action", "label": "Face the astrodust",    "input": null},
+	"do_face_enemy_planet": {"category": "action", "label": "Face the enemy planet", "input": null},
+	"do_face_home":         {"category": "action", "label": "Face my planet",        "input": null},
 	"do_throttle":   {"category": "action", "label": "Throttle to",     "input": {"min": 0.0, "max": 1.5, "default": 1.0, "step": 0.05, "suffix": "×"}},
 	"do_stop_sim":   {"category": "action", "label": "Stop simulation",  "input": null},
 	"do_pause_sim":  {"category": "action", "label": "Pause simulation", "input": null},
