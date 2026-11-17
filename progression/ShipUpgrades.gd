@@ -5,8 +5,9 @@ static var editing_ship: bool = false
 const ALL := [
 	{
 		"id": "max_speed",
-		"starter_limit": 4.0,
-		"limit_per_level": 1.2,
+		"starter_limit": 3.0,
+		"limit_per_level": 0.2,
+		"ship_default": 3.75,
 		"block_type": "set_speed",
 		"title": "MAX SPEED",
 		"icon": "res://assets/sprites/upgrades/max_speed.svg",
@@ -17,6 +18,7 @@ const ALL := [
 		"id": "fov",
 		"starter_limit": 90.0,
 		"limit_per_level": 18.0,
+		"ship_default": 70.0,
 		"block_type": "set_fov",
 		"title": "FOV",
 		"icon": "res://assets/sprites/upgrades/fov.svg",
@@ -25,8 +27,9 @@ const ALL := [
 	},
 	{
 		"id": "view_distance",
-		"starter_limit": 7.5,
+		"starter_limit": 5.0,
 		"limit_per_level": 1.0,
+		"ship_default": 7.5,
 		"block_type": "set_view",
 		"title": "VIEW DISTANCE",
 		"icon": "res://assets/sprites/upgrades/view_distance.svg",
@@ -35,8 +38,9 @@ const ALL := [
 	},
 	{
 		"id": "turn_speed",
-		"starter_limit": 180.0,
-		"limit_per_level": 36.0,
+		"starter_limit": 120.0,
+		"limit_per_level": 24.0,
+		"ship_default": 183.35,
 		"block_type": "set_turn",
 		"title": "TURN SPEED",
 		"icon": "res://assets/sprites/upgrades/turn_speed.svg",
@@ -91,7 +95,41 @@ static func clamp_scripts(scripts: Array) -> Array:
 	var clamped: Array = scripts.duplicate(true)
 	for stack in clamped:
 		_clamp_blocks(stack.get("blocks", []))
+	_add_missing_caps(clamped)
 	return clamped
+
+static func _add_missing_caps(scripts: Array):
+	var missing: Array = []
+	for upgrade in ALL:
+		var limit: float = current_limit(upgrade)
+		if float(upgrade["ship_default"]) > limit and not _sets_config(scripts, upgrade["block_type"]):
+			missing.append({"type": upgrade["block_type"], "params": {"value": limit}, "children": []})
+	if missing.is_empty():
+		return
+	var start_block: Dictionary = _find_start_block(scripts)
+	if start_block.is_empty():
+		scripts.append({"x": 40.0, "y": 40.0, "blocks": [{"type": "when_start", "params": {}, "children": missing}]})
+		return
+	start_block["children"] = start_block.get("children", []) + missing
+
+static func _sets_config(scripts: Array, block_type: String) -> bool:
+	for stack in scripts:
+		for block in stack.get("blocks", []):
+			if block.get("type", "") == block_type:
+				return true
+			if block.get("type", "") != "when_start":
+				continue
+			for child in block.get("children", []):
+				if child.get("type", "") == block_type:
+					return true
+	return false
+
+static func _find_start_block(scripts: Array) -> Dictionary:
+	for stack in scripts:
+		for block in stack.get("blocks", []):
+			if block.get("type", "") == "when_start":
+				return block
+	return {}
 
 static func _clamp_blocks(blocks: Array):
 	for block in blocks:
