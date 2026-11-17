@@ -15,7 +15,7 @@ Welcome to the Shipyard, Commander. Every ship that leaves {planet} is fitted ou
 Upgrades raise what your ship can do, how fast it flies, how sharp it turns, and how far and how wide it sees. Each one costs Astro Coin.
 
 [Line:3]
-Addons unlock new blocks in the workspace. Buy one and its block shows up in your palette, ready to program.
+Every ship starts with low limits. Your config blocks can never go past them, and each upgrade level pushes a limit a little higher.
 
 [Line:4]
 Win levels to earn coin, then come back and spend it. A better ship gives your algorithm more to work with.

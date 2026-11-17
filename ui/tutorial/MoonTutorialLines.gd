@@ -12,7 +12,7 @@ static func _shipyard() -> Array:
 	return [
 		{"id": 1, "text": "Welcome to the Shipyard, Commander. Every ship that leaves {planet} is fitted out right here."},
 		{"id": 2, "text": "Upgrades raise what your ship can do, how fast it flies, how sharp it turns, and how far and how wide it sees. Each one costs Astro Coin."},
-		{"id": 3, "text": "Addons unlock new blocks in the workspace. Buy one and its block shows up in your palette, ready to program."},
+		{"id": 3, "text": "Every ship starts with low limits. Your config blocks can never go past them, and each upgrade level pushes a limit a little higher."},
 		{"id": 4, "text": "Win levels to earn coin, then come back and spend it. A better ship gives your algorithm more to work with."},
 	]
 

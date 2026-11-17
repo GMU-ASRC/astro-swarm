@@ -21,7 +21,7 @@ Top right is your Astro Coin. Win a level and I pay you in coin and experience, 
 Those moons are more than decoration. Press Moons to visit them. Hivemind is where you program your spaceship, block by block, and it is open from the start.
 
 [Line:5]
-Rank up and more moons arrive. The first is the Shipyard. Spend coin there on upgrades that raise how fast, how far and how wide your programs may set a ship, and on addons such as Thrusters, which unlock the Throttle block.
+Rank up and more moons arrive. The first is the Shipyard. Spend coin there on upgrades that raise how fast, how sharp, how far and how wide your programs may set a ship.
 
 [Line:6]
 My Entries lists every run you have sent to the server. Come back to it to see how an entry scored and to claim the experience it earned, or open any entry on the website for its charts and replays.
