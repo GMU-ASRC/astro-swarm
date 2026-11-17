@@ -6,9 +6,10 @@ const OUTBOX_DIR := "user://entry_outbox"
 const API_KEY := "world-unfair-file"
 const RETRY_INTERVAL := 60.0
 const RETRY_TIMEOUT := 120.0
-const OFFLINE_CODES := [0, 502, 503, 504]
+const OFFLINE_CODES := [0, 408, 429, 502, 503, 504, 520, 521, 522, 523, 524, 530]
 
 var _is_flushing: bool = false
+var _sending_file_names: Dictionary = {}
 
 func _ready():
 	DirAccess.make_dir_recursive_absolute(OUTBOX_DIR)
@@ -41,11 +42,17 @@ func post_entry(api_path: String, payload: Dictionary, timeout: float, on_done: 
 	var stamped_payload: Dictionary = payload.duplicate()
 	stamped_payload["created_at"] = _current_timestamp()
 	var body := JSON.stringify(stamped_payload, "", false)
+	var file_name := _save(api_path, body)
+	_sending_file_names[file_name] = true
 	_send(api_path, body, timeout, func(code: int, response: PackedByteArray):
+		_sending_file_names.erase(file_name)
 		var saved_offline := is_offline_code(code)
 		if saved_offline:
-			_save(api_path, body)
+			if file_name == "":
+				_save(api_path, body)
+			pending_count_changed.emit(pending_count())
 		else:
+			_remove(file_name)
 			flush()
 		on_done.call(code, response, saved_offline)
 	)
@@ -97,15 +104,19 @@ func _send(api_path: String, body: String, timeout: float, on_response: Callable
 		request.queue_free()
 		on_response.call(0, PackedByteArray())
 
-func _save(api_path: String, body: String):
+func _save(api_path: String, body: String) -> String:
 	var unix_millis := int(Time.get_unix_time_from_system() * 1000.0)
 	var file_name := "%d_%06d.json" % [unix_millis, randi() % 1000000]
 	var file := FileAccess.open(OUTBOX_DIR.path_join(file_name), FileAccess.WRITE)
 	if file == null:
-		return
+		return ""
 	file.store_string(JSON.stringify({"path": api_path, "body": body}))
 	file.close()
-	pending_count_changed.emit(pending_count())
+	return file_name
+
+func _remove(file_name: String):
+	if file_name != "":
+		DirAccess.remove_absolute(OUTBOX_DIR.path_join(file_name))
 
 func _read_entry(file_path: String) -> Dictionary:
 	var entry = JSON.parse_string(FileAccess.get_file_as_string(file_path))
@@ -114,7 +125,7 @@ func _read_entry(file_path: String) -> Dictionary:
 	return {}
 
 func _pending_file_names() -> Array:
-	var file_names: Array = Array(DirAccess.get_files_at(OUTBOX_DIR)).filter(func(file_name): return file_name.ends_with(".json"))
+	var file_names: Array = Array(DirAccess.get_files_at(OUTBOX_DIR)).filter(func(file_name): return file_name.ends_with(".json") and not _sending_file_names.has(file_name))
 	file_names.sort()
 	return file_names
 
