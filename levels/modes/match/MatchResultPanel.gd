@@ -26,14 +26,14 @@ var _headline: Label
 var _grid: GridContainer
 
 func _ready():
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	visible = false
 	var backdrop := ColorRect.new()
 	backdrop.color = Color(0, 0, 0, 0.6)
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(backdrop)
 	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(520, 0)
@@ -86,6 +86,8 @@ func _headline_text(result: Dictionary, winner: int) -> String:
 			return "Time ran out. The planet with more health wins." if winner >= 0 else "Time ran out with both planets level."
 		"left":
 			return "Your opponent left the match."
+		"forfeit":
+			return "A commander forfeited the match."
 	return ""
 
 func _fill_grid(players: Array):
@@ -101,10 +103,10 @@ func _fill_grid(players: Array):
 		for slot in 2:
 			_grid.add_child(_label(str(int(round(float(players[slot].get(stat[1], 0))))), 10, C_TEXT))
 
-func _label(text: String, size: int, color: Color) -> Label:
+func _label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_override("font", FONT)
-	label.add_theme_font_size_override("font_size", size)
+	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	return label

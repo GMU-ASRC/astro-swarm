@@ -4,6 +4,8 @@ const FONT := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const GAME_THEME := preload("res://ui/GameTheme.tres")
 const HUD_BUTTONS := preload("res://ui/hud/HudButtons.gd")
 const MATCH_CONFIG := preload("res://levels/modes/match/MatchConfig.gd")
+const TUTORIAL := preload("res://ui/tutorial/BlobTutorial.gd")
+const TUTORIAL_LINES := preload("res://levels/modes/match/MatchTutorialLines.gd")
 
 const MATCH_SCENE := "res://levels/modes/match/MatchScene.tscn"
 const PLAYER_BASE_SCENE := "res://levels/menus/PlayerBaseScene.tscn"
@@ -32,9 +34,12 @@ var _quick_search_left: float = -1.0
 func _ready():
 	get_tree().paused = false
 	theme = GAME_THEME
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	MatchNetwork.close()
 	_build_ui()
+	if not PlayerSettings.get_flag(TUTORIAL_LINES.SEEN_FLAG):
+		PlayerSettings.set_flag(TUTORIAL_LINES.SEEN_FLAG, true)
+		_show_tutorial()
 	MatchNetwork.hosts_changed.connect(_on_hosts_changed)
 	MatchNetwork.opponent_joined.connect(_on_opponent_joined)
 	MatchNetwork.opponent_left.connect(_on_opponent_left)
@@ -91,10 +96,10 @@ func _local_name() -> String:
 func _build_ui():
 	var background := ColorRect.new()
 	background.color = C_BG
-	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
 	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(620, 0)
@@ -160,9 +165,23 @@ func _build_ui():
 	_status_label = _label("", 11, C_AMBER)
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(_status_label)
+	var bottom_row := HBoxContainer.new()
+	bottom_row.add_theme_constant_override("separation", 10)
+	column.add_child(bottom_row)
 	var back_button := HUD_BUTTONS.make("BACK", HUD_BUTTONS.Kind.BACK, 11)
 	back_button.pressed.connect(_on_back_pressed)
-	column.add_child(back_button)
+	bottom_row.add_child(back_button)
+	var tutorial_button := HUD_BUTTONS.make("HOW TO PLAY", HUD_BUTTONS.Kind.NEUTRAL, 11)
+	tutorial_button.pressed.connect(_show_tutorial)
+	bottom_row.add_child(tutorial_button)
+
+func _show_tutorial():
+	var tutorial = TUTORIAL.new()
+	tutorial.lines = TUTORIAL_LINES.lines()
+	tutorial.voice_dir = TUTORIAL_LINES.VOICE_DIR
+	tutorial.show_visuals = false
+	tutorial.final_hint = "CLICK TO CLOSE"
+	add_child(tutorial)
 
 func _section_title(text: String) -> Label:
 	return _label(text, 13, C_TEXT)
@@ -254,10 +273,10 @@ func _on_back_pressed():
 	MatchNetwork.close()
 	get_tree().change_scene_to_file(PLAYER_BASE_SCENE)
 
-func _label(text: String, size: int, color: Color) -> Label:
+func _label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_override("font", FONT)
-	label.add_theme_font_size_override("font_size", size)
+	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	return label

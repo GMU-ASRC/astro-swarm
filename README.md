@@ -90,7 +90,11 @@ A short cut of Survive made for recording video, listed as **Sur2** in the game-
 A two-player match between two devices on the same local network, picked as **LAN Match** in the game-mode dropdown.
 
 - **Lobby.** One player presses **Host Game** and picks **Regular** or **Fog of War**; the other sees the game in the list (found by a UDP broadcast on port 7778) or types the host address and presses **Join**. The match runs over ENet on port 7777. The host runs the simulation and the guest sends its orders and receives the world 20 times a second.
-- **Arena.** Every match generates a new arena from a random seed: its size, both home planets (mirrored through the center so neither side is favored) and pairs of mining moons that hold astrodust and slowly refill.
+- **Tutorial.** Dr. Blob explains the mode the first time the lobby opens. **How To Play** in the lobby and in the pause menu plays it again.
+- **Arena.** Every match generates a new arena from a random seed, from 8000 by 4800 up to 10000 by 6000 pixels. Both home planets are placed at random, at least 55% of the arena diagonal apart. Mining moons are scattered with wide spacing and come in three kinds: rich (small, refills fast), standard and giant (large, refills slowly). Every player gets one standard moon close to home and one rich moon a little farther out, so both starts are fair. Nebulae and asteroid fields are drawn for scenery.
+- **Minimap.** Bottom left. It shows moons, planets and every ship you can see; in Regular mode clicking it moves the camera, within the pan limit.
+- **Pause.** **Esc** pauses the match for both players. The pause menu has Resume, How To Play, Forfeit (press twice) and Leave Match.
+- **Hotkeys.** **B** shop, **U** upgrades, **Tab** workspace, **R** ready, **F** follow the scout, **H** jump home, **Esc** pause.
 - **Setup.** Both players get 30 seconds to buy starting ships and write their algorithms. Ships stay parked until the round goes live. Pressing **Ready** on both sides starts it early.
 - **Astrodust.** Each player starts with 250. Collectors run the player's search algorithm; when one touches a mining moon it mines until its hold is full and then flies straight home to unload, then goes back to searching.
 - **Shop.** Defender 30, Collector 50, Evader 40, Scout 60. Defenders go to the hangar and are deployed by dragging inside your ring, the drag setting their heading. Collectors and evaders launch from the planet.
@@ -99,7 +103,7 @@ A two-player match between two devices on the same local network, picked as **LA
 - **Workspace.** The **Workspace** button opens a Collector, Defender and Evader program. Edits apply to every ship of that type straight away, also while the round is live. New blocks: *When I see astrodust*, *When I see the enemy planet*, *When I am far from my planet*, the matching *If* blocks, and the actions *Face the astrodust*, *Face the enemy planet* and *Face my planet*.
 - **Camera.** Middle-drag pans, the wheel zooms. In Regular mode the camera can only move a set distance from your planet. A scout is flown with WASD, the arrow keys or a gamepad, and the camera follows it; **F** toggles following.
 - **Fog of War.** You cannot pan. You only see what your planet and ships see. Mining moons and the enemy planet stay hidden until one of your ships finds them.
-- **Winning.** Destroy the enemy planet. If ten minutes pass, the planet with more health wins.
+- **Winning.** Destroy the enemy planet. If ten minutes pass, the planet with more health wins. Forfeiting or leaving hands the win to the other player.
 
 ## Levels
 

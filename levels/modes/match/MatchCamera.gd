@@ -31,6 +31,7 @@ func handle_input(event: InputEvent) -> bool:
 			_panning = event.pressed and can_pan
 			return true
 	elif event is InputEventMouseMotion and _panning:
+		follow_scout = false
 		position -= event.relative / zoom.x
 		_clamp_position()
 		return true
@@ -38,6 +39,11 @@ func handle_input(event: InputEvent) -> bool:
 
 func toggle_follow():
 	follow_scout = not follow_scout
+
+func center_on_home():
+	follow_scout = false
+	position = home_center
+	_clamp_position()
 
 func is_following() -> bool:
 	return follow_scout and is_instance_valid(scout)
@@ -54,14 +60,26 @@ func _zoom_by(factor: float):
 	zoom = Vector2(level, level)
 	_clamp_position()
 
+func look_at_point(world_point: Vector2):
+	if not can_pan:
+		return
+	follow_scout = false
+	position = world_point
+	_clamp_position()
+
 func _clamp_position():
 	if not is_following():
-		var offset: Vector2 = position - home_center
-		if offset.length() > MATCH_CONFIG.PAN_LIMIT:
-			position = home_center + offset.normalized() * MATCH_CONFIG.PAN_LIMIT
+		var from_home: Vector2 = position - home_center
+		if from_home.length() > MATCH_CONFIG.PAN_LIMIT:
+			position = home_center + from_home.normalized() * MATCH_CONFIG.PAN_LIMIT
 	var half: Vector2 = get_viewport_rect().size * 0.5 / zoom
-	position.x = arena.x * 0.5 if half.x * 2.0 >= arena.x else clampf(position.x, half.x, arena.x - half.x)
-	position.y = arena.y * 0.5 if half.y * 2.0 >= arena.y else clampf(position.y, half.y, arena.y - half.y)
+	position.x = _clamp_axis(position.x, half.x, arena.x)
+	position.y = _clamp_axis(position.y, half.y, arena.y)
+
+func _clamp_axis(value: float, half_view: float, arena_length: float) -> float:
+	if half_view * 2.0 >= arena_length:
+		return arena_length * 0.5
+	return clampf(value, half_view, arena_length - half_view)
 
 func screen_to_world(screen_point: Vector2) -> Vector2:
 	return get_screen_center_position() + (screen_point - get_viewport_rect().size * 0.5) / zoom.x

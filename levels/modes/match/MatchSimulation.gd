@@ -21,6 +21,8 @@ var phase: int = MATCH_CONFIG.Phase.SETUP
 var setup_left: float = MATCH_CONFIG.SETUP_SECONDS
 var match_left: float = MATCH_CONFIG.MATCH_SECONDS
 var ships: Dictionary = {}
+var paused: bool = false
+var paused_by: int = 0
 
 var _next_ship_id: int = 1
 var _pilot_inputs: Array = [Vector2.ZERO, Vector2.ZERO]
@@ -49,6 +51,21 @@ func handle_command(slot: int, kind: String, payload: Dictionary):
 		"ready":
 			if phase == MATCH_CONFIG.Phase.SETUP:
 				players[slot].is_ready = not players[slot].is_ready
+		"pause":
+			_set_paused(bool(payload.get("on", not paused)), slot)
+		"forfeit":
+			finish(1 - slot, "forfeit")
+
+func _set_paused(on: bool, slot: int):
+	if on == paused:
+		return
+	paused = on
+	paused_by = slot
+	for ship in ships.values():
+		if is_instance_valid(ship):
+			ship.set_physics_process(not paused and phase == MATCH_CONFIG.Phase.LIVE)
+	for site in sites:
+		site.set_process(not paused)
 
 func set_pilot(slot: int, thrust: float, turn: float):
 	_pilot_inputs[slot] = Vector2(clampf(thrust, -1.0, 1.0), clampf(turn, -1.0, 1.0))
@@ -119,7 +136,7 @@ func _spawn(slot: int, role: int, point: Vector2, facing: float):
 	ship.rotation = facing
 	world.add_child(ship)
 	SHIP_FACTORY.configure(ship, player.programs.get(role, []), player)
-	ship.set_physics_process(phase == MATCH_CONFIG.Phase.LIVE)
+	ship.set_physics_process(phase == MATCH_CONFIG.Phase.LIVE and not paused)
 	if role == MATCH_CONFIG.Role.COLLECTOR:
 		ship.cargo_delivered.connect(_on_cargo_delivered)
 	ships[ship.ship_id] = ship
@@ -150,10 +167,13 @@ func _ships_of(slot: int, role: int) -> Array:
 	return out
 
 func scout_of(slot: int):
-	var scouts: Array = _ships_of(slot, MATCH_CONFIG.Role.SCOUT)
-	return scouts[0] if not scouts.is_empty() else null
+	for ship in _ships_of(slot, MATCH_CONFIG.Role.SCOUT):
+		return ship
+	return null
 
 func _physics_process(delta: float):
+	if paused:
+		return
 	match phase:
 		MATCH_CONFIG.Phase.SETUP:
 			setup_left -= delta
@@ -167,6 +187,8 @@ func _physics_process(delta: float):
 
 func _go_live():
 	phase = MATCH_CONFIG.Phase.LIVE
+	notice.emit(0, "MATCH IS LIVE")
+	notice.emit(1, "MATCH IS LIVE")
 	setup_left = 0.0
 	for ship in ships.values():
 		if is_instance_valid(ship):
@@ -211,6 +233,7 @@ func _damage_planet(target_slot: int, attacker_slot: int):
 	players[attacker_slot].planet_damage_dealt += MATCH_CONFIG.EVADER_PLANET_DAMAGE
 	homes[target_slot].hp = target.planet_hp
 	explosion.emit(homes[target_slot].position, 120.0)
+	notice.emit(target_slot, "YOUR PLANET IS UNDER ATTACK")
 
 func _check_finish():
 	var first_down: bool = players[0].planet_hp <= 0.0
@@ -231,6 +254,7 @@ func finish(winner: int, reason: String):
 	if phase == MATCH_CONFIG.Phase.OVER:
 		return
 	phase = MATCH_CONFIG.Phase.OVER
+	paused = false
 	for ship in ships.values():
 		if is_instance_valid(ship):
 			ship.set_physics_process(false)
@@ -249,6 +273,8 @@ func snapshot() -> Dictionary:
 	for site in sites:
 		site_dust.append(site.dust)
 	return {
+		"paused": paused,
+		"paused_by": paused_by,
 		"phase": phase,
 		"setup_left": setup_left,
 		"match_left": match_left,

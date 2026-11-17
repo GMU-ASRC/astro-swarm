@@ -5,11 +5,14 @@ const MATCH_CONFIG := preload("res://levels/modes/match/MatchConfig.gd")
 const DUST_ICON_PATH := "res://assets/sprites/match/astrodust.svg"
 const MOON_PIXELS := 48.0
 const ICON_SIZE := 22.0
+const LABEL_FONT := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 
 var site_index: int = 0
 var radius: float = 60.0
 var dust: float = MATCH_CONFIG.SITE_MAX_DUST
 var max_dust: float = MATCH_CONFIG.SITE_MAX_DUST
+var regen_rate: float = MATCH_CONFIG.SITE_REGEN
+var kind: String = "standard"
 var regenerates: bool = true
 
 var _dust_icon: Texture2D
@@ -18,6 +21,10 @@ func setup(index: int, site: Dictionary):
 	site_index = index
 	radius = float(site["radius"])
 	position = site["position"]
+	kind = str(site.get("kind", "standard"))
+	max_dust = float(site.get("max_dust", MATCH_CONFIG.SITE_MAX_DUST))
+	regen_rate = float(site.get("regen", MATCH_CONFIG.SITE_REGEN))
+	dust = max_dust
 	var moon := MOON.instantiate() as Control
 	add_child(moon)
 	moon.generate(int(site["seed"]), MOON_PIXELS)
@@ -38,7 +45,7 @@ func has_dust() -> bool:
 
 func _process(delta: float):
 	if regenerates and dust < max_dust:
-		dust = minf(max_dust, dust + MATCH_CONFIG.SITE_REGEN * delta)
+		dust = minf(max_dust, dust + regen_rate * delta)
 	queue_redraw()
 
 func _draw():
@@ -50,6 +57,7 @@ func _draw():
 	if _dust_icon != null:
 		var icon_rect := Rect2(Vector2(-ICON_SIZE * 0.5, -ring_radius - ICON_SIZE - 6.0), Vector2(ICON_SIZE, ICON_SIZE))
 		draw_texture_rect(_dust_icon, icon_rect, false)
+	draw_string(LABEL_FONT, Vector2(-40.0, ring_radius + 18.0), "%d" % int(dust), HORIZONTAL_ALIGNMENT_CENTER, 80.0, 12, MATCH_CONFIG.DUST_COLOR)
 
 func _ignore_mouse(node: Node):
 	if node is Control:

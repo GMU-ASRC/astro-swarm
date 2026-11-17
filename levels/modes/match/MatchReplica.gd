@@ -17,6 +17,8 @@ var phase: int = MATCH_CONFIG.Phase.SETUP
 var setup_left: float = MATCH_CONFIG.SETUP_SECONDS
 var match_left: float = MATCH_CONFIG.MATCH_SECONDS
 var ships: Dictionary = {}
+var paused: bool = false
+var paused_by: int = 0
 
 func setup(match_players: Array, home_bases: Array, mining_sites: Array, arena_size: Vector2, world_node: Node2D):
 	players = match_players
@@ -29,6 +31,8 @@ func setup(match_players: Array, home_bases: Array, mining_sites: Array, arena_s
 
 func apply_snapshot(data: Dictionary):
 	phase = int(data.get("phase", phase))
+	paused = bool(data.get("paused", paused))
+	paused_by = int(data.get("paused_by", paused_by))
 	setup_left = float(data.get("setup_left", setup_left))
 	match_left = float(data.get("match_left", match_left))
 	var player_rows: Array = data.get("players", [])
