@@ -1,6 +1,7 @@
 extends Control
 
 const CreditsTab = preload("res://levels/menus/CreditsTab.gd")
+const DEV_XP_BOX = preload("res://levels/menus/DevXpBox.gd")
 
 signal closed
 
@@ -172,7 +173,7 @@ func _build_dev_mode_ui():
 	title.add_theme_color_override("font_color", Color(0.93, 0.94, 1, 1))
 
 	var info := Label.new()
-	info.text = "Dev mode unlocks every level. With it off, each level unlocks after you finish the one before it."
+	info.text = "Dev mode unlocks every level and lets you give yourself XP. With it off, each level unlocks after you finish the one before it."
 	info.add_theme_font_size_override("font_size", 12)
 	info.add_theme_color_override("font_color", Color(0.6, 0.62, 0.74, 1))
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -184,15 +185,18 @@ func _build_dev_mode_ui():
 	dev_mode_toggle.button_pressed = PlayerSettings.is_dev_mode()
 	var server_box := _build_server_url_box()
 	server_box.visible = dev_mode_toggle.button_pressed
+	var xp_box := DEV_XP_BOX.new()
+	xp_box.visible = dev_mode_toggle.button_pressed
 	dev_mode_toggle.toggled.connect(func(on: bool):
 		PlayerSettings.set_dev_mode(on)
 		server_box.visible = on
+		xp_box.visible = on
 	)
 
 	var separator := HSeparator.new()
 
 	var first_index: int = player_vbox.get_node("ResetTitle").get_index()
-	var nodes: Array = [title, info, dev_mode_toggle, server_box, separator]
+	var nodes: Array = [title, info, dev_mode_toggle, server_box, xp_box, separator]
 	for i in nodes.size():
 		player_vbox.add_child(nodes[i])
 		player_vbox.move_child(nodes[i], first_index + i)
