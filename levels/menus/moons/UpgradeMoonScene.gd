@@ -24,7 +24,9 @@ func _ready():
 	PlayerData.ship_upgrades_changed.connect(_refresh)
 	PlayerData.ship_addons_changed.connect(_refresh)
 	_add_section("UPGRADES", sections, UPGRADE_ROW, SHIP_UPGRADES.ALL, SHIP_UPGRADES.purchase)
-	_add_section("ADDONS", _card_shelf(), ADDON_CARD, SHIP_ADDONS.ALL, SHIP_ADDONS.purchase)
+	var addons: Array = SHIP_ADDONS.available()
+	if not addons.is_empty():
+		_add_section("ADDONS", _card_shelf(), ADDON_CARD, addons, SHIP_ADDONS.purchase)
 	_refresh()
 	MOON_CATALOG.show_tutorial_once(self, MOON_CATALOG.SHIPYARD)
 

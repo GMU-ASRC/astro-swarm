@@ -11,6 +11,21 @@ const ALL := [
 	},
 ]
 
+const HIDDEN_BLOCKS := ["do_throttle"]
+
+static func available() -> Array:
+	var shown: Array = []
+	for addon in ALL:
+		if not is_hidden(addon):
+			shown.append(addon)
+	return shown
+
+static func is_hidden(addon: Dictionary) -> bool:
+	for block_type in addon["unlocked_blocks"]:
+		if HIDDEN_BLOCKS.has(block_type):
+			return true
+	return false
+
 static func is_owned(addon: Dictionary) -> bool:
 	return PlayerData.has_ship_addon(addon["id"])
 
@@ -23,6 +38,8 @@ static func purchase(addon: Dictionary) -> bool:
 	return true
 
 static func is_block_locked(block_type: String) -> bool:
+	if HIDDEN_BLOCKS.has(block_type):
+		return true
 	for addon in ALL:
 		if addon["unlocked_blocks"].has(block_type):
 			return not is_owned(addon)
