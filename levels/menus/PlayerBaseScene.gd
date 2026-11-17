@@ -9,6 +9,8 @@ const MOON_PIXELS := 40.0
 const MOON_DISP := 52.0
 const ORBIT_MIN := 170.0
 const ORBIT_MAX := 255.0
+const ORBIT_INCLINE_MIN := 30.0
+const ORBIT_INCLINE_MAX := 78.0
 
 @onready var planet_layer: Control = $PlanetLayer
 @onready var username_label: Label = $HUD/PlayerInfo/Username
@@ -126,11 +128,11 @@ func _build_moons():
 		moon.generate(sd, MOON_PIXELS)
 		_disable_mouse(moon)
 		var rng := RandomNumberGenerator.new()
-		rng.seed = sd
+		rng.randomize()
 		_moons.append({
 			"node": moon,
 			"r": rng.randf_range(ORBIT_MIN, ORBIT_MAX),
-			"incl": rng.randf_range(deg_to_rad(58.0), deg_to_rad(78.0)),
+			"incl": rng.randf_range(deg_to_rad(ORBIT_INCLINE_MIN), deg_to_rad(ORBIT_INCLINE_MAX)),
 			"alpha": rng.randf_range(0.0, PI),
 			"speed": rng.randf_range(0.25, 0.55) * (1.0 if rng.randf() < 0.5 else -1.0),
 			"phase": rng.randf_range(0.0, TAU),
