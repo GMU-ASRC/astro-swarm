@@ -29,7 +29,7 @@ func _launch():
 
 func _launch_wave():
 	_wave += 1
-	_spawn_evader_at(_planet + Vector2(EVADER_SPAWN_RADIUS, 0.0).rotated(_wave_spawn_angle()))
+	_spawn_evader_at(_evader_spawn_point(_wave_spawn_angle(), EVADER_SPAWN_RADIUS))
 	_update_count()
 
 func _track_events():

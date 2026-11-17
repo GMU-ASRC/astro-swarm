@@ -105,13 +105,7 @@ func _spawn_edge_wave(count: int):
 
 func _edge_point(angle: float) -> Vector2:
 	var direction: Vector2 = Vector2(1.0, 0.0).rotated(angle)
-	var half: Vector2 = _arena * 0.5 - Vector2(EDGE_INSET, EDGE_INSET)
-	var reach: float = INF
-	if absf(direction.x) > 0.0001:
-		reach = minf(reach, half.x / absf(direction.x))
-	if absf(direction.y) > 0.0001:
-		reach = minf(reach, half.y / absf(direction.y))
-	return _planet + direction * reach
+	return _planet + direction * _edge_reach(direction)
 
 func _draw_spawn_band():
 	var half: Vector2 = _arena * 0.5 - Vector2(EDGE_INSET, EDGE_INSET)

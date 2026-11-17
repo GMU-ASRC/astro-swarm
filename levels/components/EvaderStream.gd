@@ -68,7 +68,7 @@ func clear():
 
 func _spawn_next():
 	var angle: float = _rng.randf() * TAU
-	var spawn_position: Vector2 = _level._planet + Vector2(spawn_distance, 0.0).rotated(angle)
+	var spawn_position: Vector2 = _level._evader_spawn_point(angle, spawn_distance)
 	_evaders.append(_level._make_scripted_evader(spawn_position))
 	spawned += 1
 	_spawn_timer = interval

@@ -18,7 +18,9 @@ const ACHIEVEMENTS   := preload("res://achievements/Achievements.gd")
 const EVADER_STREAM  := preload("res://levels/components/EvaderStream.gd")
 const LEVEL_REWARDS  := preload("res://progression/LevelRewards.gd")
 const LEVELS_MENU_SCENE := "res://levels/menus/LevelsScene.tscn"
-const STREAM_SPAWN_RADIUS := 750.0
+const STREAM_SPAWN_RADIUS := 1000.0
+const SPAWN_CLEARANCE := 150.0
+const SPAWN_EDGE_INSET := 60.0
 
 # Distances are pixels, durations are seconds and rotations are radians. The
 # block editor shows meters, at 40 pixels per meter.
@@ -36,7 +38,6 @@ const DEFENDER_HP   := 99.0  # hit points
 const FIRST_GENOME_SWITCH_LEVEL := 4
 
 const EVADER_HP            := 3.0    # hit points
-const EVADER_SPEED         := 105.0  # pixels/second (2.625 m/s)
 const EVADER_SPAWN_RADIUS  := 1000.0 # pixels, radius of the ring the evader spawns on
 const EVADER_PROGRAM := [
 	{"type": "when_always", "params": {}},
@@ -405,6 +406,7 @@ func _on_genome_switched(_stage_index: int):
 			ship.reprogram(program)
 			_apply_ship_config(ship, program)
 			ship.ship_color = color
+	_match_evader_speeds()
 
 func _defender_color() -> Color:
 	if _genome_switcher != null and _genome_switcher.is_counting():
@@ -436,11 +438,45 @@ func _make_scripted_evader(spawn_pos: Vector2) -> Node2D:
 	evader.is_evader = true
 	evader.arena_size = _arena
 	evader.show_health = false
-	evader.speed_mult = EVADER_SPEED / 150.0
+	evader.max_speed = _defender_speed()
 	add_child(evader)
 	evader.global_position = spawn_pos
 	evader.rotation = (_planet - spawn_pos).angle()
 	return evader
+
+func _defender_speed() -> float:
+	for ship in _defender_ships:
+		if is_instance_valid(ship) and not ship.is_evader:
+			return ship.max_speed
+	var program: Array = _launch_program if not _launch_program.is_empty() else PlayerData.get_ship_algorithm()
+	return SimulationManager.ship_config_from_scripts(program, 0.0, 0.0).speed
+
+func _match_evader_speeds():
+	var speed: float = _defender_speed()
+	for child in get_children():
+		if child.get("is_evader") == true:
+			child.max_speed = speed
+
+func _evader_spawn_point(angle: float, base_radius: float) -> Vector2:
+	var direction: Vector2 = Vector2(1.0, 0.0).rotated(angle)
+	var distance: float = maxf(base_radius, _farthest_defender_distance() + SPAWN_CLEARANCE)
+	return _planet + direction * minf(distance, _edge_reach(direction))
+
+func _farthest_defender_distance() -> float:
+	var farthest: float = 0.0
+	for ship in _defender_ships:
+		if is_instance_valid(ship) and not ship.is_evader:
+			farthest = maxf(farthest, ship.global_position.distance_to(_planet))
+	return farthest
+
+func _edge_reach(direction: Vector2) -> float:
+	var half: Vector2 = _arena * 0.5 - Vector2(SPAWN_EDGE_INSET, SPAWN_EDGE_INSET)
+	var reach: float = INF
+	if absf(direction.x) > 0.0001:
+		reach = minf(reach, half.x / absf(direction.x))
+	if absf(direction.y) > 0.0001:
+		reach = minf(reach, half.y / absf(direction.y))
+	return reach
 
 func _random_ring_placements(count: int, rng: RandomNumberGenerator) -> Array:
 	var out: Array = []
