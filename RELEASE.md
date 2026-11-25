@@ -1,3 +1,14 @@
+# 0.0.10
+
+## Updates
+
+- Set FOV block minimum lowered from 20 to 1 degree
+- Max speed cap starts at 3.0 (was 4.0) and grows 0.2 per level (was 1.2)
+- View distance cap starts at 5.0 (was 7.5)
+- Turn speed cap starts at 120 (was 180) and grows 24 per level (was 36)
+- Programs that leave a capped setting at a ship default above the current cap get an on start block that sets it to the cap
+- Evaders always match the speed of the defenders
+
 # 0.0.9
 
 ## Updates

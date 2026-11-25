@@ -5,7 +5,7 @@ const MATCHES_PATH := "/api/survive/matches"
 signal submit_finished(success: bool, code: int, response)
 
 func game_version() -> String:
-	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.9"))
+	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.10"))
 
 func submit(match_data: Dictionary):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":

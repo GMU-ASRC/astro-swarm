@@ -12,7 +12,7 @@ signal training_score_finished(success: bool, code: int, response)
 signal xp_claimed(entry_id: String, success: bool, xp: int, coins: int, message: String)
 
 func game_version() -> String:
-	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.9"))
+	return "v" + str(ProjectSettings.get_setting("application/config/version", "0.0.10"))
 
 func submit(algorithm: Array, placements: Array, level_id: String, collisions: bool = false, genome_schedule: Array = []):
 	if not PlayerData.has_profile() or PlayerData.player_id == "":

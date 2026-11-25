@@ -1,6 +1,6 @@
 extends Control
 
-const VERSION := "v0.0.9-alpha"
+const VERSION := "v0.0.10-alpha"
 const VERSION_PATH := "/api/version"
 const API_KEY := "world-unfair-file"
 
