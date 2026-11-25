@@ -2,12 +2,27 @@
 
 ## Updates
 
-- Set FOV block minimum lowered from 20 to 1 degree
-- Max speed cap starts at 3.0 (was 4.0) and grows 0.2 per level (was 1.2)
-- View distance cap starts at 5.0 (was 7.5)
-- Turn speed cap starts at 120 (was 180) and grows 24 per level (was 36)
+- Evaders always match the speed of the defenders and spawn beyond the defender line
+- Lowered the ship upgrade caps: max speed starts at 3.0 (was 4.0) and grows 0.2 per level (was 1.2), view distance starts at 5.0 (was 7.5), and turn speed starts at 120 (was 180) and grows 24 per level (was 36)
 - Programs that leave a capped setting at a ship default above the current cap get an on start block that sets it to the cap
-- Evaders always match the speed of the defenders
+- The Set FOV block minimum is 1 degree (was 20)
+- The default program starts with on start blocks that set speed, view distance and FOV
+- Level 3 waits 10 seconds before the first wave
+- Hid the throttle block and the thrusters addon, and removed them from the tutorial lines
+- Removed the shop button from the player base
+- Moon orbits on the player base are randomized each visit
+- Removed the workspace panel padding
+
+## Additions
+
+- LAN Match: a two-player match between two devices on the same network, in Regular or Fog of War mode, with a lobby, mining moons, a ship shop, upgrades, and Collector, Defender and Evader programs
+- LAN Match tutorial, minimap, pause menu and a randomly generated arena for every match
+- Entries are saved offline and uploaded once the website is reachable again, and stay on disk until the upload finishes
+- A give XP control in dev mode
+
+## Fixes
+
+- Resetting the game also clears the tutorial flags
 
 # 0.0.9
 
